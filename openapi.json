@@ -1,0 +1,4385 @@
+{
+  "components": {
+    "schemas": {
+      "AlertCreateRequest": {
+        "description": "Body for POST /v1/alerts (usage-billed per active alert per month).",
+        "examples": [
+          {
+            "division": "D1",
+            "enabled": true,
+            "filters": {
+              "position": "Goalkeeper"
+            },
+            "gender": "women",
+            "name": "D1 women's soccer goalkeepers",
+            "sport": "soccer",
+            "webhook_url": "https://example.com/hooks/portal"
+          }
+        ],
+        "properties": {
+          "division": {
+            "description": "Division scope, e.g. 'D1'.",
+            "title": "Division",
+            "type": "string"
+          },
+          "enabled": {
+            "default": true,
+            "description": "Create the alert paused by setting false.",
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "filters": {
+            "additionalProperties": true,
+            "description": "Filter DSL; see /v1/filters/catalog and the docs.",
+            "title": "Filters",
+            "type": "object"
+          },
+          "gender": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "'men' or 'women'; ignored for single-gender sports.",
+            "title": "Gender"
+          },
+          "name": {
+            "description": "Human label for the alert.",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "sport": {
+            "description": "e.g. 'soccer', 'basketball', 'baseball'.",
+            "title": "Sport",
+            "type": "string"
+          },
+          "webhook_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "HTTPS endpoint for match notifications (delivery coming soon; stored now).",
+            "title": "Webhook Url"
+          }
+        },
+        "required": [
+          "name",
+          "sport",
+          "division",
+          "filters"
+        ],
+        "title": "AlertCreateRequest",
+        "type": "object"
+      },
+      "AlertDeleteResponse": {
+        "description": "Acknowledgement for DELETE /v1/alerts/{alert_id}.",
+        "properties": {
+          "deleted": {
+            "default": true,
+            "title": "Deleted",
+            "type": "boolean"
+          }
+        },
+        "title": "AlertDeleteResponse",
+        "type": "object"
+      },
+      "AlertListResponse": {
+        "description": "Envelope for GET /v1/alerts.",
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/AlertSummary"
+            },
+            "title": "Data",
+            "type": "array"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "AlertListResponse",
+        "type": "object"
+      },
+      "AlertMatchEntry": {
+        "description": "A portal entry that matched an alert.",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "matched_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Matched At"
+          },
+          "player": {
+            "additionalProperties": true,
+            "description": "Matched portal player: name, team, division, sport_path, status, is_grad_transfer.",
+            "title": "Player",
+            "type": "object"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "AlertMatchEntry",
+        "type": "object"
+      },
+      "AlertMatchListResponse": {
+        "description": "Envelope for GET /v1/alerts/{alert_id}/matches.",
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/AlertMatchEntry"
+            },
+            "title": "Data",
+            "type": "array"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "AlertMatchListResponse",
+        "type": "object"
+      },
+      "AlertSummary": {
+        "description": "A portal watch alert created via the API.",
+        "examples": [
+          {
+            "created_at": "2026-07-01T12:00:00Z",
+            "division": "D1",
+            "enabled": true,
+            "filters": {
+              "position": "Goalkeeper"
+            },
+            "id": "5f2c1a9e-8d7b-4e6f-a1b2-c3d4e5f60718",
+            "last_evaluated_at": "2026-07-21T09:00:00Z",
+            "last_match_count": 3,
+            "name": "D1 women's soccer goalkeepers",
+            "sport_path": "womens-soccer",
+            "webhook_delivery": "coming_soon",
+            "webhook_url": "https://example.com/hooks/portal"
+          }
+        ],
+        "properties": {
+          "created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "division": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Division"
+          },
+          "enabled": {
+            "default": true,
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "filters": {
+            "additionalProperties": true,
+            "description": "Filter DSL; see GET /v1/filters/catalog.",
+            "title": "Filters",
+            "type": "object"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "last_evaluated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "When the alert was last evaluated against the live portal feed.",
+            "title": "Last Evaluated At"
+          },
+          "last_match_count": {
+            "default": 0,
+            "description": "Match count from the most recent evaluation.",
+            "title": "Last Match Count",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "sport_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sport Path"
+          },
+          "webhook_delivery": {
+            "default": "coming_soon",
+            "description": "Webhook delivery is not yet live; poll GET /v1/alerts/{id}/matches.",
+            "title": "Webhook Delivery",
+            "type": "string"
+          },
+          "webhook_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Webhook Url"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "AlertSummary",
+        "type": "object"
+      },
+      "ApiErrorDetail": {
+        "additionalProperties": true,
+        "description": "The error object inside the `{ \"error\": {...} }` envelope. May carry\nadditional context keys beyond the three fixed ones.",
+        "properties": {
+          "code": {
+            "description": "Stable machine-readable code for this specific error.",
+            "examples": [
+              "invalid_scope"
+            ],
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "description": "Human-readable explanation.",
+            "examples": [
+              "Unknown sport 'curling'."
+            ],
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "description": "Error category, e.g. 'invalid_request', 'not_found', 'rate_limited'.",
+            "examples": [
+              "invalid_request"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "code",
+          "message"
+        ],
+        "title": "ApiErrorDetail",
+        "type": "object"
+      },
+      "ApiErrorResponse": {
+        "description": "Envelope returned for every 4xx/5xx from /v1, except 422 request\nvalidation errors which use FastAPI's standard `{\"detail\": [...]}` shape.",
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ApiErrorDetail"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "title": "ApiErrorResponse",
+        "type": "object"
+      },
+      "GameSummary": {
+        "description": "A game/fixture with whatever box-score / play-by-play the internal\nfetch returned, passed through under `detail`.",
+        "properties": {
+          "detail": {
+            "additionalProperties": true,
+            "description": "Complete game payload: teams, score, and (when held) box score and play-by-play. Shape varies by sport.",
+            "title": "Detail",
+            "type": "object"
+          },
+          "id": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Game id as requested.",
+            "title": "Id"
+          }
+        },
+        "title": "GameSummary",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "PlayerDetail": {
+        "description": "A single player's profile with season stats, accolades, and (when the\nplayer is linked to a person) their cross-program career.",
+        "examples": [
+          {
+            "accolades": [
+              {
+                "award": "All-NESCAC First Team",
+                "season": "2025-26"
+              }
+            ],
+            "career": {
+              "stints": [
+                {
+                  "seasons": [
+                    "2024-25",
+                    "2025-26"
+                  ],
+                  "team": "Amherst"
+                }
+              ]
+            },
+            "class_year": "Junior",
+            "conference": "NESCAC",
+            "division": "D3",
+            "height": "5-10",
+            "hometown": "Portland, OR",
+            "id": 184223,
+            "is_verified": false,
+            "name": "Jordan Rivera",
+            "person_id": 90211,
+            "position": "Midfielder",
+            "season_stats": [
+              {
+                "games_played": 18,
+                "goals": 7,
+                "season": "2025-26"
+              }
+            ],
+            "team": "Amherst"
+          }
+        ],
+        "properties": {
+          "accolades": {
+            "description": "Awards and honors, when held.",
+            "title": "Accolades"
+          },
+          "career": {
+            "description": "Cross-program career topology (stints across schools), when linked.",
+            "title": "Career"
+          },
+          "class_year": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Class Year"
+          },
+          "conference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conference"
+          },
+          "division": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Division"
+          },
+          "headshot_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Headshot Url"
+          },
+          "height": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Height"
+          },
+          "hometown": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hometown"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "is_verified": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Verified"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "person_id": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Cross-program person id; use with GET /v1/persons/{person_id}.",
+            "title": "Person Id"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          },
+          "season_stats": {
+            "description": "Per-season stat rows; shape varies by sport.",
+            "title": "Season Stats"
+          },
+          "team": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Team/school name.",
+            "title": "Team"
+          }
+        },
+        "title": "PlayerDetail",
+        "type": "object"
+      },
+      "PlayerSearchPage": {
+        "description": "One page of player search results.",
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/PlayerSummary"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "has_more": {
+            "default": false,
+            "description": "True when another page is available.",
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Opaque cursor for the next page; null when there are no more results.",
+            "examples": [
+              "eyJvZmZzZXQiOiAyNX0="
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "PlayerSearchPage",
+        "type": "object"
+      },
+      "PlayerSearchRequest": {
+        "description": "Public body for POST /v1/players/search.\n\nScope (`sport`/`gender`/`division`) is required and drives RLS. The\nremaining fields are a curated, sport-agnostic subset of the internal\nmanual-search filters; richer catalog-driven filters come in a later rev.",
+        "examples": [
+          {
+            "conference": "NESCAC",
+            "division": "D3",
+            "gender": "men",
+            "limit": 25,
+            "position": "Midfielder",
+            "sort_by": "goals",
+            "sort_order": "descending",
+            "sport": "soccer"
+          }
+        ],
+        "properties": {
+          "class_year": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Class Year"
+          },
+          "conference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conference"
+          },
+          "cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Opaque pagination cursor from a prior response.",
+            "title": "Cursor"
+          },
+          "division": {
+            "description": "Division scope; may be a comma-joined NCAA list, e.g. 'D1,D2'.",
+            "title": "Division",
+            "type": "string"
+          },
+          "gender": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "'men' or 'women'; ignored for single-gender sports.",
+            "title": "Gender"
+          },
+          "hometown": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hometown"
+          },
+          "limit": {
+            "default": 25,
+            "description": "Page size (max 100).",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "major": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Major"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          },
+          "season": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Season"
+          },
+          "sort_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Stat field to sort by.",
+            "title": "Sort By"
+          },
+          "sort_order": {
+            "default": "descending",
+            "description": "'ascending' or 'descending'.",
+            "title": "Sort Order",
+            "type": "string"
+          },
+          "sport": {
+            "description": "e.g. 'soccer', 'basketball', 'baseball'.",
+            "title": "Sport",
+            "type": "string"
+          },
+          "team_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Team Name"
+          }
+        },
+        "required": [
+          "sport",
+          "division"
+        ],
+        "title": "PlayerSearchRequest",
+        "type": "object"
+      },
+      "PlayerSeasonsResponse": {
+        "description": "Season-history view for one player. All three keys are always present;\n`track_performances` is populated for track & field athletes only.",
+        "properties": {
+          "accolades": {
+            "description": "Awards and honors, when held.",
+            "title": "Accolades"
+          },
+          "season_stats": {
+            "description": "Per-season stat rows; shape varies by sport.",
+            "title": "Season Stats"
+          },
+          "track_performances": {
+            "description": "Track & field performance list; null for other sports.",
+            "title": "Track Performances"
+          }
+        },
+        "title": "PlayerSeasonsResponse",
+        "type": "object"
+      },
+      "PlayerSummary": {
+        "description": "A player row as returned by search \u2014 identity plus a sport-shaped stat\nbag. Contact fields (email/phone/social) are intentionally omitted.",
+        "examples": [
+          {
+            "class_year": "Junior",
+            "conference": "NESCAC",
+            "division": "D3",
+            "headshot_url": "https://api.magisterial.ai/api/public/img?u=...",
+            "height": "5-10",
+            "hometown": "Portland, OR",
+            "id": 184223,
+            "is_verified": false,
+            "name": "Jordan Rivera",
+            "position": "Midfielder",
+            "season": "2025-26",
+            "stats": {
+              "assists": 5,
+              "games_played": 18,
+              "goals": 7
+            },
+            "team": "Amherst"
+          }
+        ],
+        "properties": {
+          "class_year": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "e.g. 'Freshman', 'Sophomore', 'Junior', 'Senior'.",
+            "title": "Class Year"
+          },
+          "conference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conference"
+          },
+          "division": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "e.g. 'D1', 'D2', 'D3', 'NAIA', 'NJCAA'.",
+            "title": "Division"
+          },
+          "headshot_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Headshot Url"
+          },
+          "height": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Formatted height, e.g. '6-2'.",
+            "title": "Height"
+          },
+          "hometown": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hometown"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Player id; use with GET /v1/players/{player_id}.",
+            "title": "Id"
+          },
+          "is_verified": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "True when the athlete has claimed this profile.",
+            "title": "Is Verified"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          },
+          "season": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Season the stat bag belongs to, e.g. '2025-26'.",
+            "title": "Season"
+          },
+          "stats": {
+            "additionalProperties": true,
+            "description": "Sport-shaped stat fields; keys vary by sport (see GET /v1/filters/catalog).",
+            "title": "Stats",
+            "type": "object"
+          },
+          "team": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Team/school name.",
+            "title": "Team"
+          }
+        },
+        "title": "PlayerSummary",
+        "type": "object"
+      },
+      "PortalEntry": {
+        "description": "One live transfer-portal entry. `contacts` is present only for callers\nwhose owning account is PRO/MAX for the sport \u2014 the sole deliberate\nexception to the no-contact-info rule, matching the in-app portal paywall.",
+        "examples": [
+          {
+            "conference": "GLIAC",
+            "designated_student_athlete": false,
+            "division": "D2",
+            "first_seen_at": "2026-06-30T14:05:00Z",
+            "id": "7ffb2b3e-1c9a-4c1e-9f4a-2f6a8b1d0c55",
+            "initiated_date": "2026-06-30",
+            "is_grad_transfer": false,
+            "last_seen_at": "2026-07-20T02:10:00Z",
+            "last_updated_date": "2026-07-02",
+            "name": "Casey Morgan",
+            "sport_path": "womens-basketball",
+            "status": "INC",
+            "team": "Grand Valley State",
+            "year": "SO"
+          }
+        ],
+        "properties": {
+          "conference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conference"
+          },
+          "contacts": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Contact info (email/phone/social); PRO/MAX tier only.",
+            "title": "Contacts"
+          },
+          "designated_student_athlete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Designated Student Athlete"
+          },
+          "division": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Division"
+          },
+          "first_seen_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "When this entry first appeared in our feed.",
+            "title": "First Seen At"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "initiated_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Date the athlete entered the portal.",
+            "title": "Initiated Date"
+          },
+          "is_grad_transfer": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Grad Transfer"
+          },
+          "last_seen_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "When this entry was last confirmed present.",
+            "title": "Last Seen At"
+          },
+          "last_updated_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Date NCAA last updated the record.",
+            "title": "Last Updated Date"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "sport_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sport Path"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "NCAA record status, e.g. 'INC' (active).",
+            "title": "Status"
+          },
+          "team": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Current school (matched name when resolved).",
+            "title": "Team"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Class year code, e.g. 'FR', 'SO', 'JR', 'SR'.",
+            "title": "Year"
+          }
+        },
+        "title": "PortalEntry",
+        "type": "object"
+      },
+      "PortalPage": {
+        "description": "One page of transfer-portal entries.",
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/PortalEntry"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "has_more": {
+            "default": false,
+            "description": "True when another page is available.",
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Opaque cursor for the next page; null when there are no more results.",
+            "examples": [
+              "eyJvZmZzZXQiOiAyNX0="
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "PortalPage",
+        "type": "object"
+      },
+      "PublicQueryRequest": {
+        "description": "Body for POST /v1/query (natural-language query \u2014 usage-billed).\n\nThe model is fixed server-side in v1 so billing stays predictable.",
+        "examples": [
+          {
+            "division": "D3",
+            "gender": "men",
+            "prompt": "Who led the NESCAC in assists this season?",
+            "sport": "soccer"
+          }
+        ],
+        "properties": {
+          "division": {
+            "default": "D1",
+            "description": "Division scope, e.g. 'D1'.",
+            "title": "Division",
+            "type": "string"
+          },
+          "gender": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "'men' or 'women'; ignored for single-gender sports.",
+            "title": "Gender"
+          },
+          "prompt": {
+            "description": "The question to answer.",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Prompt",
+            "type": "string"
+          },
+          "sport": {
+            "description": "e.g. 'soccer', 'basketball', 'baseball'.",
+            "title": "Sport",
+            "type": "string"
+          }
+        },
+        "required": [
+          "prompt",
+          "sport"
+        ],
+        "title": "PublicQueryRequest",
+        "type": "object"
+      },
+      "QueryCreateResponse": {
+        "description": "Acknowledgement for POST /v1/query; poll GET /v1/query/{run_id}.",
+        "properties": {
+          "run_id": {
+            "examples": [
+              "9f8a1c2e-6f0b-4f2a-8f0d-3f2b1a9c8e7d"
+            ],
+            "title": "Run Id",
+            "type": "string"
+          },
+          "status": {
+            "examples": [
+              "queued"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "status"
+        ],
+        "title": "QueryCreateResponse",
+        "type": "object"
+      },
+      "QueryRunStatus": {
+        "description": "Status of a natural-language query run. `answer` and `usage` appear once\nthe run is terminal (usage lands seconds after completion, when billing\nfinalizes).",
+        "examples": [
+          {
+            "answer": "The top three D1 scorers this season are ...",
+            "created_at": "2026-07-21T16:20:00Z",
+            "finished_at": "2026-07-21T16:20:34Z",
+            "run_id": "9f8a1c2e-6f0b-4f2a-8f0d-3f2b1a9c8e7d",
+            "started_at": "2026-07-21T16:20:01Z",
+            "status": "done",
+            "usage": {
+              "billed_usd": 0.11,
+              "model": "claude-sonnet-4-6",
+              "tokens_in": 18452,
+              "tokens_out": 512
+            }
+          }
+        ],
+        "properties": {
+          "answer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Final answer text; present once the run is done.",
+            "title": "Answer"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Failure detail when status is 'error'.",
+            "title": "Error"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "status": {
+            "description": "queued | running | done | error | cancelled",
+            "title": "Status",
+            "type": "string"
+          },
+          "usage": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Token counts, model, and billed amount; present once billing finalizes.",
+            "title": "Usage"
+          }
+        },
+        "required": [
+          "run_id",
+          "status"
+        ],
+        "title": "QueryRunStatus",
+        "type": "object"
+      },
+      "RosterEntry": {
+        "description": "A roster member \u2014 identity only, no contact fields.",
+        "examples": [
+          {
+            "class_year": "Junior",
+            "hometown": "Portland, OR",
+            "id": 184223,
+            "is_verified": false,
+            "jersey_number": "8",
+            "name": "Jordan Rivera",
+            "person_id": 90211,
+            "position": "Midfielder"
+          }
+        ],
+        "properties": {
+          "class_year": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Class Year"
+          },
+          "headshot_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Headshot Url"
+          },
+          "hometown": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hometown"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Player id; use with GET /v1/players/{player_id}.",
+            "title": "Id"
+          },
+          "is_verified": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Verified"
+          },
+          "jersey_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Jersey Number"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "person_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Person Id"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          }
+        },
+        "title": "RosterEntry",
+        "type": "object"
+      },
+      "RosterPage": {
+        "description": "One page of roster members.",
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/RosterEntry"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "has_more": {
+            "default": false,
+            "description": "True when another page is available.",
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Opaque cursor for the next page; null when there are no more results.",
+            "examples": [
+              "eyJvZmZzZXQiOiAyNX0="
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "RosterPage",
+        "type": "object"
+      },
+      "SportEntry": {
+        "description": "A supported sport and the genders it carries.",
+        "properties": {
+          "genders": {
+            "examples": [
+              [
+                "men",
+                "women"
+              ]
+            ],
+            "items": {
+              "type": "string"
+            },
+            "title": "Genders",
+            "type": "array"
+          },
+          "sport": {
+            "examples": [
+              "soccer"
+            ],
+            "title": "Sport",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sport",
+          "genders"
+        ],
+        "title": "SportEntry",
+        "type": "object"
+      },
+      "SportListResponse": {
+        "description": "Envelope for GET /v1/sports.",
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/SportEntry"
+            },
+            "title": "Data",
+            "type": "array"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "SportListResponse",
+        "type": "object"
+      },
+      "StringListResponse": {
+        "description": "Envelope for simple string lists (divisions, conferences).",
+        "properties": {
+          "data": {
+            "examples": [
+              [
+                "D1",
+                "D2",
+                "D3",
+                "NAIA",
+                "NJCAA"
+              ]
+            ],
+            "items": {
+              "type": "string"
+            },
+            "title": "Data",
+            "type": "array"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "StringListResponse",
+        "type": "object"
+      },
+      "TeamDetail": {
+        "description": "A single team plus its per-season document/stat records.",
+        "examples": [
+          {
+            "conference": "NESCAC",
+            "division": "D3",
+            "id": 1873,
+            "logo_url": "https://magisterial.ai/logos/amherst.png",
+            "name": "Amherst",
+            "sport_path": "mens-soccer"
+          }
+        ],
+        "properties": {
+          "conference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conference"
+          },
+          "division": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Division"
+          },
+          "documents": {
+            "description": "Per-season team records (schedules, stats documents); shape varies by sport.",
+            "title": "Documents"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Team id; use with GET /v1/teams/{team_id}.",
+            "title": "Id"
+          },
+          "logo_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logo Url"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "sport_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Gendered sport key, e.g. 'mens-soccer'.",
+            "title": "Sport Path"
+          }
+        },
+        "title": "TeamDetail",
+        "type": "object"
+      },
+      "TeamPage": {
+        "description": "One page of teams.",
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/TeamSummary"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "has_more": {
+            "default": false,
+            "description": "True when another page is available.",
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Opaque cursor for the next page; null when there are no more results.",
+            "examples": [
+              "eyJvZmZzZXQiOiAyNX0="
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "TeamPage",
+        "type": "object"
+      },
+      "TeamSummary": {
+        "description": "A team as returned by the teams list.",
+        "examples": [
+          {
+            "conference": "NESCAC",
+            "division": "D3",
+            "id": 1873,
+            "logo_url": "https://magisterial.ai/logos/amherst.png",
+            "name": "Amherst",
+            "sport_path": "mens-soccer"
+          }
+        ],
+        "properties": {
+          "conference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conference"
+          },
+          "division": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Division"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Team id; use with GET /v1/teams/{team_id}.",
+            "title": "Id"
+          },
+          "logo_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logo Url"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "sport_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Gendered sport key, e.g. 'mens-soccer'.",
+            "title": "Sport Path"
+          }
+        },
+        "title": "TeamSummary",
+        "type": "object"
+      },
+      "TransferListResponse": {
+        "description": "Envelope for GET /v1/persons/{person_id}/transfers.",
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/TransferRecord"
+            },
+            "title": "Data",
+            "type": "array"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "TransferListResponse",
+        "type": "object"
+      },
+      "TransferRecord": {
+        "description": "One school-change edge for a person (from the RLS-free transfers table).",
+        "properties": {
+          "first_season_to": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "First season at the destination school.",
+            "title": "First Season To"
+          },
+          "from_conference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From Conference"
+          },
+          "from_division": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From Division"
+          },
+          "from_team_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Origin team id, when resolved.",
+            "title": "From Team Id"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "last_season_from": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Last season at the origin school.",
+            "title": "Last Season From"
+          },
+          "person_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Person Id"
+          },
+          "sport_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sport Path"
+          },
+          "to_conference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "To Conference"
+          },
+          "to_division": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "To Division"
+          },
+          "to_team_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Destination team id, when resolved.",
+            "title": "To Team Id"
+          }
+        },
+        "title": "TransferRecord",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "bearerFormat": "mag_live_... / mag_test_... API key",
+        "description": "API key created at https://magisterial.ai/console/api-keys, sent as `Authorization: Bearer mag_live_...`.",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "REST API for college sports data across NCAA D1/D2/D3, NAIA, and NJCAA:\nplayers, teams, rosters, cross-program careers, games, the live transfer\nportal, and an agent-backed natural-language query endpoint.\n\n## Authentication\n\nEvery endpoint requires an API key sent as a bearer token:\n\n```\nAuthorization: Bearer mag_live_...\n```\n\nCreate and manage keys in the developer console at\n[magisterial.ai/console/api-keys](https://magisterial.ai/console/api-keys).\nKeys are prefixed `mag_live_` (production) or `mag_test_`.\n\n## Scoping\n\nData access is scoped by `sport`, `division`, and (for dual-gender sports)\n`gender`. Valid values come from `GET /v1/sports` and `GET /v1/divisions`;\nsome endpoints accept comma-joined NCAA divisions, e.g. `D1,D2`.\n\n## Pagination\n\nList endpoints paginate with an opaque `cursor`. Pass the `next_cursor` from\none response as the `cursor` of the next request; `has_more` signals whether\nanother page exists.\n\n## Errors\n\nEvery 4xx/5xx returns a JSON envelope:\n\n```json\n{ \"error\": { \"type\": \"invalid_request\", \"code\": \"invalid_scope\", \"message\": \"...\" } }\n```\n\nThe one exception is request validation (422), which uses FastAPI's standard\n`{\"detail\": [...]}` shape. Rate-limited responses (429) include\n`X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`, and\n`Retry-After` headers.\n\n## Billing\n\nEndpoints marked *usage-billed* (`/v1/portal`, `/v1/query`, `/v1/alerts`)\nrequire API billing to be enabled on the account and meter usage against a\nmonthly budget; the free endpoints are included with any API key. A 402\nresponse means billing is not enabled or the budget is exhausted.\n",
+    "summary": "College sports data: players, teams, careers, games, the transfer portal, and natural-language query.",
+    "title": "Magisterial Developer API",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/v1/alerts": {
+      "get": {
+        "description": "All alerts created through the API for this account, newest first.\nAlerts created in the app are not visible here.",
+        "operationId": "list_alerts",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed, or revoked API key."
+          },
+          "402": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "API billing not enabled for this account, or the monthly budget is exhausted."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden \u2014 e.g. account limit reached."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded. See the X-RateLimit-* and Retry-After headers."
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "List alerts",
+        "tags": [
+          "Alerts"
+        ]
+      },
+      "post": {
+        "description": "Watch the transfer portal for entries matching a filter set. Billed per\nactive alert per calendar month, charged on creation. Webhook delivery is\nnot yet live \u2014 poll GET /v1/alerts/{alert_id}/matches.",
+        "operationId": "create_alert",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlertCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertSummary"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid request \u2014 unknown sport/gender/division scope, bad cursor, or bad parameter."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed, or revoked API key."
+          },
+          "402": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "API billing not enabled for this account, or the monthly budget is exhausted."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden \u2014 e.g. account limit reached."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded. See the X-RateLimit-* and Retry-After headers."
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Create alert (usage-billed monthly)",
+        "tags": [
+          "Alerts"
+        ]
+      }
+    },
+    "/v1/alerts/{alert_id}": {
+      "delete": {
+        "description": "Delete an API-created alert. The current month's charge is not\nrefunded, and recreating within the same month does not double-charge.",
+        "operationId": "delete_alert",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "alert_id",
+            "required": true,
+            "schema": {
+              "title": "Alert Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertDeleteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed, or revoked API key."
+          },
+          "402": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "API billing not enabled for this account, or the monthly budget is exhausted."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden \u2014 e.g. account limit reached."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "No resource with that id in the requested scope."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded. See the X-RateLimit-* and Retry-After headers."
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Delete alert",
+        "tags": [
+          "Alerts"
+        ]
+      }
+    },
+    "/v1/alerts/{alert_id}/matches": {
+      "get": {
+        "description": "Recent portal entries that matched an alert, newest first. This is the\npolling surface until webhook delivery ships.",
+        "operationId": "list_alert_matches",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "alert_id",
+            "required": true,
+            "schema": {
+              "title": "Alert Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertMatchListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed, or revoked API key."
+          },
+          "402": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "API billing not enabled for this account, or the monthly budget is exhausted."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden \u2014 e.g. account limit reached."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "No resource with that id in the requested scope."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded. See the X-RateLimit-* and Retry-After headers."
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "List an alert's recent matches",
+        "tags": [
+          "Alerts"
+        ]
+      }
+    },
+    "/v1/conferences": {
+      "get": {
+        "description": "Conference names present in the requested sport/division scope \u2014 valid\nvalues for `conference` filters on other endpoints.",
+        "operationId": "list_conferences",
+        "parameters": [
+          {
+            "description": "Sport scope, e.g. 'soccer'.",
+            "in": "query",
+            "name": "sport",
+            "required": true,
+            "schema": {
+              "description": "Sport scope, e.g. 'soccer'.",
+              "title": "Sport",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Division scope, e.g. 'D1'.",
+            "in": "query",
+            "name": "division",
+            "required": true,
+            "schema": {
+              "description": "Division scope, e.g. 'D1'.",
+              "title": "Division",
+              "type": "string"
+            }
+          },
+          {
+            "description": "'men' or 'women'.",
+            "in": "query",
+            "name": "gender",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "'men' or 'women'.",
+              "title": "Gender"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid request \u2014 unknown sport/gender/division scope, bad cursor, or bad parameter."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed, or revoked API key."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded. See the X-RateLimit-* and Retry-After headers."
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "List conferences in a division",
+        "tags": [
+          "Reference"
+        ]
+      }
+    },
+    "/v1/coverage": {
+      "get": {
+        "description": "Full data-coverage matrix: per sport and division, how many teams,\ncoaches, games, and players we hold, with season ranges, per-season\nbreakdowns, and transfer-portal tracking counts. Free (read rate limit);\ncounts refresh roughly every 6 hours.",
+        "operationId": "get_coverage",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": {
+                    "generated_at": "2026-07-21T12:00:00Z",
+                    "portal": {
+                      "active": 8200,
+                      "divisions": [
+                        "D1",
+                        "D2",
+                        "D3"
+                      ],
+                      "entries": 41000
+                    },
+                    "sports": [
+                      {
+                        "divisions": [
+                          {
+                            "division": "D1",
+                            "teams": 620
+                          }
+                        ],
+                        "sport": "soccer"
+                      }
+                    ],
+                    "totals": {
+                      "coaches": 36000,
+                      "conferences": 480,
+                      "games": 410000,
+                      "players": 850000,
+                      "schools": 3200,
+                      "teams": 21000
+                    }
+                  }
+                },
+                "schema": {}
+              }
+            },
+            "description": "Per sport and division: teams, coaches, games, and players held, with season ranges, per-season breakdowns, and transfer-portal tracking counts."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed, or revoked API key."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded. See the X-RateLimit-* and Retry-After headers."
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Data coverage matrix",
+        "tags": [
+          "Reference"
+        ]
+      }
+    },
+    "/v1/divisions": {
+      "get": {
+        "description": "Valid values for the `division` scope parameter. NCAA divisions may be\ncomma-joined on endpoints that accept multi-division scopes, e.g. 'D1,D2'.",
+        "operationId": "list_divisions",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed, or revoked API key."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded. See the X-RateLimit-* and Retry-After headers."
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "List divisions",
+        "tags": [
+          "Reference"
+        ]
+      }
+    },
+    "/v1/filters/catalog": {
+      "get": {
+        "description": "The filter and stat vocabulary per sport \u2014 the keys accepted by\nPOST /v1/players/search (`sort_by`, filter fields) and by alert `filters`.",
+        "operationId": "get_filter_catalog",
+        "parameters": [
+          {
+            "description": "Sport to scope the catalog to.",
+            "in": "query",
+            "name": "sport",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Sport to scope the catalog to.",
+              "title": "Sport"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "sports": {
+                    "soccer": {
+                      "filters": [
+                        {
+                          "key": "position",
+                          "type": "enum",
+                          "values": [
+                            "Goalkeeper",
+                            "Defender"
+                          ]
+                        }
+                      ],
+                      "stats": [
+                        {
+                          "key": "goals",
+                          "label": "Goals"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "schema": {}
+              }
+            },
+            "description": "Filter catalog: per-sport filter fields, stat fields, and enum values."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed, or revoked API key."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded. See the X-RateLimit-* and Retry-After headers."
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Queryable filter fields for a sport",
+        "tags": [
+          "Reference"
+        ]
+      }
+    },
+    "/v1/games": {
+      "get": {
+        "description": "Not yet available \u2014 always returns 501. Fetch individual games with\nGET /v1/games/{game_id} in the meantime.",
+        "operationId": "list_games",
+        "responses": {
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed, or revoked API key."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded. See the X-RateLimit-* and Retry-After headers."
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Endpoint not yet available; see the message for the suggested alternative."
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "List games (coming soon)",
+        "tags": [
+          "Games"
+        ]
+      }
+    },
+    "/v1/games/{game_id}": {
+      "get": {
+        "description": "One game with everything held for it: teams, score, and (where covered)\nbox score and play-by-play under `detail`. Shape varies by sport.",
+        "operationId": "get_game",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "game_id",
+            "required": true,
+            "schema": {
+              "title": "Game Id",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Sport scope, e.g. 'soccer'.",
+            "in": "query",
+            "name": "sport",
+            "required": true,
+            "schema": {
+              "description": "Sport scope, e.g. 'soccer'.",
+              "title": "Sport",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Division scope, e.g. 'D1'.",
+            "in": "query",
+            "name": "division",
+            "required": true,
+            "schema": {
+              "description": "Division scope, e.g. 'D1'.",
+              "title": "Division",
+              "type": "string"
+            }
+          },
+          {
+            "description": "'men' or 'women'.",
+            "in": "query",
+            "name": "gender",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "'men' or 'women'.",
+              "title": "Gender"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameSummary"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid request \u2014 unknown sport/gender/division scope, bad cursor, or bad parameter."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed, or revoked API key."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "No resource with that id in the requested scope."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded. See the X-RateLimit-* and Retry-After headers."
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Get a game",
+        "tags": [
+          "Games"
+        ]
+      }
+    },
+    "/v1/persons/{person_id}": {
+      "get": {
+        "description": "A person's full profile via their most recent stint, with the complete\ncross-program career attached. Careers span divisions, so only a sport\n(and optional gender) scope is required.",
+        "operationId": "get_person",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "person_id",
+            "required": true,
+            "schema": {
+              "title": "Person Id",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Sport scope, e.g. 'soccer'.",
+            "in": "query",
+            "name": "sport",
+            "required": true,
+            "schema": {
+              "description": "Sport scope, e.g. 'soccer'.",
+              "title": "Sport",
+              "type": "string"
+            }
+          },
+          {
+            "description": "'men' or 'women'.",
+            "in": "query",
+            "name": "gender",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "'men' or 'women'.",
+              "title": "Gender"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid request \u2014 unknown sport/gender/division scope, bad cursor, or bad parameter."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed, or revoked API key."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "No resource with that id in the requested scope."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded. See the X-RateLimit-* and Retry-After headers."
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Get a person's cross-program career",
+        "tags": [
+          "Persons"
+        ]
+      }
+    },
+    "/v1/persons/{person_id}/transfers": {
+      "get": {
+        "description": "Every recorded school change for a person, oldest first. An unknown\nperson id returns an empty list. No division scope is required.",
+        "operationId": "list_person_transfers",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "person_id",
+            "required": true,
+            "schema": {
+              "title": "Person Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed, or revoked API key."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded. See the X-RateLimit-* and Retry-After headers."
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Get a person's transfer history",
+        "tags": [
+          "Persons"
+        ]
+      }
+    },
+    "/v1/players/search": {
+      "post": {
+        "description": "Filter and rank players within a sport/division scope. Sortable stat\nfields come from GET /v1/filters/catalog. Results paginate with an opaque\n`cursor`; pass `next_cursor` back to fetch the following page.",
+        "operationId": "search_players",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlayerSearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerSearchPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid request \u2014 unknown sport/gender/division scope, bad cursor, or bad parameter."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed, or revoked API key."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded. See the X-RateLimit-* and Retry-After headers."
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Search players",
+        "tags": [
+          "Players"
+        ]
+      }
+    },
+    "/v1/players/{player_id}": {
+      "get": {
+        "description": "Full profile for one player: identity, season stats, accolades, and \u2014\nwhen the player is linked to a person \u2014 their cross-program career. The\nplayer must be visible in the requested sport/division scope.",
+        "operationId": "get_player",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "player_id",
+            "required": true,
+            "schema": {
+              "title": "Player Id",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Sport scope, e.g. 'soccer'.",
+            "in": "query",
+            "name": "sport",
+            "required": true,
+            "schema": {
+              "description": "Sport scope, e.g. 'soccer'.",
+              "title": "Sport",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Division scope, e.g. 'D1'.",
+            "in": "query",
+            "name": "division",
+            "required": true,
+            "schema": {
+              "description": "Division scope, e.g. 'D1'.",
+              "title": "Division",
+              "type": "string"
+            }
+          },
+          {
+            "description": "'men' or 'women'.",
+            "in": "query",
+            "name": "gender",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "'men' or 'women'.",
+              "title": "Gender"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid request \u2014 unknown sport/gender/division scope, bad cursor, or bad parameter."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed, or revoked API key."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "No resource with that id in the requested scope."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded. See the X-RateLimit-* and Retry-After headers."
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Get a player",
+        "tags": [
+          "Players"
+        ]
+      }
+    },
+    "/v1/players/{player_id}/seasons": {
+      "get": {
+        "description": "Season-history view for one player: per-season stat rows and accolades\nonly (no identity block). Track & field athletes additionally carry a\n`track_performances` list.",
+        "operationId": "get_player_seasons",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "player_id",
+            "required": true,
+            "schema": {
+              "title": "Player Id",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Sport scope, e.g. 'soccer'.",
+            "in": "query",
+            "name": "sport",
+            "required": true,
+            "schema": {
+              "description": "Sport scope, e.g. 'soccer'.",
+              "title": "Sport",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Division scope, e.g. 'D1'.",
+            "in": "query",
+            "name": "division",
+            "required": true,
+            "schema": {
+              "description": "Division scope, e.g. 'D1'.",
+              "title": "Division",
+              "type": "string"
+            }
+          },
+          {
+            "description": "'men' or 'women'.",
+            "in": "query",
+            "name": "gender",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "'men' or 'women'.",
+              "title": "Gender"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerSeasonsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid request \u2014 unknown sport/gender/division scope, bad cursor, or bad parameter."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed, or revoked API key."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "No resource with that id in the requested scope."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded. See the X-RateLimit-* and Retry-After headers."
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Get a player's season stats",
+        "tags": [
+          "Players"
+        ]
+      }
+    },
+    "/v1/portal": {
+      "get": {
+        "description": "Live transfer-portal entries for a sport/division, newest first. Each\nrequest is usage-billed. `contacts` is populated only when the owning\naccount holds a PRO/MAX plan for the sport; otherwise it is null. Use\n`since` for incremental polling.",
+        "operationId": "list_portal_entries",
+        "parameters": [
+          {
+            "description": "Sport scope, e.g. 'soccer'.",
+            "in": "query",
+            "name": "sport",
+            "required": true,
+            "schema": {
+              "description": "Sport scope, e.g. 'soccer'.",
+              "title": "Sport",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Division scope, e.g. 'D1'.",
+            "in": "query",
+            "name": "division",
+            "required": true,
+            "schema": {
+              "description": "Division scope, e.g. 'D1'.",
+              "title": "Division",
+              "type": "string"
+            }
+          },
+          {
+            "description": "'men' or 'women'.",
+            "in": "query",
+            "name": "gender",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "'men' or 'women'.",
+              "title": "Gender"
+            }
+          },
+          {
+            "description": "Record status filter, e.g. 'INC' (active).",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Record status filter, e.g. 'INC' (active).",
+              "title": "Status"
+            }
+          },
+          {
+            "description": "ISO 8601 \u2014 only entries first seen at/after this time.",
+            "in": "query",
+            "name": "since",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "ISO 8601 \u2014 only entries first seen at/after this time.",
+              "title": "Since"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortalPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid request \u2014 unknown sport/gender/division scope, bad cursor, or bad parameter."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed, or revoked API key."
+          },
+          "402": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "API billing not enabled for this account, or the monthly budget is exhausted."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden \u2014 e.g. account limit reached."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded. See the X-RateLimit-* and Retry-After headers."
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Transfer portal (usage-billed)",
+        "tags": [
+          "Transfer Portal"
+        ]
+      }
+    },
+    "/v1/query": {
+      "post": {
+        "description": "Ask a question in plain language; an agent researches the answer against\nthe requested sport/division scope. Returns 202 with a `run_id`\nimmediately \u2014 poll GET /v1/query/{run_id} (runs typically finish in under\na minute). Billed by token usage once the run completes.",
+        "operationId": "create_query",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicQueryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryCreateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid request \u2014 unknown sport/gender/division scope, bad cursor, or bad parameter."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed, or revoked API key."
+          },
+          "402": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "API billing not enabled for this account, or the monthly budget is exhausted."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden \u2014 e.g. account limit reached."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded. See the X-RateLimit-* and Retry-After headers."
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Natural-language query (usage-billed)",
+        "tags": [
+          "Query"
+        ]
+      }
+    },
+    "/v1/query/{run_id}": {
+      "get": {
+        "description": "Status of a query run you created. `answer` appears once the run is\nterminal; `usage` (tokens and billed amount) lands seconds later when\nbilling finalizes.",
+        "operationId": "get_query_run",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryRunStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed, or revoked API key."
+          },
+          "402": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "API billing not enabled for this account, or the monthly budget is exhausted."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden \u2014 e.g. account limit reached."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "No resource with that id in the requested scope."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded. See the X-RateLimit-* and Retry-After headers."
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Query run status",
+        "tags": [
+          "Query"
+        ]
+      }
+    },
+    "/v1/sports": {
+      "get": {
+        "description": "Every sport the API covers, with the genders each one carries. Use these\nvalues for the `sport` and `gender` scope parameters on other endpoints.",
+        "operationId": "list_sports",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SportListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed, or revoked API key."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded. See the X-RateLimit-* and Retry-After headers."
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "List supported sports",
+        "tags": [
+          "Reference"
+        ]
+      }
+    },
+    "/v1/teams": {
+      "get": {
+        "description": "Teams in the requested sport/division scope, alphabetical, optionally\nfiltered to one conference. Paginates with an opaque `cursor`.",
+        "operationId": "list_teams",
+        "parameters": [
+          {
+            "description": "Sport scope, e.g. 'soccer'.",
+            "in": "query",
+            "name": "sport",
+            "required": true,
+            "schema": {
+              "description": "Sport scope, e.g. 'soccer'.",
+              "title": "Sport",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Division scope, e.g. 'D1'.",
+            "in": "query",
+            "name": "division",
+            "required": true,
+            "schema": {
+              "description": "Division scope, e.g. 'D1'.",
+              "title": "Division",
+              "type": "string"
+            }
+          },
+          {
+            "description": "'men' or 'women'.",
+            "in": "query",
+            "name": "gender",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "'men' or 'women'.",
+              "title": "Gender"
+            }
+          },
+          {
+            "description": "Filter to one conference.",
+            "in": "query",
+            "name": "conference",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter to one conference.",
+              "title": "Conference"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid request \u2014 unknown sport/gender/division scope, bad cursor, or bad parameter."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed, or revoked API key."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded. See the X-RateLimit-* and Retry-After headers."
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "List teams",
+        "tags": [
+          "Teams"
+        ]
+      }
+    },
+    "/v1/teams/{team_id}": {
+      "get": {
+        "description": "One team plus its per-season document/stat records. The team must be\nvisible in the requested sport/division scope.",
+        "operationId": "get_team",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id",
+            "required": true,
+            "schema": {
+              "title": "Team Id",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Sport scope, e.g. 'soccer'.",
+            "in": "query",
+            "name": "sport",
+            "required": true,
+            "schema": {
+              "description": "Sport scope, e.g. 'soccer'.",
+              "title": "Sport",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Division scope, e.g. 'D1'.",
+            "in": "query",
+            "name": "division",
+            "required": true,
+            "schema": {
+              "description": "Division scope, e.g. 'D1'.",
+              "title": "Division",
+              "type": "string"
+            }
+          },
+          {
+            "description": "'men' or 'women'.",
+            "in": "query",
+            "name": "gender",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "'men' or 'women'.",
+              "title": "Gender"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid request \u2014 unknown sport/gender/division scope, bad cursor, or bad parameter."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed, or revoked API key."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "No resource with that id in the requested scope."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded. See the X-RateLimit-* and Retry-After headers."
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Get a team",
+        "tags": [
+          "Teams"
+        ]
+      }
+    },
+    "/v1/teams/{team_id}/coaches": {
+      "get": {
+        "description": "Not yet available \u2014 always returns 501. Coaching staff will appear here\nonce school-to-team resolution is wired into the public API.",
+        "operationId": "get_team_coaches",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id",
+            "required": true,
+            "schema": {
+              "title": "Team Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed, or revoked API key."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded. See the X-RateLimit-* and Retry-After headers."
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Endpoint not yet available; see the message for the suggested alternative."
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Get a team's coaching staff (coming soon)",
+        "tags": [
+          "Teams"
+        ]
+      }
+    },
+    "/v1/teams/{team_id}/roster": {
+      "get": {
+        "description": "Current roster for one team \u2014 identity fields only, never contact info.\nPaginates with an opaque `cursor`.",
+        "operationId": "get_team_roster",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id",
+            "required": true,
+            "schema": {
+              "title": "Team Id",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Sport scope, e.g. 'soccer'.",
+            "in": "query",
+            "name": "sport",
+            "required": true,
+            "schema": {
+              "description": "Sport scope, e.g. 'soccer'.",
+              "title": "Sport",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Division scope, e.g. 'D1'.",
+            "in": "query",
+            "name": "division",
+            "required": true,
+            "schema": {
+              "description": "Division scope, e.g. 'D1'.",
+              "title": "Division",
+              "type": "string"
+            }
+          },
+          {
+            "description": "'men' or 'women'.",
+            "in": "query",
+            "name": "gender",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "'men' or 'women'.",
+              "title": "Gender"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RosterPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid request \u2014 unknown sport/gender/division scope, bad cursor, or bad parameter."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed, or revoked API key."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "No resource with that id in the requested scope."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded. See the X-RateLimit-* and Retry-After headers."
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Get a team's roster",
+        "tags": [
+          "Teams"
+        ]
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.magisterial.ai"
+    }
+  ],
+  "tags": [
+    {
+      "description": "Sports, divisions, conferences, the filter catalog, and the data-coverage matrix \u2014 the vocabulary the rest of the API speaks.",
+      "name": "Reference"
+    },
+    {
+      "description": "Search players and fetch profiles and season stats.",
+      "name": "Players"
+    },
+    {
+      "description": "Teams, rosters, and per-season team records.",
+      "name": "Teams"
+    },
+    {
+      "description": "Cross-program careers and transfer histories, spanning divisions.",
+      "name": "Persons"
+    },
+    {
+      "description": "Games with box scores and play-by-play where covered.",
+      "name": "Games"
+    },
+    {
+      "description": "The live NCAA transfer portal feed. Usage-billed.",
+      "name": "Transfer Portal"
+    },
+    {
+      "description": "Agent-backed natural-language questions over the data. Usage-billed.",
+      "name": "Query"
+    },
+    {
+      "description": "Standing transfer-portal watches with match polling. Usage-billed monthly.",
+      "name": "Alerts"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+name: Publish to npm
+
+# Publishes on GitHub release via npm Trusted Publishing (OIDC) — configure
+# this repo/workflow as the trusted publisher for `magisterial` on npmjs.com
+# (Package settings -> Trusted publishers). The package must exist first
+# (initial manual `npm publish`), then no tokens are needed here.
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      # Trusted publishing requires a recent npm.
+      - run: npm install -g npm@latest
+      - run: npm ci
+      - run: npm test
+      - run: npm publish --provenance --access public
