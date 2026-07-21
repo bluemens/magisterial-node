@@ -18,6 +18,7 @@ export {
   RateLimitError,
   InternalServerError,
   QueryPollTimeout,
+  ExportPollTimeout,
 } from "./error.js";
 export { VERSION } from "./version.js";
 export * as types from "./types.js";
@@ -27,6 +28,8 @@ export type { TeamListParams, RosterParams } from "./resources/teams.js";
 export type { PortalListParams } from "./resources/portal.js";
 export type { QueryCreateParams, PollOptions } from "./resources/query.js";
 export type { AlertCreateParams } from "./resources/alerts.js";
+export type { GameListParams } from "./resources/games.js";
+export type { ExportCreateParams, ExportPollOptions } from "./resources/exports.js";
 
 import { Magisterial } from "./client.js";
 export default Magisterial;

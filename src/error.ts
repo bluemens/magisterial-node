@@ -34,6 +34,20 @@ export class QueryPollTimeout extends MagisterialError {
   }
 }
 
+export class ExportPollTimeout extends MagisterialError {
+  override name = "ExportPollTimeout";
+  exportId: string;
+  lastStatus: string;
+  constructor(exportId: string, lastStatus: string, timeoutMs: number) {
+    super(
+      `Export ${exportId} still '${lastStatus}' after ${Math.round(timeoutMs / 1000)}s; ` +
+        `poll client.exports.get('${exportId}') to retrieve it later.`,
+    );
+    this.exportId = exportId;
+    this.lastStatus = lastStatus;
+  }
+}
+
 interface ErrorEnvelope {
   error?: { type?: string; code?: string; message?: string };
   detail?: unknown;

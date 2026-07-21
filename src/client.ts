@@ -9,6 +9,7 @@ import {
   errorFromResponse,
 } from "./error.js";
 import { Alerts } from "./resources/alerts.js";
+import { Exports } from "./resources/exports.js";
 import { Games } from "./resources/games.js";
 import { Persons } from "./resources/persons.js";
 import { Players } from "./resources/players.js";
@@ -60,6 +61,7 @@ export class Magisterial {
   readonly portal: Portal;
   readonly query: Query;
   readonly alerts: Alerts;
+  readonly exports: Exports;
 
   #apiKey: string;
   #fetch: typeof globalThis.fetch;
@@ -90,6 +92,7 @@ export class Magisterial {
     this.portal = new Portal(this);
     this.query = new Query(this);
     this.alerts = new Alerts(this);
+    this.exports = new Exports(this);
   }
 
   /** Perform a request and return decoded JSON, retrying 429/5xx and network

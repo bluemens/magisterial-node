@@ -21,8 +21,9 @@ export interface paths {
         /**
          * Create alert (usage-billed monthly)
          * @description Watch the transfer portal for entries matching a filter set. Billed per
-         *     active alert per calendar month, charged on creation. Webhook delivery is
-         *     not yet live — poll GET /v1/alerts/{alert_id}/matches.
+         *     active alert per calendar month, charged on creation. Matches push to
+         *     webhook endpoints registered in the console (event `alert.triggered`);
+         *     GET /v1/alerts/{alert_id}/matches remains available for polling.
          */
         post: operations["create_alert"];
         delete?: never;
@@ -61,8 +62,8 @@ export interface paths {
         };
         /**
          * List an alert's recent matches
-         * @description Recent portal entries that matched an alert, newest first. This is the
-         *     polling surface until webhook delivery ships.
+         * @description Recent portal entries that matched an alert, newest first. The polling
+         *     alternative to `alert.triggered` webhook deliveries.
          */
         get: operations["list_alert_matches"];
         put?: never;
@@ -138,6 +139,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/exports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List export jobs
+         * @description The caller's export jobs, newest first. Download URLs are minted by
+         *     GET /v1/exports/{export_id}, not here.
+         */
+        get: operations["list_exports"];
+        put?: never;
+        /**
+         * Create a bulk export (usage-billed)
+         * @description Export one dataset (players, teams, games, or coaches) in one
+         *     sport/division scope as a gzipped CSV or JSONL file. Returns 202 with an
+         *     `export_id` immediately — poll GET /v1/exports/{export_id} for the signed
+         *     download URL (most exports finish in well under a minute). Billed on
+         *     success by result size; failed exports are never billed.
+         */
+        post: operations["create_export"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/exports/{export_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get an export job
+         * @description Status of one export job. Once `status` is 'succeeded', `download_url`
+         *     holds a fresh short-lived signed URL (mint a new one by polling again).
+         *     The stored file expires at `expires_at`.
+         */
+        get: operations["get_export"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/filters/catalog": {
         parameters: {
             query?: never;
@@ -167,9 +219,11 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * List games (coming soon)
-         * @description Not yet available — always returns 501. Fetch individual games with
-         *     GET /v1/games/{game_id} in the meantime.
+         * List games
+         * @description Games (fixtures) in the requested sport/division scope, newest first.
+         *     One row per real-world game, side-anchored (home/away). A cross-division
+         *     game is visible in either side's division scope. Paginates with an opaque
+         *     `cursor`; ids feed GET /v1/games/{game_id}.
          */
         get: operations["list_games"];
         put?: never;
@@ -189,8 +243,9 @@ export interface paths {
         };
         /**
          * Get a game
-         * @description One game with everything held for it: teams, score, and (where covered)
-         *     box score and play-by-play under `detail`. Shape varies by sport.
+         * @description One game with everything held for it: the fixture (`detail.game`), team
+         *     and player box scores, play-by-play, and per-sport extras (drives, recaps).
+         *     Shape varies by sport. Ids come from GET /v1/games.
          */
         get: operations["get_game"];
         put?: never;
@@ -449,9 +504,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get a team's coaching staff (coming soon)
-         * @description Not yet available — always returns 501. Coaching staff will appear here
-         *     once school-to-team resolution is wired into the public API.
+         * Get a team's coaching staff
+         * @description Coaching staff for one team-season, head coach first. Defaults to the
+         *     latest season held; pass `season` for a historical staff. `email` is
+         *     populated only for PRO/MAX accounts (the portal-contacts carve-out).
          */
         get: operations["get_team_coaches"];
         put?: never;
@@ -601,7 +657,7 @@ export interface components {
          *       "last_match_count": 3,
          *       "name": "D1 women's soccer goalkeepers",
          *       "sport_path": "womens-soccer",
-         *       "webhook_delivery": "coming_soon",
+         *       "webhook_delivery": "enabled",
          *       "webhook_url": "https://example.com/hooks/portal"
          *     }
          */
@@ -641,8 +697,8 @@ export interface components {
             sport_path?: string | null;
             /**
              * Webhook Delivery
-             * @description Webhook delivery is not yet live; poll GET /v1/alerts/{id}/matches.
-             * @default coming_soon
+             * @description 'enabled' when at least one enabled webhook endpoint in the console is subscribed to alert.triggered (and matches webhook_url, if set); otherwise 'no_endpoint_registered'. Register endpoints in the console; polling GET /v1/alerts/{id}/matches always works.
+             * @default no_endpoint_registered
              */
             webhook_delivery: string;
             /** Webhook Url */
@@ -684,14 +740,325 @@ export interface components {
             error: components["schemas"]["ApiErrorDetail"];
         };
         /**
+         * ExportCreateRequest
+         * @description Body for POST /v1/exports (usage-billed by result size).
+         *
+         *     One export = one dataset in one sport/division scope, written as a single
+         *     gzipped flat file. Use the optional filters to keep large datasets under
+         *     the row cap.
+         * @example {
+         *       "conference": "NESCAC",
+         *       "dataset": "players",
+         *       "division": "D3",
+         *       "format": "csv",
+         *       "gender": "men",
+         *       "season": "2025",
+         *       "sport": "soccer"
+         *     }
+         */
+        ExportCreateRequest: {
+            /**
+             * Conference
+             * @description Conference filter (players/teams/coaches).
+             */
+            conference?: string | null;
+            /**
+             * Dataset
+             * @description 'players' | 'teams' | 'games' | 'coaches'.
+             */
+            dataset: string;
+            /**
+             * Division
+             * @description Division scope, e.g. 'D1'.
+             */
+            division: string;
+            /**
+             * Format
+             * @description 'csv' or 'jsonl'; the file is always gzipped.
+             * @default csv
+             */
+            format: string;
+            /**
+             * Gender
+             * @description 'men' or 'women'; ignored for single-gender sports.
+             */
+            gender?: string | null;
+            /**
+             * Season
+             * @description Season filter (championship year, e.g. '2025').
+             */
+            season?: string | null;
+            /**
+             * Sport
+             * @description e.g. 'soccer', 'basketball', 'baseball'.
+             */
+            sport: string;
+        };
+        /**
+         * ExportCreateResponse
+         * @description Acknowledgement for POST /v1/exports; poll GET /v1/exports/{export_id}.
+         */
+        ExportCreateResponse: {
+            /**
+             * Export Id
+             * @example b3f9c1d2-4a5e-4f6b-8c7d-9e0f1a2b3c4d
+             */
+            export_id: string;
+            /**
+             * Status
+             * @example queued
+             */
+            status: string;
+        };
+        /**
+         * ExportJobStatus
+         * @description Status of an export job. `download_url` appears once the job succeeds and
+         *     is minted fresh (short-lived) on every status read; re-poll for a new one.
+         *     The stored file itself expires at `expires_at`.
+         * @example {
+         *       "billed_usd": 0.2,
+         *       "bytes": 1830421,
+         *       "created_at": "2026-07-21T16:20:00Z",
+         *       "dataset": "players",
+         *       "download_expires_at": "2026-07-21T16:40:00Z",
+         *       "download_url": "https://...r2.cloudflarestorage.com/...",
+         *       "expires_at": "2026-07-28T16:20:19Z",
+         *       "export_id": "b3f9c1d2-4a5e-4f6b-8c7d-9e0f1a2b3c4d",
+         *       "finished_at": "2026-07-21T16:20:19Z",
+         *       "format": "csv",
+         *       "params": {
+         *         "division": "D3",
+         *         "gender": "men",
+         *         "sport": "soccer"
+         *       },
+         *       "row_count": 14205,
+         *       "started_at": "2026-07-21T16:20:01Z",
+         *       "status": "succeeded"
+         *     }
+         */
+        ExportJobStatus: {
+            /**
+             * Billed Usd
+             * @description Amount billed for this export; present once billing lands.
+             */
+            billed_usd?: number | null;
+            /**
+             * Bytes
+             * @description Compressed file size.
+             */
+            bytes?: number | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Dataset */
+            dataset: string;
+            /**
+             * Download Expires At
+             * @description When `download_url` stops working; poll again for a fresh one.
+             */
+            download_expires_at?: string | null;
+            /**
+             * Download Url
+             * @description Short-lived signed download URL; present while status is 'succeeded'.
+             */
+            download_url?: string | null;
+            /**
+             * Error
+             * @description Failure detail when status is 'failed'.
+             */
+            error?: string | null;
+            /**
+             * Expires At
+             * @description When the stored file is deleted (status becomes 'expired').
+             */
+            expires_at?: string | null;
+            /** Export Id */
+            export_id: string;
+            /** Finished At */
+            finished_at?: string | null;
+            /** Format */
+            format: string;
+            /**
+             * Params
+             * @description Echo of the requested scope and filters.
+             */
+            params?: {
+                [key: string]: unknown;
+            };
+            /** Row Count */
+            row_count?: number | null;
+            /** Started At */
+            started_at?: string | null;
+            /**
+             * Status
+             * @description queued | running | succeeded | failed | expired
+             */
+            status: string;
+        };
+        /**
+         * ExportListPage
+         * @description One page of export jobs (newest first).
+         */
+        ExportListPage: {
+            /** Data */
+            data: components["schemas"]["ExportJobStatus"][];
+            /**
+             * Has More
+             * @description True when another page is available.
+             * @default false
+             */
+            has_more: boolean;
+            /**
+             * Next Cursor
+             * @description Opaque cursor for the next page; null when there are no more results.
+             * @example eyJvZmZzZXQiOiAyNX0=
+             */
+            next_cursor?: string | null;
+        };
+        /**
+         * GameFixture
+         * @description One game as listed by GET /v1/games — a side-anchored fixture (home/away,
+         *     never perspective-relative). A game between teams in different divisions is
+         *     visible in either division's scope.
+         * @example {
+         *       "attendance": 650,
+         *       "away_conference_record": "4-2-0",
+         *       "away_period_scores": [
+         *         0,
+         *         1
+         *       ],
+         *       "away_score": 1,
+         *       "away_team_id": 1912,
+         *       "away_team_name": "Tufts",
+         *       "away_team_record": "8-3-1",
+         *       "boxscore_url": "https://athletics.amherst.edu/boxscore/12345",
+         *       "game_date": "2025-10-18",
+         *       "game_time": "1:00 PM",
+         *       "home_conference_record": "5-1-0",
+         *       "home_period_scores": [
+         *         1,
+         *         1
+         *       ],
+         *       "home_score": 2,
+         *       "home_team_id": 1873,
+         *       "home_team_name": "Amherst",
+         *       "home_team_record": "9-2-1",
+         *       "id": 48213,
+         *       "location": "Amherst, MA",
+         *       "neutral_site": false,
+         *       "season": "2025",
+         *       "sport_path": "mens-soccer",
+         *       "status": "final",
+         *       "venue": "Hitchcock Field",
+         *       "winner_team_id": 1873
+         *     }
+         */
+        GameFixture: {
+            /** Attendance */
+            attendance?: number | null;
+            /** Away Conference Record */
+            away_conference_record?: string | null;
+            /** Away Period Scores */
+            away_period_scores?: unknown | null;
+            /** Away Score */
+            away_score?: number | null;
+            /** Away Team Id */
+            away_team_id?: number | null;
+            /** Away Team Name */
+            away_team_name?: string | null;
+            /** Away Team Record */
+            away_team_record?: string | null;
+            /** Boxscore Url */
+            boxscore_url?: string | null;
+            /**
+             * Game Date
+             * @description ISO date, e.g. '2025-10-18'.
+             */
+            game_date?: string | null;
+            /** Game Time */
+            game_time?: string | null;
+            /** Home Conference Record */
+            home_conference_record?: string | null;
+            /**
+             * Home Period Scores
+             * @description Line score by period/segment.
+             */
+            home_period_scores?: unknown | null;
+            /** Home Score */
+            home_score?: number | null;
+            /**
+             * Home Team Id
+             * @description Team id; use with GET /v1/teams/{team_id}.
+             */
+            home_team_id?: number | null;
+            /** Home Team Name */
+            home_team_name?: string | null;
+            /**
+             * Home Team Record
+             * @description Record at time of game.
+             */
+            home_team_record?: string | null;
+            /**
+             * Id
+             * @description Game id; use with GET /v1/games/{game_id}.
+             */
+            id?: number | null;
+            /** Location */
+            location?: string | null;
+            /** Neutral Site */
+            neutral_site?: boolean | null;
+            /**
+             * Season
+             * @description Championship year, e.g. '2025'.
+             */
+            season?: string | null;
+            /**
+             * Sport Path
+             * @description Gendered sport key, e.g. 'mens-soccer'.
+             */
+            sport_path?: string | null;
+            /**
+             * Status
+             * @description scheduled | final | postponed | cancelled | forfeit
+             */
+            status?: string | null;
+            /** Venue */
+            venue?: string | null;
+            /**
+             * Winner Team Id
+             * @description Null for ties (or an untracked winner).
+             */
+            winner_team_id?: number | null;
+        };
+        /**
+         * GamePage
+         * @description One page of games.
+         */
+        GamePage: {
+            /** Data */
+            data: components["schemas"]["GameFixture"][];
+            /**
+             * Has More
+             * @description True when another page is available.
+             * @default false
+             */
+            has_more: boolean;
+            /**
+             * Next Cursor
+             * @description Opaque cursor for the next page; null when there are no more results.
+             * @example eyJvZmZzZXQiOiAyNX0=
+             */
+            next_cursor?: string | null;
+        };
+        /**
          * GameSummary
-         * @description A game/fixture with whatever box-score / play-by-play the internal
-         *     fetch returned, passed through under `detail`.
+         * @description A game with everything held for it, passed through under `detail`:
+         *     the fixture (`detail.game`), team/player box scores, play-by-play, and
+         *     (where covered) drives and recaps. Per-sport shapes vary.
          */
         GameSummary: {
             /**
              * Detail
-             * @description Complete game payload: teams, score, and (when held) box score and play-by-play. Shape varies by sport.
+             * @description Complete game payload: `game` (the fixture), `team_stats`, `player_stats`, `play_by_play`, and per-sport extras (drives, recaps). Shape varies by sport.
              */
             detail?: {
                 [key: string]: unknown;
@@ -1290,6 +1657,80 @@ export interface components {
              *     ]
              */
             data: string[];
+        };
+        /**
+         * TeamCoachEntry
+         * @description One member of a team's coaching staff for a season. `email` is populated
+         *     only for callers whose owning account is PRO/MAX for the sport — the same
+         *     paid-tier carve-out the portal contacts use.
+         * @example {
+         *       "bio_url": "https://athletics.amherst.edu/coaches/justin-serpone",
+         *       "headshot_url": "https://api.magisterial.ai/api/public/img?u=...",
+         *       "id": 18234,
+         *       "is_head_coach": true,
+         *       "name": "Justin Serpone",
+         *       "person_id": 5121,
+         *       "profile_slug": "justin-serpone",
+         *       "role": "Head Men's Soccer Coach",
+         *       "season": "2025"
+         *     }
+         */
+        TeamCoachEntry: {
+            /**
+             * Bio Url
+             * @description Coach bio page on the school site.
+             */
+            bio_url?: string | null;
+            /**
+             * Email
+             * @description Coach email; PRO/MAX tier only, else null.
+             */
+            email?: string | null;
+            /** Headshot Url */
+            headshot_url?: string | null;
+            /**
+             * Id
+             * @description Coach id.
+             */
+            id?: number | null;
+            /** Is Head Coach */
+            is_head_coach?: boolean | null;
+            /** Name */
+            name?: string | null;
+            /**
+             * Person Id
+             * @description Cross-school person cluster id, when linked.
+             */
+            person_id?: number | null;
+            /**
+             * Profile Slug
+             * @description Public profile slug on magisterial.ai, when minted.
+             */
+            profile_slug?: string | null;
+            /**
+             * Role
+             * @description Staff title as published, e.g. 'Assistant Coach'.
+             */
+            role?: string | null;
+            /**
+             * Season
+             * @description Season this staff row belongs to.
+             */
+            season?: string | null;
+        };
+        /**
+         * TeamCoachesResponse
+         * @description Envelope for GET /v1/teams/{team_id}/coaches. `season` is the season the
+         *     staff list belongs to (the latest one held unless `season` was requested).
+         */
+        TeamCoachesResponse: {
+            /** Data */
+            data: components["schemas"]["TeamCoachEntry"][];
+            /**
+             * Season
+             * @description Season of the returned staff; null when no staff is held.
+             */
+            season?: string | null;
         };
         /**
          * TeamDetail
@@ -1908,6 +2349,228 @@ export interface operations {
             };
         };
     };
+    list_exports: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportListPage"];
+                };
+            };
+            /** @description Missing, malformed, or revoked API key. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API billing not enabled for this account, or the monthly budget is exhausted. */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Forbidden — e.g. account limit reached. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    create_export: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExportCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportCreateResponse"];
+                };
+            };
+            /** @description Invalid request — unknown sport/gender/division scope, bad cursor, or bad parameter. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Missing, malformed, or revoked API key. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API billing not enabled for this account, or the monthly budget is exhausted. */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Forbidden — e.g. account limit reached. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    get_export: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                export_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportJobStatus"];
+                };
+            };
+            /** @description Missing, malformed, or revoked API key. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API billing not enabled for this account, or the monthly budget is exhausted. */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Forbidden — e.g. account limit reached. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description No resource with that id in the requested scope. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
     get_filter_catalog: {
         parameters: {
             query?: {
@@ -1984,13 +2647,50 @@ export interface operations {
     };
     list_games: {
         parameters: {
-            query?: never;
+            query: {
+                /** @description Sport scope, e.g. 'soccer'. */
+                sport: string;
+                /** @description Division scope, e.g. 'D1'. */
+                division: string;
+                /** @description 'men' or 'women'. */
+                gender?: string | null;
+                /** @description Only games this team played (either side). */
+                team_id?: number | null;
+                /** @description Championship year, e.g. '2025'. */
+                season?: string | null;
+                /** @description ISO date; only games on/after this date. */
+                date_from?: string | null;
+                /** @description ISO date; only games on/before this date. */
+                date_to?: string | null;
+                /** @description scheduled | final | postponed | cancelled | forfeit */
+                status?: string | null;
+                limit?: number;
+                cursor?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GamePage"];
+                };
+            };
+            /** @description Invalid request — unknown sport/gender/division scope, bad cursor, or bad parameter. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
             /** @description Missing, malformed, or revoked API key. */
             401: {
                 headers: {
@@ -2000,17 +2700,17 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
-            429: {
+            /** @description Validation Error */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiErrorResponse"];
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
-            /** @description Endpoint not yet available; see the message for the suggested alternative. */
-            501: {
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2845,7 +3545,16 @@ export interface operations {
     };
     get_team_coaches: {
         parameters: {
-            query?: never;
+            query: {
+                /** @description Sport scope, e.g. 'soccer'. */
+                sport: string;
+                /** @description Division scope, e.g. 'D1'. */
+                division: string;
+                /** @description 'men' or 'women'. */
+                gender?: string | null;
+                /** @description Season to return (championship year, e.g. '2025'); defaults to the latest held. */
+                season?: string | null;
+            };
             header?: never;
             path: {
                 team_id: number;
@@ -2854,8 +3563,35 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamCoachesResponse"];
+                };
+            };
+            /** @description Invalid request — unknown sport/gender/division scope, bad cursor, or bad parameter. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
             /** @description Missing, malformed, or revoked API key. */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description No resource with that id in the requested scope. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2874,15 +3610,6 @@ export interface operations {
             };
             /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
             429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorResponse"];
-                };
-            };
-            /** @description Endpoint not yet available; see the message for the suggested alternative. */
-            501: {
                 headers: {
                     [name: string]: unknown;
                 };

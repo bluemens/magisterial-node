@@ -191,6 +191,64 @@ describe("pagination", () => {
   });
 });
 
+describe("0.2.0 endpoints", () => {
+  it("lists games with filters and typed fixtures", async () => {
+    const { client } = makeClient((url) => {
+      expect(url).toContain("/v1/games?");
+      expect(url).toContain("status=final");
+      return json(200, {
+        data: [{ id: 9001, home_team_name: "Amherst", away_team_name: "Tufts", status: "final" }],
+        next_cursor: null,
+        has_more: false,
+      });
+    });
+    const page = await client.games.list({ sport: "soccer", division: "D3", status: "final" });
+    expect(page.data[0].home_team_name).toBe("Amherst");
+  });
+
+  it("fetches team coaches", async () => {
+    const { client } = makeClient(() =>
+      json(200, { season: "2025-26", data: [{ name: "Sam Blake", role: "Head Coach" }] }),
+    );
+    const staff = await client.teams.coaches(1873, { sport: "soccer", division: "D3" });
+    expect(staff.season).toBe("2025-26");
+    expect(staff.data![0].name).toBe("Sam Blake");
+  });
+
+  it("export createAndPoll reaches succeeded", async () => {
+    const statuses = ["queued", "running", "succeeded"][Symbol.iterator]();
+    const { client } = makeClient((_url, init) =>
+      init.method === "POST"
+        ? json(202, { export_id: "e1", status: "queued" })
+        : json(200, {
+            export_id: "e1",
+            status: statuses.next().value,
+            dataset: "players",
+            download_url: "https://example.com/f.csv.gz",
+          }),
+    );
+    const job = await client.exports.createAndPoll({
+      dataset: "players",
+      sport: "soccer",
+      division: "D3",
+    });
+    expect(job.status).toBe("succeeded");
+    expect(job.download_url).toBeTruthy();
+  });
+
+  it("export create is not auto-retried", async () => {
+    let calls = 0;
+    const { client } = makeClient(() => {
+      calls++;
+      return json(429, errorBody("rate_limited", "rate_limit_exceeded", "Slow down."));
+    });
+    await expect(
+      client.exports.create({ dataset: "players", sport: "soccer", division: "D3" }),
+    ).rejects.toBeInstanceOf(RateLimitError);
+    expect(calls).toBe(1);
+  });
+});
+
 describe("query polling", () => {
   it("createAndPoll reaches done", async () => {
     const statuses = ["queued", "running", "done"][Symbol.iterator]();

@@ -5,6 +5,7 @@ import { Page, pageFromRaw } from "../pagination.js";
 import type {
   RosterEntry,
   RosterPage,
+  TeamCoachesResponse,
   TeamDetail,
   TeamPage,
   TeamSummary,
@@ -52,5 +53,14 @@ export class Teams {
       return pageFromRaw(raw, (cursor) => fetch({ ...query, cursor }));
     };
     return fetch(params);
+  }
+
+  /** A team's coaching staff for a season (defaults to the most recent
+   * season on record). */
+  coaches(
+    teamId: number,
+    params: ScopeParams & { season?: string },
+  ): Promise<TeamCoachesResponse> {
+    return this.client.get(`/v1/teams/${teamId}/coaches`, { ...params });
   }
 }

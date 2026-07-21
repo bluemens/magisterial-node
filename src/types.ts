@@ -24,6 +24,16 @@ export type TransferRecord = Schemas["TransferRecord"];
 export type TransferListResponse = Schemas["TransferListResponse"];
 
 export type GameSummary = Schemas["GameSummary"];
+export type GameFixture = Schemas["GameFixture"];
+export type GamePage = Schemas["GamePage"];
+
+export type TeamCoachEntry = Schemas["TeamCoachEntry"];
+export type TeamCoachesResponse = Schemas["TeamCoachesResponse"];
+
+export type ExportCreateRequest = Schemas["ExportCreateRequest"];
+export type ExportCreateResponse = Schemas["ExportCreateResponse"];
+export type ExportJobStatus = Schemas["ExportJobStatus"];
+export type ExportListPage = Schemas["ExportListPage"];
 
 export type PortalEntry = Schemas["PortalEntry"];
 export type PortalPage = Schemas["PortalPage"];
