@@ -23,6 +23,10 @@ export type RosterPage = Schemas["RosterPage"];
 export type TransferRecord = Schemas["TransferRecord"];
 export type TransferListResponse = Schemas["TransferListResponse"];
 
+export type MovementSubject = Schemas["MovementSubject"];
+export type MovementEntry = Schemas["MovementEntry"];
+export type MovementPage = Schemas["MovementPage"];
+
 export type GameSummary = Schemas["GameSummary"];
 export type GameFixture = Schemas["GameFixture"];
 export type GamePage = Schemas["GamePage"];

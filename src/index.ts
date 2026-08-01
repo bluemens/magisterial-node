@@ -29,6 +29,7 @@ export type { PortalListParams } from "./resources/portal.js";
 export type { QueryCreateParams, PollOptions } from "./resources/query.js";
 export type { AlertCreateParams } from "./resources/alerts.js";
 export type { GameListParams } from "./resources/games.js";
+export type { MovementListParams } from "./resources/movements.js";
 export type { ExportCreateParams, ExportPollOptions } from "./resources/exports.js";
 
 import { Magisterial } from "./client.js";

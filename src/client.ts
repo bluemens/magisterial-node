@@ -11,6 +11,7 @@ import {
 import { Alerts } from "./resources/alerts.js";
 import { Exports } from "./resources/exports.js";
 import { Games } from "./resources/games.js";
+import { Movements } from "./resources/movements.js";
 import { Persons } from "./resources/persons.js";
 import { Players } from "./resources/players.js";
 import { Portal } from "./resources/portal.js";
@@ -57,6 +58,7 @@ export class Magisterial {
   readonly players: Players;
   readonly teams: Teams;
   readonly persons: Persons;
+  readonly movements: Movements;
   readonly games: Games;
   readonly portal: Portal;
   readonly query: Query;
@@ -88,6 +90,7 @@ export class Magisterial {
     this.players = new Players(this);
     this.teams = new Teams(this);
     this.persons = new Persons(this);
+    this.movements = new Movements(this);
     this.games = new Games(this);
     this.portal = new Portal(this);
     this.query = new Query(this);

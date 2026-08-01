@@ -215,6 +215,33 @@ describe("0.2.0 endpoints", () => {
     expect(staff.data![0].name).toBe("Sam Blake");
   });
 
+  it("lists published movements with filters", async () => {
+    const { client } = makeClient((url) => {
+      expect(url).toContain("/v1/movements?");
+      expect(url).toContain("kind=coach");
+      expect(url).toContain("sport_path=womens-soccer");
+      return json(200, {
+        data: [
+          {
+            id: 59,
+            kind: "coach",
+            event_type: "title_changed",
+            sport_path: "womens-soccer",
+            school_name: "Macalester College",
+            subject: { name: "Marissa Olson-Guillou", to_title: "Head Coach", is_head: true },
+            resolution_kind: "head_coach_change_confirmed",
+          },
+        ],
+        next_cursor: null,
+        has_more: false,
+      });
+    });
+    const page = await client.movements.list({ kind: "coach", sportPath: "womens-soccer" });
+    expect(page.data[0].subject.name).toBe("Marissa Olson-Guillou");
+    expect(page.data[0].resolution_kind).toBe("head_coach_change_confirmed");
+    expect(page.hasMore).toBe(false);
+  });
+
   it("export createAndPoll reaches succeeded", async () => {
     const statuses = ["queued", "running", "succeeded"][Symbol.iterator]();
     const { client } = makeClient((_url, init) =>

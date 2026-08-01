@@ -106,7 +106,8 @@ export interface paths {
          * Data coverage matrix
          * @description Full data-coverage matrix: per sport and division, how many teams,
          *     coaches, games, and players we hold, with season ranges, per-season
-         *     breakdowns, and transfer-portal tracking counts. Free (read rate limit);
+         *     breakdowns, and transfer-portal tracking counts. Free and keyless — the
+         *     try-before-you-key agent hook (anonymous callers rate-limit by IP);
          *     counts refresh roughly every 6 hours.
          */
         get: operations["get_coverage"];
@@ -248,6 +249,30 @@ export interface paths {
          *     Shape varies by sport. Ids come from GET /v1/games.
          */
         get: operations["get_game"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/movements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List published movements
+         * @description Roster and coaching-staff movements our editors (or the auto-publish
+         *     policy: confirmed head-coach changes, portal-corroborated transfers) have
+         *     published, newest first. Cross-division; no scope parameters. `person_id`
+         *     links into GET /v1/persons/{person_id}; `transfer_id` is the transfer
+         *     edge a player movement minted.
+         */
+        get: operations["list_movements"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1073,6 +1098,117 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /**
+         * MovementEntry
+         * @description One published roster/coaching movement event. Only events an editor (or
+         *     the auto-publish policy) published appear here — a curated feed, not the
+         *     raw diff stream.
+         */
+        MovementEntry: {
+            /** Division */
+            division?: string | null;
+            /**
+             * Event Type
+             * @description player_added | player_removed | coach_added | coach_removed | title_changed
+             */
+            event_type: string;
+            /** Id */
+            id: number;
+            /**
+             * Kind
+             * @description 'player' or 'coach'.
+             */
+            kind: string;
+            /** Observed At */
+            observed_at?: string | null;
+            /**
+             * Person Id
+             * @description Linked person, when the movement was resolved to one.
+             */
+            person_id?: number | null;
+            /** Published At */
+            published_at?: string | null;
+            /**
+             * Resolution Kind
+             * @description e.g. 'head_coach_change_confirmed'.
+             */
+            resolution_kind?: string | null;
+            /** School Logo Url */
+            school_logo_url?: string | null;
+            /** School Name */
+            school_name?: string | null;
+            /** Season */
+            season?: string | null;
+            /** Sport Path */
+            sport_path?: string | null;
+            subject: components["schemas"]["MovementSubject"];
+            /** Team Id */
+            team_id?: number | null;
+            /**
+             * Transfer Id
+             * @description Transfer edge minted by this movement (players).
+             */
+            transfer_id?: number | null;
+        };
+        /**
+         * MovementPage
+         * @description One page of published movements.
+         */
+        MovementPage: {
+            /** Data */
+            data: components["schemas"]["MovementEntry"][];
+            /**
+             * Has More
+             * @description True when another page is available.
+             * @default false
+             */
+            has_more: boolean;
+            /**
+             * Next Cursor
+             * @description Opaque cursor for the next page; null when there are no more results.
+             * @example eyJvZmZzZXQiOiAyNX0=
+             */
+            next_cursor?: string | null;
+        };
+        /**
+         * MovementSubject
+         * @description Display snapshot of the person a movement is about, taken from the
+         *     event payload at observation time. Contact fields are never included.
+         */
+        MovementSubject: {
+            /**
+             * Class Year
+             * @description Players only.
+             */
+            class_year?: string | null;
+            /**
+             * From Title
+             * @description Coaches, title changes only.
+             */
+            from_title?: string | null;
+            /**
+             * Is Head
+             * @description Coaches only — head-coach role.
+             */
+            is_head?: boolean | null;
+            /** Name */
+            name?: string | null;
+            /**
+             * Position
+             * @description Players only.
+             */
+            position?: string | null;
+            /**
+             * Title
+             * @description Coaches only — current title.
+             */
+            title?: string | null;
+            /**
+             * To Title
+             * @description Coaches, title changes only.
+             */
+            to_title?: string | null;
         };
         /**
          * PlayerDetail
@@ -2767,6 +2903,62 @@ export interface operations {
             };
             /** @description No resource with that id in the requested scope. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    list_movements: {
+        parameters: {
+            query?: {
+                /** @description 'player' or 'coach'. */
+                kind?: string | null;
+                /** @description Full sport path, e.g. 'womens-volleyball'. */
+                sport_path?: string | null;
+                /** @description ISO datetime; only movements published on/after. */
+                since?: string | null;
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MovementPage"];
+                };
+            };
+            /** @description Missing, malformed, or revoked API key. */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

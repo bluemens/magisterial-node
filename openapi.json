@@ -1031,6 +1031,290 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
+      "MovementEntry": {
+        "description": "One published roster/coaching movement event. Only events an editor (or\nthe auto-publish policy) published appear here \u2014 a curated feed, not the\nraw diff stream.",
+        "properties": {
+          "division": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Division"
+          },
+          "event_type": {
+            "description": "player_added | player_removed | coach_added | coach_removed | title_changed",
+            "title": "Event Type",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "kind": {
+            "description": "'player' or 'coach'.",
+            "title": "Kind",
+            "type": "string"
+          },
+          "observed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observed At"
+          },
+          "person_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Linked person, when the movement was resolved to one.",
+            "title": "Person Id"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
+          "resolution_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "e.g. 'head_coach_change_confirmed'.",
+            "title": "Resolution Kind"
+          },
+          "school_logo_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "School Logo Url"
+          },
+          "school_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "School Name"
+          },
+          "season": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Season"
+          },
+          "sport_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sport Path"
+          },
+          "subject": {
+            "$ref": "#/components/schemas/MovementSubject"
+          },
+          "team_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Team Id"
+          },
+          "transfer_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Transfer edge minted by this movement (players).",
+            "title": "Transfer Id"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "event_type",
+          "subject"
+        ],
+        "title": "MovementEntry",
+        "type": "object"
+      },
+      "MovementPage": {
+        "description": "One page of published movements.",
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/MovementEntry"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "has_more": {
+            "default": false,
+            "description": "True when another page is available.",
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Opaque cursor for the next page; null when there are no more results.",
+            "examples": [
+              "eyJvZmZzZXQiOiAyNX0="
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "MovementPage",
+        "type": "object"
+      },
+      "MovementSubject": {
+        "description": "Display snapshot of the person a movement is about, taken from the\nevent payload at observation time. Contact fields are never included.",
+        "properties": {
+          "class_year": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Players only.",
+            "title": "Class Year"
+          },
+          "from_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Coaches, title changes only.",
+            "title": "From Title"
+          },
+          "is_head": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Coaches only \u2014 head-coach role.",
+            "title": "Is Head"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Players only.",
+            "title": "Position"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Coaches only \u2014 current title.",
+            "title": "Title"
+          },
+          "to_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Coaches, title changes only.",
+            "title": "To Title"
+          }
+        },
+        "title": "MovementSubject",
+        "type": "object"
+      },
       "PlayerDetail": {
         "description": "A single player's profile with season stats, accolades, and (when the\nplayer is linked to a person) their cross-program career.",
         "examples": [
@@ -3323,7 +3607,7 @@
     },
     "/v1/coverage": {
       "get": {
-        "description": "Full data-coverage matrix: per sport and division, how many teams,\ncoaches, games, and players we hold, with season ranges, per-season\nbreakdowns, and transfer-portal tracking counts. Free (read rate limit);\ncounts refresh roughly every 6 hours.",
+        "description": "Full data-coverage matrix: per sport and division, how many teams,\ncoaches, games, and players we hold, with season ranges, per-season\nbreakdowns, and transfer-portal tracking counts. Free and keyless \u2014 the\ntry-before-you-key agent hook (anonymous callers rate-limit by IP);\ncounts refresh roughly every 6 hours.",
         "operationId": "get_coverage",
         "responses": {
           "200": {
@@ -3389,6 +3673,7 @@
           }
         },
         "security": [
+          {},
           {
             "ApiKeyAuth": []
           }
@@ -4195,6 +4480,147 @@
         "summary": "Get a game",
         "tags": [
           "Games"
+        ]
+      }
+    },
+    "/v1/movements": {
+      "get": {
+        "description": "Roster and coaching-staff movements our editors (or the auto-publish\npolicy: confirmed head-coach changes, portal-corroborated transfers) have\npublished, newest first. Cross-division; no scope parameters. `person_id`\nlinks into GET /v1/persons/{person_id}; `transfer_id` is the transfer\nedge a player movement minted.",
+        "operationId": "list_movements",
+        "parameters": [
+          {
+            "description": "'player' or 'coach'.",
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "'player' or 'coach'.",
+              "title": "Kind"
+            }
+          },
+          {
+            "description": "Full sport path, e.g. 'womens-volleyball'.",
+            "in": "query",
+            "name": "sport_path",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Full sport path, e.g. 'womens-volleyball'.",
+              "title": "Sport Path"
+            }
+          },
+          {
+            "description": "ISO datetime; only movements published on/after.",
+            "in": "query",
+            "name": "since",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "ISO datetime; only movements published on/after.",
+              "title": "Since"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MovementPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed, or revoked API key."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded. See the X-RateLimit-* and Retry-After headers."
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "List published movements",
+        "tags": [
+          "Movements"
         ]
       }
     },
@@ -5758,6 +6184,10 @@
     {
       "description": "Cross-program careers and transfer histories, spanning divisions.",
       "name": "Persons"
+    },
+    {
+      "description": "Published roster and coaching-staff movements \u2014 confirmed head-coach changes and transfers, newest first.",
+      "name": "Movements"
     },
     {
       "description": "Games with box scores and play-by-play where covered.",
