@@ -128,8 +128,9 @@ export interface paths {
         };
         /**
          * List divisions
-         * @description Valid values for the `division` scope parameter. NCAA divisions may be
-         *     comma-joined on endpoints that accept multi-division scopes, e.g. 'D1,D2'.
+         * @description Atomic values for the `division` scope parameter. Clients may comma-join
+         *     any non-empty sport-valid subset, e.g. 'D1,NAIA,NJCAA-D1'. Combinations are
+         *     intentionally not enumerated by this endpoint.
          */
         get: operations["list_divisions"];
         put?: never;
@@ -586,7 +587,7 @@ export interface components {
         AlertCreateRequest: {
             /**
              * Division
-             * @description Division scope, e.g. 'D1'.
+             * @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'.
              */
             division: string;
             /**
@@ -794,7 +795,7 @@ export interface components {
             dataset: string;
             /**
              * Division
-             * @description Division scope, e.g. 'D1'.
+             * @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'.
              */
             division: string;
             /**
@@ -1349,7 +1350,7 @@ export interface components {
             cursor?: string | null;
             /**
              * Division
-             * @description Division scope; may be a comma-joined NCAA list, e.g. 'D1,D2'.
+             * @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'.
              */
             division: string;
             /**
@@ -1605,7 +1606,7 @@ export interface components {
         PublicQueryRequest: {
             /**
              * Division
-             * @description Division scope, e.g. 'D1'.
+             * @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'.
              * @default D1
              */
             division: string;
@@ -1784,12 +1785,15 @@ export interface components {
         StringListResponse: {
             /**
              * Data
+             * @description String values returned by the reference endpoint.
              * @example [
              *       "D1",
+             *       "D1-FBS",
+             *       "D1-FCS",
              *       "D2",
              *       "D3",
              *       "NAIA",
-             *       "NJCAA"
+             *       "NJCAA-D1"
              *     ]
              */
             data: string[];
@@ -2316,7 +2320,7 @@ export interface operations {
             query: {
                 /** @description Sport scope, e.g. 'soccer'. */
                 sport: string;
-                /** @description Division scope, e.g. 'D1'. */
+                /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
                 division: string;
                 /** @description 'men' or 'women'. */
                 gender?: string | null;
@@ -2786,7 +2790,7 @@ export interface operations {
             query: {
                 /** @description Sport scope, e.g. 'soccer'. */
                 sport: string;
-                /** @description Division scope, e.g. 'D1'. */
+                /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
                 division: string;
                 /** @description 'men' or 'women'. */
                 gender?: string | null;
@@ -2861,7 +2865,7 @@ export interface operations {
             query: {
                 /** @description Sport scope, e.g. 'soccer'. */
                 sport: string;
-                /** @description Division scope, e.g. 'D1'. */
+                /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
                 division: string;
                 /** @description 'men' or 'women'. */
                 gender?: string | null;
@@ -3172,7 +3176,7 @@ export interface operations {
             query: {
                 /** @description Sport scope, e.g. 'soccer'. */
                 sport: string;
-                /** @description Division scope, e.g. 'D1'. */
+                /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
                 division: string;
                 /** @description 'men' or 'women'. */
                 gender?: string | null;
@@ -3246,7 +3250,7 @@ export interface operations {
             query: {
                 /** @description Sport scope, e.g. 'soccer'. */
                 sport: string;
-                /** @description Division scope, e.g. 'D1'. */
+                /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
                 division: string;
                 /** @description 'men' or 'women'. */
                 gender?: string | null;
@@ -3320,7 +3324,7 @@ export interface operations {
             query: {
                 /** @description Sport scope, e.g. 'soccer'. */
                 sport: string;
-                /** @description Division scope, e.g. 'D1'. */
+                /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
                 division: string;
                 /** @description 'men' or 'women'. */
                 gender?: string | null;
@@ -3599,7 +3603,7 @@ export interface operations {
             query: {
                 /** @description Sport scope, e.g. 'soccer'. */
                 sport: string;
-                /** @description Division scope, e.g. 'D1'. */
+                /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
                 division: string;
                 /** @description 'men' or 'women'. */
                 gender?: string | null;
@@ -3666,7 +3670,7 @@ export interface operations {
             query: {
                 /** @description Sport scope, e.g. 'soccer'. */
                 sport: string;
-                /** @description Division scope, e.g. 'D1'. */
+                /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
                 division: string;
                 /** @description 'men' or 'women'. */
                 gender?: string | null;
@@ -3740,7 +3744,7 @@ export interface operations {
             query: {
                 /** @description Sport scope, e.g. 'soccer'. */
                 sport: string;
-                /** @description Division scope, e.g. 'D1'. */
+                /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
                 division: string;
                 /** @description 'men' or 'women'. */
                 gender?: string | null;
@@ -3816,7 +3820,7 @@ export interface operations {
             query: {
                 /** @description Sport scope, e.g. 'soccer'. */
                 sport: string;
-                /** @description Division scope, e.g. 'D1'. */
+                /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
                 division: string;
                 /** @description 'men' or 'women'. */
                 gender?: string | null;

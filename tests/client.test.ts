@@ -172,12 +172,14 @@ describe("pagination", () => {
       return json(200, { data: [player(3)], next_cursor: null, has_more: false });
     });
 
-    const page = await client.players.search({ sport: "soccer", division: "D1", limit: 2 });
+    const mixedScope = "D1,NAIA,NJCAA-D1";
+    const page = await client.players.search({ sport: "soccer", division: mixedScope, limit: 2 });
     const names: string[] = [];
     for await (const p of page) names.push(p.name!);
     expect(names).toEqual(["Player 1", "Player 2", "Player 3"]);
     expect(bodies[1].sport).toBe("soccer");
     expect(bodies[1].limit).toBe(2);
+    expect(bodies[1].division).toBe(mixedScope);
   });
 
   it("exposes the current page without following", async () => {

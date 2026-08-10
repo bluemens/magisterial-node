@@ -31,7 +31,7 @@ const client = new Magisterial();
 // Search players — `for await` follows the cursor across every page
 const page = await client.players.search({
   sport: "soccer",
-  division: "D1",
+  division: "D1,NAIA,NJCAA-D1",
   gender: "women",
   position: "Forward",
   sort_by: "goals",
