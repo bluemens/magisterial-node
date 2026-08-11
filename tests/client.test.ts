@@ -191,6 +191,52 @@ describe("pagination", () => {
     expect(page.hasMore).toBe(true);
     expect(page.nextCursor).toBe("c2");
   });
+
+  it("preserves a roster season while paginating", async () => {
+    const queries: Array<Record<string, string>> = [];
+    const { client } = makeClient((url) => {
+      const parsed = new URL(url);
+      const query = Object.fromEntries(parsed.searchParams.entries());
+      queries.push(query);
+      expect(parsed.pathname).toBe("/v1/teams/1873/roster");
+      if (!query.cursor) {
+        return json(200, {
+          season: "2026",
+          data: [{ id: 1, name: "Player 1" }],
+          next_cursor: "c2",
+          has_more: true,
+        });
+      }
+      return json(200, {
+        season: "2026",
+        data: [{ id: 2, name: "Player 2" }],
+        next_cursor: null,
+        has_more: false,
+      });
+    });
+
+    const page = await client.teams.roster(1873, {
+      sport: "soccer",
+      division: "D3",
+      season: "2026",
+      limit: 1,
+    });
+    expect(page.season).toBe("2026");
+
+    const nextPage = await page.getNextPage();
+    expect(nextPage?.season).toBe("2026");
+    expect(nextPage?.data[0].name).toBe("Player 2");
+    expect(queries).toEqual([
+      { sport: "soccer", division: "D3", season: "2026", limit: "1" },
+      {
+        sport: "soccer",
+        division: "D3",
+        season: "2026",
+        limit: "1",
+        cursor: "c2",
+      },
+    ]);
+  });
 });
 
 describe("0.2.0 endpoints", () => {
