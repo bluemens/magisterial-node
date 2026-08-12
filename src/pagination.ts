@@ -7,6 +7,7 @@ export class Page<T> implements AsyncIterable<T> {
   data: T[];
   nextCursor: string | null;
   hasMore: boolean;
+  season: string | null;
   #fetchNext: (cursor: string) => Promise<Page<T>>;
 
   constructor(
@@ -14,10 +15,12 @@ export class Page<T> implements AsyncIterable<T> {
     nextCursor: string | null,
     hasMore: boolean,
     fetchNext: (cursor: string) => Promise<Page<T>>,
+    season: string | null = null,
   ) {
     this.data = data;
     this.nextCursor = nextCursor;
     this.hasMore = hasMore;
+    this.season = season;
     this.#fetchNext = fetchNext;
   }
 
@@ -40,11 +43,18 @@ export interface RawPage<T> {
   data: T[];
   next_cursor?: string | null;
   has_more?: boolean;
+  season?: string | null;
 }
 
 export function pageFromRaw<T>(
   raw: RawPage<T>,
   fetchNext: (cursor: string) => Promise<Page<T>>,
 ): Page<T> {
-  return new Page(raw.data ?? [], raw.next_cursor ?? null, raw.has_more ?? false, fetchNext);
+  return new Page(
+    raw.data ?? [],
+    raw.next_cursor ?? null,
+    raw.has_more ?? false,
+    fetchNext,
+    raw.season ?? null,
+  );
 }

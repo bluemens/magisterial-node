@@ -19,6 +19,7 @@ export interface TeamListParams extends ScopeParams {
 }
 
 export interface RosterParams extends ScopeParams {
+  season?: string;
   limit?: number;
   cursor?: string;
 }
@@ -42,7 +43,7 @@ export class Teams {
     return this.client.get(`/v1/teams/${teamId}`, { ...params });
   }
 
-  /** A team's roster (identity fields only). */
+  /** A team's roster for a season (identity fields only). */
   async roster(teamId: number, params: RosterParams): Promise<Page<RosterEntry>> {
     const fetch = async (query: RosterParams): Promise<Page<RosterEntry>> => {
       const raw = await this.client.request<RosterPage>(

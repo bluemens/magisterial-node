@@ -172,12 +172,14 @@ describe("pagination", () => {
       return json(200, { data: [player(3)], next_cursor: null, has_more: false });
     });
 
-    const page = await client.players.search({ sport: "soccer", division: "D1", limit: 2 });
+    const mixedScope = "D1,NAIA,NJCAA-D1";
+    const page = await client.players.search({ sport: "soccer", division: mixedScope, limit: 2 });
     const names: string[] = [];
     for await (const p of page) names.push(p.name!);
     expect(names).toEqual(["Player 1", "Player 2", "Player 3"]);
     expect(bodies[1].sport).toBe("soccer");
     expect(bodies[1].limit).toBe(2);
+    expect(bodies[1].division).toBe(mixedScope);
   });
 
   it("exposes the current page without following", async () => {
@@ -188,6 +190,52 @@ describe("pagination", () => {
     expect(page.data).toHaveLength(1);
     expect(page.hasMore).toBe(true);
     expect(page.nextCursor).toBe("c2");
+  });
+
+  it("preserves a roster season while paginating", async () => {
+    const queries: Array<Record<string, string>> = [];
+    const { client } = makeClient((url) => {
+      const parsed = new URL(url);
+      const query = Object.fromEntries(parsed.searchParams.entries());
+      queries.push(query);
+      expect(parsed.pathname).toBe("/v1/teams/1873/roster");
+      if (!query.cursor) {
+        return json(200, {
+          season: "2026",
+          data: [{ id: 1, name: "Player 1" }],
+          next_cursor: "c2",
+          has_more: true,
+        });
+      }
+      return json(200, {
+        season: "2026",
+        data: [{ id: 2, name: "Player 2" }],
+        next_cursor: null,
+        has_more: false,
+      });
+    });
+
+    const page = await client.teams.roster(1873, {
+      sport: "soccer",
+      division: "D3",
+      season: "2026",
+      limit: 1,
+    });
+    expect(page.season).toBe("2026");
+
+    const nextPage = await page.getNextPage();
+    expect(nextPage?.season).toBe("2026");
+    expect(nextPage?.data[0].name).toBe("Player 2");
+    expect(queries).toEqual([
+      { sport: "soccer", division: "D3", season: "2026", limit: "1" },
+      {
+        sport: "soccer",
+        division: "D3",
+        season: "2026",
+        limit: "1",
+        cursor: "c2",
+      },
+    ]);
   });
 });
 

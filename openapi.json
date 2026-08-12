@@ -18,7 +18,7 @@
         ],
         "properties": {
           "division": {
-            "description": "Division scope, e.g. 'D1'.",
+            "description": "Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'.",
             "title": "Division",
             "type": "string"
           },
@@ -357,7 +357,7 @@
             "type": "string"
           },
           "division": {
-            "description": "Division scope, e.g. 'D1'.",
+            "description": "Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'.",
             "title": "Division",
             "type": "string"
           },
@@ -1593,7 +1593,7 @@
             "title": "Cursor"
           },
           "division": {
-            "description": "Division scope; may be a comma-joined NCAA list, e.g. 'D1,D2'.",
+            "description": "Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'.",
             "title": "Division",
             "type": "string"
           },
@@ -1896,7 +1896,7 @@
         "type": "object"
       },
       "PortalEntry": {
-        "description": "One live transfer-portal entry. `contacts` is present only for callers\nwhose owning account is PRO/MAX for the sport \u2014 the sole deliberate\nexception to the no-contact-info rule, matching the in-app portal paywall.",
+        "description": "One live transfer-portal entry. `contacts` is present only for callers\nwhose key delegates `portal.contact.read` and whose current actor is an\nactive verified coach on a Max account for the requested sport.",
         "examples": [
           {
             "conference": "GLIAC",
@@ -1937,7 +1937,7 @@
                 "type": "null"
               }
             ],
-            "description": "Contact info (email/phone/social); PRO/MAX tier only.",
+            "description": "Protected athlete contact info (email/phone/social); requires portal.contact.read plus current active verified coach and Max sport authority.",
             "title": "Contacts"
           },
           "designated_student_athlete": {
@@ -2147,7 +2147,7 @@
         "properties": {
           "division": {
             "default": "D1",
-            "description": "Division scope, e.g. 'D1'.",
+            "description": "Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'.",
             "title": "Division",
             "type": "string"
           },
@@ -2437,7 +2437,7 @@
         "type": "object"
       },
       "RosterPage": {
-        "description": "One page of roster members.",
+        "description": "One page of roster members from one season.",
         "properties": {
           "data": {
             "items": {
@@ -2466,6 +2466,18 @@
               "eyJvZmZzZXQiOiAyNX0="
             ],
             "title": "Next Cursor"
+          },
+          "season": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Season of the returned roster; null when no roster is held.",
+            "title": "Season"
           }
         },
         "required": [
@@ -2526,13 +2538,16 @@
         "description": "Envelope for simple string lists (divisions, conferences).",
         "properties": {
           "data": {
+            "description": "String values returned by the reference endpoint.",
             "examples": [
               [
                 "D1",
+                "D1-FBS",
+                "D1-FCS",
                 "D2",
                 "D3",
                 "NAIA",
-                "NJCAA"
+                "NJCAA-D1"
               ]
             ],
             "items": {
@@ -2549,7 +2564,7 @@
         "type": "object"
       },
       "TeamCoachEntry": {
-        "description": "One member of a team's coaching staff for a season. `email` is populated\nonly for callers whose owning account is PRO/MAX for the sport \u2014 the same\npaid-tier carve-out the portal contacts use.",
+        "description": "One member of a team's coaching staff for a season. `email` is populated\nonly when the key delegates `outreach.coach.read` and the current actor's\nverified player role permits player-to-coach outreach for the sport.",
         "examples": [
           {
             "bio_url": "https://athletics.amherst.edu/coaches/justin-serpone",
@@ -2585,7 +2600,7 @@
                 "type": "null"
               }
             ],
-            "description": "Coach email; PRO/MAX tier only, else null.",
+            "description": "Coach email; requires exact outreach.coach.read delegation and current verified player-role authority, else null.",
             "title": "Email"
           },
           "headshot_url": {
@@ -3119,7 +3134,7 @@
     }
   },
   "info": {
-    "description": "REST API for college sports data across NCAA D1/D2/D3, NAIA, and NJCAA:\nplayers, teams, rosters, cross-program careers, games, the live transfer\nportal, and an agent-backed natural-language query endpoint.\n\n## Authentication\n\nEvery endpoint requires an API key sent as a bearer token:\n\n```\nAuthorization: Bearer mag_live_...\n```\n\nCreate and manage keys in the developer console at\n[magisterial.ai/console/api-keys](https://magisterial.ai/console/api-keys).\nKeys are prefixed `mag_live_` (production) or `mag_test_`.\n\n## Scoping\n\nData access is scoped by `sport`, `division`, and (for dual-gender sports)\n`gender`. Valid values come from `GET /v1/sports` and `GET /v1/divisions`;\nsome endpoints accept comma-joined NCAA divisions, e.g. `D1,D2`.\n\n## Pagination\n\nList endpoints paginate with an opaque `cursor`. Pass the `next_cursor` from\none response as the `cursor` of the next request; `has_more` signals whether\nanother page exists.\n\n## Errors\n\nEvery 4xx/5xx returns a JSON envelope:\n\n```json\n{ \"error\": { \"type\": \"invalid_request\", \"code\": \"invalid_scope\", \"message\": \"...\" } }\n```\n\nThe one exception is request validation (422), which uses FastAPI's standard\n`{\"detail\": [...]}` shape. Rate-limited responses (429) include\n`X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`, and\n`Retry-After` headers.\n\n## Billing\n\nEndpoints marked *usage-billed* (`/v1/portal`, `/v1/query`, `/v1/alerts`,\n`/v1/exports`) require API billing to be enabled on the account and meter\nusage against a monthly budget; the free endpoints are included with any API\nkey. A 402 response means billing is not enabled or the budget is exhausted.\n\n## Bulk exports\n\nFor full-dataset pulls, use the bulk lane instead of walking paginated\nendpoints: `POST /v1/exports` starts an async job that writes one dataset\n(players, teams, games, or coaches) in one sport/division scope to a gzipped\nCSV or JSONL file, and `GET /v1/exports/{export_id}` returns a short-lived\nsigned download URL once it succeeds. Billed on success by result size\n(per started 10,000-row block); failed exports are never billed.\n\n## Webhooks\n\nInstead of polling, register webhook endpoints in the\n[console](https://magisterial.ai/console/webhooks) to receive signed events:\n`alert.triggered` when a watch alert finds new portal matches, and\n`query.completed` when an async query run finishes. Payloads carry a\n`Magisterial-Signature` header (`t=<ts>,v1=<hmac_sha256_hex>` over\n`{t}.{raw_body}`, keyed with the endpoint's `whsec_` secret); failed\ndeliveries retry with backoff for about two days. See the webhooks guide at\n[magisterial.ai/docs](https://magisterial.ai/docs#webhooks-guide).\n",
+    "description": "REST API for college sports data across NCAA D1/D2/D3, NAIA, and NJCAA:\nplayers, teams, rosters, cross-program careers, games, the live transfer\nportal, and an agent-backed natural-language query endpoint.\n\n## Authentication\n\nEvery endpoint requires an API key sent as a bearer token:\n\n```\nAuthorization: Bearer mag_live_...\n```\n\nCreate and manage keys in the developer console at\n[magisterial.ai/console/api-keys](https://magisterial.ai/console/api-keys).\nKeys are prefixed `mag_live_` (production) or `mag_test_`.\n\nEvery key also carries an exact delegated capability list. A key's effective\nauthority is the intersection of those scopes with the actor's current role,\nverification, account plan, and requested sport. Scope names do not imply one\nanother by prefix. New keys default to the non-PII `chat.use` scope.\n\n## Scoping\n\nData access is scoped by `sport`, `division`, and (for dual-gender sports)\n`gender`. Valid values come from `GET /v1/sports` and `GET /v1/divisions`;\nendpoints that take a division scope accept any non-empty sport-valid subset\nas canonical comma-separated atomic codes, e.g. `D1,NAIA,NJCAA-D1`. The\ndivision reference endpoint returns atomic codes only, never combinations.\n\n## Pagination\n\nList endpoints paginate with an opaque `cursor`. Pass the `next_cursor` from\none response as the `cursor` of the next request; `has_more` signals whether\nanother page exists.\n\n## Errors\n\nEvery 4xx/5xx returns a JSON envelope:\n\n```json\n{ \"error\": { \"type\": \"invalid_request\", \"code\": \"invalid_scope\", \"message\": \"...\" } }\n```\n\nThe one exception is request validation (422), which uses FastAPI's standard\n`{\"detail\": [...]}` shape. Rate-limited responses (429) include\n`X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`, and\n`Retry-After` headers.\n\n## Billing\n\nEndpoints marked *usage-billed* (`/v1/portal`, `/v1/query`, `/v1/alerts`,\n`/v1/exports`) require API billing to be enabled on the account and meter\nusage against a monthly budget; the free endpoints are included with any API\nkey. Billing availability failures return 403; exhausted budgets return 402.\n\nBilling is additive, not authorization. In particular, `/v1/portal` and API\nportal alerts are subscription-bound: the key must delegate the relevant\nportal capability and the current actor must be an active, verified coach on\nan account with the Max plan for the requested sport. Enabling API billing by\nitself never grants portal or athlete-contact access. Athlete contacts require\nthe separate `portal.contact.read` scope under the same actor and plan policy.\n\nBilling-not-enabled and past-due states return 403; an exhausted monthly\nbudget returns 402.\n\n## Bulk exports\n\nFor full-dataset pulls, use the bulk lane instead of walking paginated\nendpoints: `POST /v1/exports` starts an async job that writes one dataset\n(players, teams, games, or coaches) in one sport/division scope to a gzipped\nCSV or JSONL file, and `GET /v1/exports/{export_id}` returns a short-lived\nsigned download URL once it succeeds. Billed on success by result size\n(per started 10,000-row block); failed exports are never billed.\n\n## Webhooks\n\nInstead of polling, register webhook endpoints in the\n[console](https://magisterial.ai/console/webhooks) to receive signed events:\n`alert.triggered` when a watch alert finds new portal matches, and\n`query.completed` when an async query run finishes. Payloads carry a\n`Magisterial-Signature` header (`t=<ts>,v1=<hmac_sha256_hex>` over\n`{t}.{raw_body}`, keyed with the endpoint's `whsec_` secret); failed\ndeliveries retry with backoff for about two days. See the webhooks guide at\n[magisterial.ai/docs](https://magisterial.ai/docs#webhooks-guide).\n",
     "summary": "College sports data: players, teams, careers, games, the transfer portal, and natural-language query.",
     "title": "Magisterial Developer API",
     "version": "1.0.0"
@@ -3513,12 +3528,12 @@
             }
           },
           {
-            "description": "Division scope, e.g. 'D1'.",
+            "description": "Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'.",
             "in": "query",
             "name": "division",
             "required": true,
             "schema": {
-              "description": "Division scope, e.g. 'D1'.",
+              "description": "Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'.",
               "title": "Division",
               "type": "string"
             }
@@ -3686,7 +3701,7 @@
     },
     "/v1/divisions": {
       "get": {
-        "description": "Valid values for the `division` scope parameter. NCAA divisions may be\ncomma-joined on endpoints that accept multi-division scopes, e.g. 'D1,D2'.",
+        "description": "Atomic values for the `division` scope parameter. Clients may comma-join\nany non-empty sport-valid subset, e.g. 'D1,NAIA,NJCAA-D1'. Combinations are\nintentionally not enumerated by this endpoint.",
         "operationId": "list_divisions",
         "responses": {
           "200": {
@@ -4145,12 +4160,12 @@
             }
           },
           {
-            "description": "Division scope, e.g. 'D1'.",
+            "description": "Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'.",
             "in": "query",
             "name": "division",
             "required": true,
             "schema": {
-              "description": "Division scope, e.g. 'D1'.",
+              "description": "Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'.",
               "title": "Division",
               "type": "string"
             }
@@ -4381,12 +4396,12 @@
             }
           },
           {
-            "description": "Division scope, e.g. 'D1'.",
+            "description": "Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'.",
             "in": "query",
             "name": "division",
             "required": true,
             "schema": {
-              "description": "Division scope, e.g. 'D1'.",
+              "description": "Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'.",
               "title": "Division",
               "type": "string"
             }
@@ -4912,12 +4927,12 @@
             }
           },
           {
-            "description": "Division scope, e.g. 'D1'.",
+            "description": "Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'.",
             "in": "query",
             "name": "division",
             "required": true,
             "schema": {
-              "description": "Division scope, e.g. 'D1'.",
+              "description": "Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'.",
               "title": "Division",
               "type": "string"
             }
@@ -5040,12 +5055,12 @@
             }
           },
           {
-            "description": "Division scope, e.g. 'D1'.",
+            "description": "Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'.",
             "in": "query",
             "name": "division",
             "required": true,
             "schema": {
-              "description": "Division scope, e.g. 'D1'.",
+              "description": "Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'.",
               "title": "Division",
               "type": "string"
             }
@@ -5144,7 +5159,7 @@
     },
     "/v1/portal": {
       "get": {
-        "description": "Live transfer-portal entries for a sport/division, newest first. Each\nrequest is usage-billed. `contacts` is populated only when the owning\naccount holds a PRO/MAX plan for the sport; otherwise it is null. Use\n`since` for incremental polling.",
+        "description": "Live transfer-portal entries for a sport/division, newest first.\n\nAPI billing is required in addition to, not instead of, application\nauthority: the key must delegate `portal.entry.read`, and the current\nactor must be an active verified coach on an account with the Max plan for\nthe sport. `contacts` additionally requires the exact\n`portal.contact.read` scope under the same actor/plan policy. Use `since`\nfor incremental polling.",
         "operationId": "list_portal_entries",
         "parameters": [
           {
@@ -5159,12 +5174,12 @@
             }
           },
           {
-            "description": "Division scope, e.g. 'D1'.",
+            "description": "Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'.",
             "in": "query",
             "name": "division",
             "required": true,
             "schema": {
-              "description": "Division scope, e.g. 'D1'.",
+              "description": "Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'.",
               "title": "Division",
               "type": "string"
             }
@@ -5329,7 +5344,7 @@
             "ApiKeyAuth": []
           }
         ],
-        "summary": "Transfer portal (usage-billed)",
+        "summary": "Transfer portal (subscription-bound and usage-billed)",
         "tags": [
           "Transfer Portal"
         ]
@@ -5594,12 +5609,12 @@
             }
           },
           {
-            "description": "Division scope, e.g. 'D1'.",
+            "description": "Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'.",
             "in": "query",
             "name": "division",
             "required": true,
             "schema": {
-              "description": "Division scope, e.g. 'D1'.",
+              "description": "Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'.",
               "title": "Division",
               "type": "string"
             }
@@ -5758,12 +5773,12 @@
             }
           },
           {
-            "description": "Division scope, e.g. 'D1'.",
+            "description": "Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'.",
             "in": "query",
             "name": "division",
             "required": true,
             "schema": {
-              "description": "Division scope, e.g. 'D1'.",
+              "description": "Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'.",
               "title": "Division",
               "type": "string"
             }
@@ -5862,7 +5877,7 @@
     },
     "/v1/teams/{team_id}/coaches": {
       "get": {
-        "description": "Coaching staff for one team-season, head coach first. Defaults to the\nlatest season held; pass `season` for a historical staff. `email` is\npopulated only for PRO/MAX accounts (the portal-contacts carve-out).",
+        "description": "Coaching staff for one team-season, head coach first. Defaults to the\nlatest season held; pass `season` for a historical staff. `email` is\npopulated only when the key and active verified player role both allow\ncoach-outreach contact reads.",
         "operationId": "get_team_coaches",
         "parameters": [
           {
@@ -5886,12 +5901,12 @@
             }
           },
           {
-            "description": "Division scope, e.g. 'D1'.",
+            "description": "Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'.",
             "in": "query",
             "name": "division",
             "required": true,
             "schema": {
-              "description": "Division scope, e.g. 'D1'.",
+              "description": "Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'.",
               "title": "Division",
               "type": "string"
             }
@@ -6008,7 +6023,7 @@
     },
     "/v1/teams/{team_id}/roster": {
       "get": {
-        "description": "Current roster for one team \u2014 identity fields only, never contact info.\nPaginates with an opaque `cursor`.",
+        "description": "Roster for one team-season \u2014 identity fields only, never contact info.\nDefaults to the latest season held and paginates with an opaque `cursor`.",
         "operationId": "get_team_roster",
         "parameters": [
           {
@@ -6032,12 +6047,12 @@
             }
           },
           {
-            "description": "Division scope, e.g. 'D1'.",
+            "description": "Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'.",
             "in": "query",
             "name": "division",
             "required": true,
             "schema": {
-              "description": "Division scope, e.g. 'D1'.",
+              "description": "Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'.",
               "title": "Division",
               "type": "string"
             }
@@ -6058,6 +6073,27 @@
               ],
               "description": "'men' or 'women'.",
               "title": "Gender"
+            }
+          },
+          {
+            "description": "Roster season (4-digit year, e.g. '2026'); defaults to the latest held.",
+            "in": "query",
+            "name": "season",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 4,
+                  "minLength": 4,
+                  "pattern": "^\\d{4}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Roster season (4-digit year, e.g. '2026'); defaults to the latest held.",
+              "title": "Season"
             }
           },
           {
@@ -6194,7 +6230,7 @@
       "name": "Games"
     },
     {
-      "description": "The live NCAA transfer portal feed. Usage-billed.",
+      "description": "The live NCAA transfer portal feed. Usage-billed and subscription-bound to active verified Max coaches with exact delegated portal scopes.",
       "name": "Transfer Portal"
     },
     {

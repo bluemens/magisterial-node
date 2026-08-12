@@ -128,8 +128,9 @@ export interface paths {
         };
         /**
          * List divisions
-         * @description Valid values for the `division` scope parameter. NCAA divisions may be
-         *     comma-joined on endpoints that accept multi-division scopes, e.g. 'D1,D2'.
+         * @description Atomic values for the `division` scope parameter. Clients may comma-join
+         *     any non-empty sport-valid subset, e.g. 'D1,NAIA,NJCAA-D1'. Combinations are
+         *     intentionally not enumerated by this endpoint.
          */
         get: operations["list_divisions"];
         put?: never;
@@ -398,11 +399,15 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Transfer portal (usage-billed)
-         * @description Live transfer-portal entries for a sport/division, newest first. Each
-         *     request is usage-billed. `contacts` is populated only when the owning
-         *     account holds a PRO/MAX plan for the sport; otherwise it is null. Use
-         *     `since` for incremental polling.
+         * Transfer portal (subscription-bound and usage-billed)
+         * @description Live transfer-portal entries for a sport/division, newest first.
+         *
+         *     API billing is required in addition to, not instead of, application
+         *     authority: the key must delegate `portal.entry.read`, and the current
+         *     actor must be an active verified coach on an account with the Max plan for
+         *     the sport. `contacts` additionally requires the exact
+         *     `portal.contact.read` scope under the same actor/plan policy. Use `since`
+         *     for incremental polling.
          */
         get: operations["list_portal_entries"];
         put?: never;
@@ -532,7 +537,8 @@ export interface paths {
          * Get a team's coaching staff
          * @description Coaching staff for one team-season, head coach first. Defaults to the
          *     latest season held; pass `season` for a historical staff. `email` is
-         *     populated only for PRO/MAX accounts (the portal-contacts carve-out).
+         *     populated only when the key and active verified player role both allow
+         *     coach-outreach contact reads.
          */
         get: operations["get_team_coaches"];
         put?: never;
@@ -552,8 +558,8 @@ export interface paths {
         };
         /**
          * Get a team's roster
-         * @description Current roster for one team — identity fields only, never contact info.
-         *     Paginates with an opaque `cursor`.
+         * @description Roster for one team-season — identity fields only, never contact info.
+         *     Defaults to the latest season held and paginates with an opaque `cursor`.
          */
         get: operations["get_team_roster"];
         put?: never;
@@ -586,7 +592,7 @@ export interface components {
         AlertCreateRequest: {
             /**
              * Division
-             * @description Division scope, e.g. 'D1'.
+             * @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'.
              */
             division: string;
             /**
@@ -794,7 +800,7 @@ export interface components {
             dataset: string;
             /**
              * Division
-             * @description Division scope, e.g. 'D1'.
+             * @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'.
              */
             division: string;
             /**
@@ -1349,7 +1355,7 @@ export interface components {
             cursor?: string | null;
             /**
              * Division
-             * @description Division scope; may be a comma-joined NCAA list, e.g. 'D1,D2'.
+             * @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'.
              */
             division: string;
             /**
@@ -1493,8 +1499,8 @@ export interface components {
         /**
          * PortalEntry
          * @description One live transfer-portal entry. `contacts` is present only for callers
-         *     whose owning account is PRO/MAX for the sport — the sole deliberate
-         *     exception to the no-contact-info rule, matching the in-app portal paywall.
+         *     whose key delegates `portal.contact.read` and whose current actor is an
+         *     active verified coach on a Max account for the requested sport.
          * @example {
          *       "conference": "GLIAC",
          *       "designated_student_athlete": false,
@@ -1517,7 +1523,7 @@ export interface components {
             conference?: string | null;
             /**
              * Contacts
-             * @description Contact info (email/phone/social); PRO/MAX tier only.
+             * @description Protected athlete contact info (email/phone/social); requires portal.contact.read plus current active verified coach and Max sport authority.
              */
             contacts?: {
                 [key: string]: unknown;
@@ -1605,7 +1611,7 @@ export interface components {
         PublicQueryRequest: {
             /**
              * Division
-             * @description Division scope, e.g. 'D1'.
+             * @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'.
              * @default D1
              */
             division: string;
@@ -1732,7 +1738,7 @@ export interface components {
         };
         /**
          * RosterPage
-         * @description One page of roster members.
+         * @description One page of roster members from one season.
          */
         RosterPage: {
             /** Data */
@@ -1749,6 +1755,11 @@ export interface components {
              * @example eyJvZmZzZXQiOiAyNX0=
              */
             next_cursor?: string | null;
+            /**
+             * Season
+             * @description Season of the returned roster; null when no roster is held.
+             */
+            season?: string | null;
         };
         /**
          * SportEntry
@@ -1784,12 +1795,15 @@ export interface components {
         StringListResponse: {
             /**
              * Data
+             * @description String values returned by the reference endpoint.
              * @example [
              *       "D1",
+             *       "D1-FBS",
+             *       "D1-FCS",
              *       "D2",
              *       "D3",
              *       "NAIA",
-             *       "NJCAA"
+             *       "NJCAA-D1"
              *     ]
              */
             data: string[];
@@ -1797,8 +1811,8 @@ export interface components {
         /**
          * TeamCoachEntry
          * @description One member of a team's coaching staff for a season. `email` is populated
-         *     only for callers whose owning account is PRO/MAX for the sport — the same
-         *     paid-tier carve-out the portal contacts use.
+         *     only when the key delegates `outreach.coach.read` and the current actor's
+         *     verified player role permits player-to-coach outreach for the sport.
          * @example {
          *       "bio_url": "https://athletics.amherst.edu/coaches/justin-serpone",
          *       "headshot_url": "https://api.magisterial.ai/api/public/img?u=...",
@@ -1819,7 +1833,7 @@ export interface components {
             bio_url?: string | null;
             /**
              * Email
-             * @description Coach email; PRO/MAX tier only, else null.
+             * @description Coach email; requires exact outreach.coach.read delegation and current verified player-role authority, else null.
              */
             email?: string | null;
             /** Headshot Url */
@@ -2316,7 +2330,7 @@ export interface operations {
             query: {
                 /** @description Sport scope, e.g. 'soccer'. */
                 sport: string;
-                /** @description Division scope, e.g. 'D1'. */
+                /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
                 division: string;
                 /** @description 'men' or 'women'. */
                 gender?: string | null;
@@ -2786,7 +2800,7 @@ export interface operations {
             query: {
                 /** @description Sport scope, e.g. 'soccer'. */
                 sport: string;
-                /** @description Division scope, e.g. 'D1'. */
+                /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
                 division: string;
                 /** @description 'men' or 'women'. */
                 gender?: string | null;
@@ -2861,7 +2875,7 @@ export interface operations {
             query: {
                 /** @description Sport scope, e.g. 'soccer'. */
                 sport: string;
-                /** @description Division scope, e.g. 'D1'. */
+                /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
                 division: string;
                 /** @description 'men' or 'women'. */
                 gender?: string | null;
@@ -3172,7 +3186,7 @@ export interface operations {
             query: {
                 /** @description Sport scope, e.g. 'soccer'. */
                 sport: string;
-                /** @description Division scope, e.g. 'D1'. */
+                /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
                 division: string;
                 /** @description 'men' or 'women'. */
                 gender?: string | null;
@@ -3246,7 +3260,7 @@ export interface operations {
             query: {
                 /** @description Sport scope, e.g. 'soccer'. */
                 sport: string;
-                /** @description Division scope, e.g. 'D1'. */
+                /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
                 division: string;
                 /** @description 'men' or 'women'. */
                 gender?: string | null;
@@ -3320,7 +3334,7 @@ export interface operations {
             query: {
                 /** @description Sport scope, e.g. 'soccer'. */
                 sport: string;
-                /** @description Division scope, e.g. 'D1'. */
+                /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
                 division: string;
                 /** @description 'men' or 'women'. */
                 gender?: string | null;
@@ -3599,7 +3613,7 @@ export interface operations {
             query: {
                 /** @description Sport scope, e.g. 'soccer'. */
                 sport: string;
-                /** @description Division scope, e.g. 'D1'. */
+                /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
                 division: string;
                 /** @description 'men' or 'women'. */
                 gender?: string | null;
@@ -3666,7 +3680,7 @@ export interface operations {
             query: {
                 /** @description Sport scope, e.g. 'soccer'. */
                 sport: string;
-                /** @description Division scope, e.g. 'D1'. */
+                /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
                 division: string;
                 /** @description 'men' or 'women'. */
                 gender?: string | null;
@@ -3740,7 +3754,7 @@ export interface operations {
             query: {
                 /** @description Sport scope, e.g. 'soccer'. */
                 sport: string;
-                /** @description Division scope, e.g. 'D1'. */
+                /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
                 division: string;
                 /** @description 'men' or 'women'. */
                 gender?: string | null;
@@ -3816,10 +3830,12 @@ export interface operations {
             query: {
                 /** @description Sport scope, e.g. 'soccer'. */
                 sport: string;
-                /** @description Division scope, e.g. 'D1'. */
+                /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
                 division: string;
                 /** @description 'men' or 'women'. */
                 gender?: string | null;
+                /** @description Roster season (4-digit year, e.g. '2026'); defaults to the latest held. */
+                season?: string | null;
                 limit?: number;
                 cursor?: string | null;
             };
