@@ -647,6 +647,73 @@
         "title": "ExportListPage",
         "type": "object"
       },
+      "FreshnessInfo": {
+        "description": "When the source page behind a record was last read. `observed_at` is\nthe last fetch that was ingested; `changed_at` the last time the page's\ncontent actually changed; `next_check_at` when the next fetch is due\nunder the seasonal cadence policy (see the Data sources and freshness\nsection). Null when the program has never been read through the target\nregistry.",
+        "properties": {
+          "cadence_hours": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Current refresh interval for this record, in hours.",
+            "title": "Cadence Hours"
+          },
+          "changed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Changed At"
+          },
+          "checked_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checked At"
+          },
+          "next_check_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Check At"
+          },
+          "observed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observed At"
+          }
+        },
+        "title": "FreshnessInfo",
+        "type": "object"
+      },
       "GameFixture": {
         "description": "One game as listed by GET /v1/games \u2014 a side-anchored fixture (home/away,\nnever perspective-relative). A game between teams in different divisions is\nvisible in either division's scope.",
         "examples": [
@@ -1031,8 +1098,418 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
+      "ManagedAthleteAccessEntry": {
+        "description": "One delegated read that returned contact fields.",
+        "properties": {
+          "api_key_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Key Id"
+          },
+          "capability": {
+            "title": "Capability",
+            "type": "string"
+          },
+          "division": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Division"
+          },
+          "grant_id": {
+            "title": "Grant Id",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "occurred_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred At"
+          },
+          "player_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Player Id"
+          },
+          "row_count": {
+            "default": 0,
+            "title": "Row Count",
+            "type": "integer"
+          },
+          "sport_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sport Path"
+          },
+          "team_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Team Id"
+          }
+        },
+        "required": [
+          "id",
+          "grant_id",
+          "capability"
+        ],
+        "title": "ManagedAthleteAccessEntry",
+        "type": "object"
+      },
+      "ManagedAthleteAccessPage": {
+        "description": "A page of delegated-access audit events.",
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ManagedAthleteAccessEntry"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "has_more": {
+            "default": false,
+            "description": "True when another page is available.",
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Opaque cursor for the next page; null when there are no more results.",
+            "examples": [
+              "eyJvZmZzZXQiOiAyNX0="
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "ManagedAthleteAccessPage",
+        "type": "object"
+      },
+      "ManagedAthleteCreateRequest": {
+        "description": "Invite one athlete to authorize your account.",
+        "examples": [
+          {
+            "organization_name": "Northstar Recruiting",
+            "player_id": 13232,
+            "sport_path": "mens-soccer"
+          }
+        ],
+        "properties": {
+          "email": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Where to send the invitation. Optional: we default to the athlete's on-file contact. A supplied address is accepted only when it matches that contact or the athlete's school .edu domain.",
+            "title": "Email"
+          },
+          "organization_name": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "How your platform is named in the invitation email.",
+            "title": "Organization Name"
+          },
+          "player_id": {
+            "description": "The athlete's player id (GET /v1/players/search).",
+            "title": "Player Id",
+            "type": "integer"
+          },
+          "sport_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The athlete's sport path, e.g. 'womens-soccer'. Speeds up the lookup.",
+            "title": "Sport Path"
+          }
+        },
+        "required": [
+          "player_id"
+        ],
+        "title": "ManagedAthleteCreateRequest",
+        "type": "object"
+      },
+      "ManagedAthleteEntry": {
+        "description": "One athlete's authorization for your account.",
+        "properties": {
+          "athlete_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Masked address the invitation went to.",
+            "title": "Athlete Email"
+          },
+          "athlete_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Athlete Name"
+          },
+          "consented_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consented At"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "id": {
+            "description": "Grant id; use with the other /v1/athletes endpoints.",
+            "title": "Id",
+            "type": "string"
+          },
+          "invite_expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invite Expires At"
+          },
+          "invited_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invited At"
+          },
+          "organization_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organization Name"
+          },
+          "person_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Person Id"
+          },
+          "player_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Player Id"
+          },
+          "revoked_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked At"
+          },
+          "revoked_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "org | athlete | admin, when revoked.",
+            "title": "Revoked By"
+          },
+          "sport_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sport Path"
+          },
+          "status": {
+            "description": "invited | active | declined | revoked | expired.",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status"
+        ],
+        "title": "ManagedAthleteEntry",
+        "type": "object"
+      },
+      "ManagedAthletePage": {
+        "description": "A page of managed athletes.",
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ManagedAthleteEntry"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "has_more": {
+            "default": false,
+            "description": "True when another page is available.",
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Opaque cursor for the next page; null when there are no more results.",
+            "examples": [
+              "eyJvZmZzZXQiOiAyNX0="
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "ManagedAthletePage",
+        "type": "object"
+      },
+      "ManagedAthleteRevokeResponse": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status"
+        ],
+        "title": "ManagedAthleteRevokeResponse",
+        "type": "object"
+      },
       "MovementEntry": {
-        "description": "One published roster/coaching movement event. Only events an editor (or\nthe auto-publish policy) published appear here \u2014 a curated feed, not the\nraw diff stream.",
+        "description": "One roster/coaching movement event. The default `status=published` feed\ncarries only events an editor (or the auto-publish policy) published; the\nEnterprise `resolved` and `observed` tiers expose the underlying resolver\nstream with its raw status, so a platform can act on same-day changes at\nits own confidence threshold.",
         "properties": {
           "division": {
             "anyOf": [
@@ -1054,6 +1531,18 @@
             "title": "Id",
             "type": "integer"
           },
+          "ipeds_unitid": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Federal IPEDS UNITID of the school, when matched.",
+            "title": "Ipeds Unitid"
+          },
           "kind": {
             "description": "'player' or 'coach'.",
             "title": "Kind",
@@ -1069,6 +1558,7 @@
                 "type": "null"
               }
             ],
+            "description": "When the roster or staff page change was observed by the scraper.",
             "title": "Observed At"
           },
           "person_id": {
@@ -1093,6 +1583,7 @@
                 "type": "null"
               }
             ],
+            "description": "When the event entered the curated feed; null until it does.",
             "title": "Published At"
           },
           "resolution_kind": {
@@ -1106,6 +1597,43 @@
             ],
             "description": "e.g. 'head_coach_change_confirmed'.",
             "title": "Resolution Kind"
+          },
+          "resolution_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Raw resolver outcome: linked_transfer | linked_move | new_freshman | new_hire | departed_unknown | roster_rollover | reappeared | pending.",
+            "title": "Resolution Status"
+          },
+          "resolved_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "When identity resolution finished for this event.",
+            "title": "Resolved At"
+          },
+          "school_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "School id; see GET /v1/schools/{school_id}.",
+            "title": "School Id"
           },
           "school_logo_url": {
             "anyOf": [
@@ -1150,6 +1678,18 @@
               }
             ],
             "title": "Sport Path"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "'published' (curated feed), 'resolved' (identity resolution finished, not editorially published), or 'pending' (observed, awaiting resolution).",
+            "title": "Status"
           },
           "subject": {
             "$ref": "#/components/schemas/MovementSubject"
@@ -1544,7 +2084,7 @@
         "type": "object"
       },
       "PlayerSearchRequest": {
-        "description": "Public body for POST /v1/players/search.\n\nScope (`sport`/`gender`/`division`) is required and drives RLS. The\nremaining fields are a curated, sport-agnostic subset of the internal\nmanual-search filters; richer catalog-driven filters come in a later rev.",
+        "description": "Public body for POST /v1/players/search.\n\nScope (`sport`/`gender`/`division`) is required and bounds every result.\nThe remaining fields are a curated, sport-agnostic subset of the app's\nmanual-search filters; richer catalog-driven filters come in a later rev.",
         "examples": [
           {
             "conference": "NESCAC",
@@ -2446,6 +2986,17 @@
             "title": "Data",
             "type": "array"
           },
+          "freshness": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FreshnessInfo"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "When this team's roster page was last read."
+          },
           "has_more": {
             "default": false,
             "description": "True when another page is available.",
@@ -2484,6 +3035,315 @@
           "data"
         ],
         "title": "RosterPage",
+        "type": "object"
+      },
+      "SchoolDetail": {
+        "description": "A school plus every program it fields.",
+        "properties": {
+          "athletics_domain": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The school's official athletics website domain (the source of its program data).",
+            "title": "Athletics Domain"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "control": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Institutional control, e.g. 'Public' or 'Private nonprofit'.",
+            "title": "Control"
+          },
+          "id": {
+            "description": "School id; use with GET /v1/schools/{school_id}.",
+            "title": "Id",
+            "type": "integer"
+          },
+          "ipeds_unitid": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Federal IPEDS UNITID (NCES), when matched.",
+            "title": "Ipeds Unitid"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Stable school slug.",
+            "title": "Slug"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Two-letter US state code, when known.",
+            "title": "State"
+          },
+          "teams": {
+            "items": {
+              "$ref": "#/components/schemas/SchoolTeamRef"
+            },
+            "title": "Teams",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "SchoolDetail",
+        "type": "object"
+      },
+      "SchoolPage": {
+        "description": "A page of schools.",
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/SchoolRef"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "has_more": {
+            "default": false,
+            "description": "True when another page is available.",
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Opaque cursor for the next page; null when there are no more results.",
+            "examples": [
+              "eyJvZmZzZXQiOiAyNX0="
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "SchoolPage",
+        "type": "object"
+      },
+      "SchoolRef": {
+        "description": "The institution behind a team. `ipeds_unitid` is the federal IPEDS\nUNITID (NCES), the stable external key for joining to your own school\nrecords; it is null for schools outside the federal universe (some NAIA,\njunior-college, Canadian, and independent institutions).",
+        "properties": {
+          "athletics_domain": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The school's official athletics website domain (the source of its program data).",
+            "title": "Athletics Domain"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "control": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Institutional control, e.g. 'Public' or 'Private nonprofit'.",
+            "title": "Control"
+          },
+          "id": {
+            "description": "School id; use with GET /v1/schools/{school_id}.",
+            "title": "Id",
+            "type": "integer"
+          },
+          "ipeds_unitid": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Federal IPEDS UNITID (NCES), when matched.",
+            "title": "Ipeds Unitid"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Stable school slug.",
+            "title": "Slug"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Two-letter US state code, when known.",
+            "title": "State"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "SchoolRef",
+        "type": "object"
+      },
+      "SchoolTeamRef": {
+        "description": "One program a school fields, across every sport and division we hold.",
+        "properties": {
+          "conference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conference"
+          },
+          "division": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Division"
+          },
+          "id": {
+            "description": "Team id; scope-aware detail at GET /v1/teams/{team_id}.",
+            "title": "Id",
+            "type": "integer"
+          },
+          "logo_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logo Url"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "sport_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sport Path"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "SchoolTeamRef",
         "type": "object"
       },
       "SportEntry": {
@@ -2579,6 +3439,18 @@
           }
         ],
         "properties": {
+          "bio_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Full biography published on the official coaching profile.",
+            "title": "Bio Text"
+          },
           "bio_url": {
             "anyOf": [
               {
@@ -2660,6 +3532,18 @@
             "description": "Cross-school person cluster id, when linked.",
             "title": "Person Id"
           },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Published coach phone; requires the same outreach authority as email.",
+            "title": "Phone"
+          },
           "profile_slug": {
             "anyOf": [
               {
@@ -2703,12 +3587,29 @@
       "TeamCoachesResponse": {
         "description": "Envelope for GET /v1/teams/{team_id}/coaches. `season` is the season the\nstaff list belongs to (the latest one held unless `season` was requested).",
         "properties": {
+          "contacts_included": {
+            "default": false,
+            "description": "True when contact fields (email, phone) were populated for this request.",
+            "title": "Contacts Included",
+            "type": "boolean"
+          },
           "data": {
             "items": {
               "$ref": "#/components/schemas/TeamCoachEntry"
             },
             "title": "Data",
             "type": "array"
+          },
+          "freshness": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FreshnessInfo"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "When this team's staff page was last read."
           },
           "season": {
             "anyOf": [
@@ -2738,6 +3639,16 @@
             "id": 1873,
             "logo_url": "https://magisterial.ai/logos/amherst.png",
             "name": "Amherst",
+            "school": {
+              "athletics_domain": "athletics.amherst.edu",
+              "city": "Amherst",
+              "control": "Private nonprofit",
+              "id": 812,
+              "ipeds_unitid": 164465,
+              "name": "Amherst College",
+              "slug": "amherst",
+              "state": "MA"
+            },
             "sport_path": "mens-soccer"
           }
         ],
@@ -2767,6 +3678,17 @@
           "documents": {
             "description": "Per-season team records (schedules, stats documents); shape varies by sport.",
             "title": "Documents"
+          },
+          "freshness": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TeamFreshness"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "When each kind of source page for this program was last read."
           },
           "id": {
             "anyOf": [
@@ -2802,6 +3724,17 @@
             ],
             "title": "Name"
           },
+          "school": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SchoolRef"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The institution, with its IPEDS UNITID for joining to external records."
+          },
           "sport_path": {
             "anyOf": [
               {
@@ -2816,6 +3749,53 @@
           }
         },
         "title": "TeamDetail",
+        "type": "object"
+      },
+      "TeamFreshness": {
+        "description": "Per data kind freshness for one team-program.",
+        "properties": {
+          "coaches": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FreshnessInfo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "roster": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FreshnessInfo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "schedule": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FreshnessInfo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "season_stats": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FreshnessInfo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "TeamFreshness",
         "type": "object"
       },
       "TeamPage": {
@@ -2865,6 +3845,16 @@
             "id": 1873,
             "logo_url": "https://magisterial.ai/logos/amherst.png",
             "name": "Amherst",
+            "school": {
+              "athletics_domain": "athletics.amherst.edu",
+              "city": "Amherst",
+              "control": "Private nonprofit",
+              "id": 812,
+              "ipeds_unitid": 164465,
+              "name": "Amherst College",
+              "slug": "amherst",
+              "state": "MA"
+            },
             "sport_path": "mens-soccer"
           }
         ],
@@ -2925,6 +3915,17 @@
             ],
             "title": "Name"
           },
+          "school": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SchoolRef"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The institution, with its IPEDS UNITID for joining to external records."
+          },
           "sport_path": {
             "anyOf": [
               {
@@ -2959,7 +3960,7 @@
         "type": "object"
       },
       "TransferRecord": {
-        "description": "One school-change edge for a person (from the RLS-free transfers table).",
+        "description": "One school-change edge in a person's cross-program career.",
         "properties": {
           "first_season_to": {
             "anyOf": [
@@ -3134,7 +4135,7 @@
     }
   },
   "info": {
-    "description": "REST API for college sports data across NCAA D1/D2/D3, NAIA, and NJCAA:\nplayers, teams, rosters, cross-program careers, games, the live transfer\nportal, and an agent-backed natural-language query endpoint.\n\n## Authentication\n\nEvery endpoint requires an API key sent as a bearer token:\n\n```\nAuthorization: Bearer mag_live_...\n```\n\nCreate and manage keys in the developer console at\n[magisterial.ai/console/api-keys](https://magisterial.ai/console/api-keys).\nKeys are prefixed `mag_live_` (production) or `mag_test_`.\n\nEvery key also carries an exact delegated capability list. A key's effective\nauthority is the intersection of those scopes with the actor's current role,\nverification, account plan, and requested sport. Scope names do not imply one\nanother by prefix. New keys default to the non-PII `chat.use` scope.\n\n## Scoping\n\nData access is scoped by `sport`, `division`, and (for dual-gender sports)\n`gender`. Valid values come from `GET /v1/sports` and `GET /v1/divisions`;\nendpoints that take a division scope accept any non-empty sport-valid subset\nas canonical comma-separated atomic codes, e.g. `D1,NAIA,NJCAA-D1`. The\ndivision reference endpoint returns atomic codes only, never combinations.\n\n## Pagination\n\nList endpoints paginate with an opaque `cursor`. Pass the `next_cursor` from\none response as the `cursor` of the next request; `has_more` signals whether\nanother page exists.\n\n## Errors\n\nEvery 4xx/5xx returns a JSON envelope:\n\n```json\n{ \"error\": { \"type\": \"invalid_request\", \"code\": \"invalid_scope\", \"message\": \"...\" } }\n```\n\nThe one exception is request validation (422), which uses FastAPI's standard\n`{\"detail\": [...]}` shape. Rate-limited responses (429) include\n`X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`, and\n`Retry-After` headers.\n\n## Billing\n\nEndpoints marked *usage-billed* (`/v1/portal`, `/v1/query`, `/v1/alerts`,\n`/v1/exports`) require API billing to be enabled on the account and meter\nusage against a monthly budget; the free endpoints are included with any API\nkey. Billing availability failures return 403; exhausted budgets return 402.\n\nBilling is additive, not authorization. In particular, `/v1/portal` and API\nportal alerts are subscription-bound: the key must delegate the relevant\nportal capability and the current actor must be an active, verified coach on\nan account with the Max plan for the requested sport. Enabling API billing by\nitself never grants portal or athlete-contact access. Athlete contacts require\nthe separate `portal.contact.read` scope under the same actor and plan policy.\n\nBilling-not-enabled and past-due states return 403; an exhausted monthly\nbudget returns 402.\n\n## Bulk exports\n\nFor full-dataset pulls, use the bulk lane instead of walking paginated\nendpoints: `POST /v1/exports` starts an async job that writes one dataset\n(players, teams, games, or coaches) in one sport/division scope to a gzipped\nCSV or JSONL file, and `GET /v1/exports/{export_id}` returns a short-lived\nsigned download URL once it succeeds. Billed on success by result size\n(per started 10,000-row block); failed exports are never billed.\n\n## Webhooks\n\nInstead of polling, register webhook endpoints in the\n[console](https://magisterial.ai/console/webhooks) to receive signed events:\n`alert.triggered` when a watch alert finds new portal matches, and\n`query.completed` when an async query run finishes. Payloads carry a\n`Magisterial-Signature` header (`t=<ts>,v1=<hmac_sha256_hex>` over\n`{t}.{raw_body}`, keyed with the endpoint's `whsec_` secret); failed\ndeliveries retry with backoff for about two days. See the webhooks guide at\n[magisterial.ai/docs](https://magisterial.ai/docs#webhooks-guide).\n",
+    "description": "REST API for college sports data across NCAA D1/D2/D3, NAIA, and NJCAA:\nplayers, teams and schools, rosters and coaching staffs, cross-program\ncareers, games, roster and staff movements, the live transfer portal, and an\nagent-backed natural-language query endpoint.\n\n## Authentication\n\nEvery endpoint requires an API key sent as a bearer token:\n\n```\nAuthorization: Bearer mag_live_...\n```\n\nCreate and manage keys in the developer console at\n[magisterial.ai/console/api-keys](https://magisterial.ai/console/api-keys).\nKeys are prefixed `mag_live_` (production) or `mag_test_`.\n\nEvery key also carries an exact delegated capability list. A key's effective\nauthority is the intersection of those scopes with the actor's current role,\nverification, account plan, and requested sport. Scope names do not imply one\nanother by prefix. New keys default to the non-PII `chat.use` scope.\n\n## Scoping\n\nData access is scoped by `sport`, `division`, and (for dual-gender sports)\n`gender`. Valid values come from `GET /v1/sports` and `GET /v1/divisions`;\nendpoints that take a division scope accept any non-empty sport-valid subset\nas canonical comma-separated atomic codes, e.g. `D1,NAIA,NJCAA-D1`. The\ndivision reference endpoint returns atomic codes only, never combinations.\n\n## Data sources and freshness\n\nMagisterial holds no licensed NCAA, conference, or vendor feed. Records are\ncompiled from publicly available sources and from the people they describe:\n\n- **School athletics sites.** Rosters, coaching staffs, schedules, results,\n  box scores, and season statistics come from each program's official\n  athletics website (Sidearm Sports, Presto Sports, and WMT-hosted sites),\n  read as published and normalized into one schema. `bio_url`,\n  `boxscore_url`, and a school's `athletics_domain` point back at the source.\n- **Public federations and registries.** stats.ncaa.org for play-by-play and\n  shot charts, TFRRS for track and field and cross-country performances, the\n  NCAA transfer-portal listings, and federal IPEDS / College Scorecard data\n  for institution profiles and the `ipeds_unitid` join key.\n- **The people themselves.** Coaches and athletes who claim their profile add\n  and correct their own information; recruiting questionnaires and in-product\n  use contribute verified contact and preference data that is exposed only\n  under the contact capabilities described in the Managed athletes section.\n\nHeadshots and logos are the schools' own published assets, served by\nreference (some through our image proxy); we claim no rights in them.\n\nFreshness is a property of each record, not of the API. Roster, coaching\nstaff, and team responses carry a `freshness` object (`observed_at`, when the\nsource page was last fetched; `changed_at`, when its content last changed;\n`next_check_at`), and `GET /v1/coverage` lists the last run of every ingest\nlane. The refresh policy is seasonal:\n\n| Data | Inside its churn window | Otherwise |\n|---|---|---|\n| Rosters | every 24 hours | every 7 days |\n| Coaching staffs | every 7 days (Mar 1 to Jun 30) | every 14 days |\n| Season statistics | every 7 days in season | every 14 days |\n| Schedules and box scores | every 24 hours, sport lanes every 4 to 6 hours in season | daily |\n| Movements | observed at scrape time, identity resolution every 6 hours | editorial publish |\n\nMovement events carry both `observed_at` (when the roster or staff page\nchanged) and `published_at` (when the event cleared identity resolution and\nentered the curated feed). Enterprise keys can read the resolver stream\ndirectly with `status=resolved` or `status=observed` on `GET /v1/movements`.\n\n## Schools and external identifiers\n\nEvery team carries a `school` object with our school id, a stable slug, the\nschool's athletics domain, and its federal IPEDS UNITID (`ipeds_unitid`)\nwhere the institution is in the federal universe (about 87% of schools, and\n93% of NCAA programs). `GET /v1/schools` lists institutions with a\n`ipeds_unitid` lookup, and `GET /v1/schools/{school_id}` returns every program\na school fields across sports and divisions, so you can join on UNITID first\nand fall back to name, state, and conference only for the remainder.\n\n## Coach contacts (Enterprise)\n\nCoach contact fields (`email` and `phone` on `GET /v1/teams/{team_id}/coaches`)\nare returned in three cases. Two of them are per-athlete outreach permissions\nbacked by a verified player claim; the third is a licensed directory.\n\n**Your own verified claim.** A key whose owner is a verified player and carries\n`outreach.coach.read` reads contacts for that athlete, free, as in the app.\n\n**Managed athletes.** A platform that represents many athletes obtains the\nbacking per athlete. Invite a player profile with `POST /v1/athletes`; the\nathlete receives an email at an address we can vouch for (their on-file\ncontact, their school .edu address, or the account that already claimed the\nprofile) and accepts on magisterial.ai, which also completes their verified\nclaim. From then on any key on the account that carries `outreach.coach.read`\nmay pass `on_behalf_of=<player_id>` to read coach contacts for that athlete.\nEvery such read is logged, visible to the athlete, and billed at $0.05 per\nrequest. Athletes can withdraw the authorization at any time; a revoked or\nunclaimed grant denies on the next call. Requires the Enterprise plan and the\n`managed_athlete.manage` key scope; seats default to 250 per account.\n\n**Licensed coach contact directory.** An Enterprise agreement can license the\ndirectory itself. The account's plan then carries\n`coach_contact_directory: true`, and a key with the exact\n`coach.contact.directory_read` scope reads coach contacts on\n`GET /v1/teams/{team_id}/coaches` without `on_behalf_of`. Licensed reads are\nstill per request and metered at $0.05 each, still honor a coach's own\ncontact opt-out, are logged per request, and are never included in bulk\nexports. The licence is arranged per customer under a data-use agreement\n(permitted use, no resale, complaint handling) and can be switched off on the\nplan at any time.\n\n## Pagination\n\nList endpoints paginate with an opaque `cursor`. Pass the `next_cursor` from\none response as the `cursor` of the next request; `has_more` signals whether\nanother page exists.\n\n## Errors\n\nEvery 4xx/5xx returns a JSON envelope:\n\n```json\n{ \"error\": { \"type\": \"invalid_request\", \"code\": \"invalid_scope\", \"message\": \"...\" } }\n```\n\nThe one exception is request validation (422), which uses FastAPI's standard\n`{\"detail\": [...]}` shape. Rate-limited responses (429) include\n`X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`, and\n`Retry-After` headers.\n\n## Plans\n\nEvery key inherits its owner's Developer-API plan. Three plans exist:\n\n| Plan | Price | Read limit | Monthly requests | Usage-billed endpoints |\n|---|---|---|---|---|\n| Free | $0, every account | 10 / minute | 1,000 | Not available |\n| Developer | $99.99 / month | 300 / minute | 250,000 | Available |\n| Enterprise | Contact sales | Custom (1,000 / minute default) | Unlimited | Available, custom ceilings |\n\nThe free read endpoints (players, season stats, teams, schools, rosters,\ncoaches, games, careers, transfers, published movements, reference data) are on every plan at\nthe plan's limits. Every response carries `X-Magisterial-Plan`; plans with a\nmonthly quota add `X-Monthly-Quota-Limit` and `X-Monthly-Quota-Remaining`,\nand a capped account receives 429 `monthly_quota_exceeded` until the UTC\ncalendar month rolls over. Plans and prices:\n[magisterial.ai/pricing/developers](https://magisterial.ai/pricing/developers).\nUpgrade in the developer console\n([magisterial.ai/console/billing](https://magisterial.ai/console/billing));\nEnterprise is arranged per customer.\n\n## Billing\n\nEndpoints marked *usage-billed* (`/v1/portal`, `/v1/query`, `/v1/alerts`,\n`/v1/exports`) are open on the Developer and Enterprise plans only (a Free key\nreceives 403 `plan_required`), require usage billing to be enabled on the\naccount, and meter usage against a monthly budget you set. List prices: portal\n$0.05 per request, coach contacts (delegated or licensed) $0.05 per request,\nalerts $5 per active alert per month, exports $0.10 per\nstarted 10,000-row block (billed on success only), query at model cost with a\n3x markup. Buying the Developer plan enables usage billing on the same\nsubscription. Billing-not-enabled and past-due states return 403; an exhausted monthly\nbudget returns 402.\n\nBilling is additive, not authorization. In particular, `/v1/portal` and API\nportal alerts are subscription-bound: the key must delegate the relevant\nportal capability and the current actor must be an active, verified coach on\nan account with the Max plan for the requested sport. Enabling usage billing\nby itself never grants portal or athlete-contact access. Athlete contacts\nrequire the separate `portal.contact.read` scope under the same actor and\nplan policy.\n\n## Bulk exports\n\nFor full-dataset pulls, use the bulk lane instead of walking paginated\nendpoints: `POST /v1/exports` starts an async job that writes one dataset\n(players, teams, games, or coaches) in one sport/division scope to a gzipped\nCSV or JSONL file, and `GET /v1/exports/{export_id}` returns a short-lived\nsigned download URL once it succeeds. Billed on success by result size\n(per started 10,000-row block); failed exports are never billed.\n\n## Webhooks\n\nInstead of polling, register webhook endpoints in the\n[console](https://magisterial.ai/console/webhooks) to receive signed events:\n`alert.triggered` when a watch alert finds new portal matches, and\n`query.completed` when an async query run finishes. Payloads carry a\n`Magisterial-Signature` header (`t=<ts>,v1=<hmac_sha256_hex>` over\n`{t}.{raw_body}`, keyed with the endpoint's `whsec_` secret); failed\ndeliveries retry with backoff for about two days. See the webhooks guide at\n[magisterial.ai/docs](https://magisterial.ai/docs#webhooks-guide).\n",
     "summary": "College sports data: players, teams, careers, games, the transfer portal, and natural-language query.",
     "title": "Magisterial Developer API",
     "version": "1.0.0"
@@ -3511,6 +4512,534 @@
         ]
       }
     },
+    "/v1/athletes": {
+      "get": {
+        "description": "Every athlete who has been invited to, or has authorized, your account,\nnewest first. `active` grants are the ones `on_behalf_of` accepts.",
+        "operationId": "list_managed_athletes",
+        "parameters": [
+          {
+            "description": "Filter: invited | active | declined | revoked | expired.",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter: invited | active | declined | revoked | expired.",
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagedAthletePage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid request \u2014 unknown sport/gender/division scope, bad cursor, or bad parameter."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed, or revoked API key."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded. See the X-RateLimit-* and Retry-After headers."
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "List your managed athletes",
+        "tags": [
+          "Managed athletes"
+        ]
+      },
+      "post": {
+        "description": "Send one athlete an invitation to authorize your platform. The email\ngoes to an address we can vouch for (the athlete's on-file contact, their\nschool .edu address, or the account that already claimed the profile);\naccepting it also completes the athlete's verified claim. The grant starts\nas `invited` and becomes `active` when the athlete accepts. Re-inviting a\ndeclined, revoked, or expired athlete reuses the same grant id.",
+        "operationId": "create_managed_athlete",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManagedAthleteCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagedAthleteEntry"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid request \u2014 unknown sport/gender/division scope, bad cursor, or bad parameter."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed, or revoked API key."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded. See the X-RateLimit-* and Retry-After headers."
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Invite an athlete to authorize your account",
+        "tags": [
+          "Managed athletes"
+        ]
+      }
+    },
+    "/v1/athletes/{grant_id}": {
+      "delete": {
+        "description": "End the authorization (or cancel a pending invitation). Delegated\nreads for the athlete fail from the next request; the grant stays listed\nas `revoked` for your records.",
+        "operationId": "revoke_managed_athlete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "grant_id",
+            "required": true,
+            "schema": {
+              "title": "Grant Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagedAthleteRevokeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid request \u2014 unknown sport/gender/division scope, bad cursor, or bad parameter."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed, or revoked API key."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded. See the X-RateLimit-* and Retry-After headers."
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Revoke an athlete authorization",
+        "tags": [
+          "Managed athletes"
+        ]
+      },
+      "get": {
+        "description": "One grant by id, including its current status and timestamps.",
+        "operationId": "get_managed_athlete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "grant_id",
+            "required": true,
+            "schema": {
+              "title": "Grant Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagedAthleteEntry"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid request \u2014 unknown sport/gender/division scope, bad cursor, or bad parameter."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed, or revoked API key."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded. See the X-RateLimit-* and Retry-After headers."
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Get one managed athlete",
+        "tags": [
+          "Managed athletes"
+        ]
+      }
+    },
+    "/v1/athletes/{grant_id}/access": {
+      "get": {
+        "description": "Every request that returned contact fields on this athlete's behalf,\nnewest first. The athlete sees the same log in their settings.",
+        "operationId": "list_managed_athlete_access",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "grant_id",
+            "required": true,
+            "schema": {
+              "title": "Grant Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagedAthleteAccessPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid request \u2014 unknown sport/gender/division scope, bad cursor, or bad parameter."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed, or revoked API key."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded. See the X-RateLimit-* and Retry-After headers."
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Audit log of delegated reads for one athlete",
+        "tags": [
+          "Managed athletes"
+        ]
+      }
+    },
+    "/v1/athletes/{grant_id}/resend": {
+      "post": {
+        "description": "Issue a fresh 14-day invitation link to the same address. Only\n`invited` grants can be resent; re-invite a declined, revoked, or expired\nathlete with POST /v1/athletes instead.",
+        "operationId": "resend_managed_athlete_invite",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "grant_id",
+            "required": true,
+            "schema": {
+              "title": "Grant Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagedAthleteEntry"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid request \u2014 unknown sport/gender/division scope, bad cursor, or bad parameter."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed, or revoked API key."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded. See the X-RateLimit-* and Retry-After headers."
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Resend a pending invitation",
+        "tags": [
+          "Managed athletes"
+        ]
+      }
+    },
     "/v1/conferences": {
       "get": {
         "description": "Conference names present in the requested sport/division scope \u2014 valid\nvalues for `conference` filters on other endpoints.",
@@ -3622,7 +5151,7 @@
     },
     "/v1/coverage": {
       "get": {
-        "description": "Full data-coverage matrix: per sport and division, how many teams,\ncoaches, games, and players we hold, with season ranges, per-season\nbreakdowns, and transfer-portal tracking counts. Free and keyless \u2014 the\ntry-before-you-key agent hook (anonymous callers rate-limit by IP);\ncounts refresh roughly every 6 hours.",
+        "description": "Full data-coverage matrix: per sport and division, how many teams,\ncoaches, games, and players we hold, with season ranges, per-season\nbreakdowns, and transfer-portal tracking counts, plus `freshness`: the\nlast run of every ingest lane (live) and the seasonal cadence policy.\nFree and keyless \u2014 the try-before-you-key agent hook (anonymous callers\nrate-limit by IP). The count totals are a cached snapshot refreshed about\nevery 6 hours; record-level freshness lives on each team, roster, and\ncoaching-staff response.",
         "operationId": "get_coverage",
         "responses": {
           "200": {
@@ -4500,7 +6029,7 @@
     },
     "/v1/movements": {
       "get": {
-        "description": "Roster and coaching-staff movements our editors (or the auto-publish\npolicy: confirmed head-coach changes, portal-corroborated transfers) have\npublished, newest first. Cross-division; no scope parameters. `person_id`\nlinks into GET /v1/persons/{person_id}; `transfer_id` is the transfer\nedge a player movement minted.",
+        "description": "Roster and coaching-staff movements, newest first. Cross-division; no\nscope parameters. The default `published` tier is the curated feed our\neditors (or the auto-publish policy: confirmed head-coach changes,\nportal-corroborated transfers) released. Enterprise keys can read the\nresolver stream with `status=resolved` (identity resolved but not\neditorially published) or `status=observed` (every non-dismissed event,\nincluding pending ones), each row carrying its `resolution_status` so you\nchoose the confidence threshold. `person_id` links into\nGET /v1/persons/{person_id}; `transfer_id` is the transfer edge a player\nmovement minted.",
         "operationId": "list_movements",
         "parameters": [
           {
@@ -4540,7 +6069,7 @@
             }
           },
           {
-            "description": "ISO datetime; only movements published on/after.",
+            "description": "ISO datetime; only movements at/after this time. Compared against published_at on the published tier and observed_at on the resolved and observed tiers.",
             "in": "query",
             "name": "since",
             "required": false,
@@ -4553,8 +6082,20 @@
                   "type": "null"
                 }
               ],
-              "description": "ISO datetime; only movements published on/after.",
+              "description": "ISO datetime; only movements at/after this time. Compared against published_at on the published tier and observed_at on the resolved and observed tiers.",
               "title": "Since"
+            }
+          },
+          {
+            "description": "Feed tier: 'published' (curated, every plan), 'resolved' (identity resolution finished; Enterprise), or 'observed' (every non-dismissed event including pending ones; Enterprise).",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "default": "published",
+              "description": "Feed tier: 'published' (curated, every plan), 'resolved' (identity resolution finished; Enterprise), or 'observed' (every non-dismissed event including pending ones; Enterprise).",
+              "title": "Status",
+              "type": "string"
             }
           },
           {
@@ -5545,6 +7086,229 @@
         ]
       }
     },
+    "/v1/schools": {
+      "get": {
+        "description": "Institutions, alphabetical, with the federal IPEDS UNITID where matched.\nCross-division and cross-sport; no scope parameters. Look a school up by\n`ipeds_unitid` to map your own records onto ours, then fetch its programs\nwith GET /v1/schools/{school_id}.",
+        "operationId": "list_schools",
+        "parameters": [
+          {
+            "description": "Case-insensitive name contains.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 80,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Case-insensitive name contains.",
+              "title": "Q"
+            }
+          },
+          {
+            "description": "Two-letter US state code.",
+            "in": "query",
+            "name": "state",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 2,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Two-letter US state code.",
+              "title": "State"
+            }
+          },
+          {
+            "description": "Exact federal IPEDS UNITID.",
+            "in": "query",
+            "name": "ipeds_unitid",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Exact federal IPEDS UNITID.",
+              "title": "Ipeds Unitid"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchoolPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed, or revoked API key."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded. See the X-RateLimit-* and Retry-After headers."
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "List schools",
+        "tags": [
+          "Schools"
+        ]
+      }
+    },
+    "/v1/schools/{school_id}": {
+      "get": {
+        "description": "One institution plus every program it fields across sports and\ndivisions (team ids for the scoped team endpoints). Identity only; stats\nstay behind the sport/division-scoped endpoints.",
+        "operationId": "get_school",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "school_id",
+            "required": true,
+            "schema": {
+              "title": "School Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchoolDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed, or revoked API key."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "No resource with that id in the requested scope."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded. See the X-RateLimit-* and Retry-After headers."
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Get a school and its programs",
+        "tags": [
+          "Schools"
+        ]
+      }
+    },
     "/v1/sports": {
       "get": {
         "description": "Every sport the API covers, with the genders each one carries. Use these\nvalues for the `sport` and `gender` scope parameters on other endpoints.",
@@ -5594,7 +7358,7 @@
     },
     "/v1/teams": {
       "get": {
-        "description": "Teams in the requested sport/division scope, alphabetical, optionally\nfiltered to one conference. Paginates with an opaque `cursor`.",
+        "description": "Teams in the requested sport/division scope, alphabetical, optionally\nfiltered to one conference or to one school by IPEDS UNITID. Each team\ncarries its `school` (id, slug, athletics domain, IPEDS UNITID).\nPaginates with an opaque `cursor`.",
         "operationId": "list_teams",
         "parameters": [
           {
@@ -5653,6 +7417,24 @@
               ],
               "description": "Filter to one conference.",
               "title": "Conference"
+            }
+          },
+          {
+            "description": "Filter to the school with this federal IPEDS UNITID.",
+            "in": "query",
+            "name": "ipeds_unitid",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter to the school with this federal IPEDS UNITID.",
+              "title": "Ipeds Unitid"
             }
           },
           {
@@ -5749,7 +7531,7 @@
     },
     "/v1/teams/{team_id}": {
       "get": {
-        "description": "One team plus its per-season document/stat records. The team must be\nvisible in the requested sport/division scope.",
+        "description": "One team plus its per-season document/stat records, its `school`\n(with IPEDS UNITID), and per data kind `freshness`. The team must be\nvisible in the requested sport/division scope.",
         "operationId": "get_team",
         "parameters": [
           {
@@ -5877,7 +7659,7 @@
     },
     "/v1/teams/{team_id}/coaches": {
       "get": {
-        "description": "Coaching staff for one team-season, head coach first. Defaults to the\nlatest season held; pass `season` for a historical staff. `email` is\npopulated only when the key and active verified player role both allow\ncoach-outreach contact reads.",
+        "description": "Coaching staff for one team-season, head coach first. Defaults to the\nlatest season held; pass `season` for a historical staff. `email` and\n`phone` are populated in three cases: the key owner's own verified player\nclaim allows coach-outreach reads; `on_behalf_of` names a managed athlete\nwho authorized the account (Enterprise); or the account's Enterprise\nagreement licenses the coach contact directory and the key carries the\nexact `coach.contact.directory_read` scope (see the Coach contacts\nsection). Delegated and licensed reads are usage-billed per request. A\ndelegated request that cannot be authorized fails with 403 rather than\nsilently returning nulls. `freshness` says when the staff page was last\nread.",
         "operationId": "get_team_coaches",
         "parameters": [
           {
@@ -5945,6 +7727,24 @@
               ],
               "description": "Season to return (championship year, e.g. '2025'); defaults to the latest held.",
               "title": "Season"
+            }
+          },
+          {
+            "description": "Enterprise: player id of a managed athlete who has authorized your account. Contact fields are then evaluated against that athlete's verified claim, audited, and billed at the delegated coach-contact rate.",
+            "in": "query",
+            "name": "on_behalf_of",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Enterprise: player id of a managed athlete who has authorized your account. Contact fields are then evaluated against that athlete's verified claim, audited, and billed at the delegated coach-contact rate.",
+              "title": "On Behalf Of"
             }
           }
         ],
@@ -6023,7 +7823,7 @@
     },
     "/v1/teams/{team_id}/roster": {
       "get": {
-        "description": "Roster for one team-season \u2014 identity fields only, never contact info.\nDefaults to the latest season held and paginates with an opaque `cursor`.",
+        "description": "Roster for one team-season \u2014 identity fields only, never contact info.\nDefaults to the latest season held and paginates with an opaque `cursor`.\n`freshness` says when the roster page was last read and when the next\ncheck is due.",
         "operationId": "get_team_roster",
         "parameters": [
           {
@@ -6214,15 +8014,19 @@
       "name": "Players"
     },
     {
-      "description": "Teams, rosters, and per-season team records.",
+      "description": "Teams, rosters, coaching staffs, and per-season team records, each with record-level freshness.",
       "name": "Teams"
+    },
+    {
+      "description": "Institutions behind the teams, with the federal IPEDS UNITID for joining to external records and every program a school fields.",
+      "name": "Schools"
     },
     {
       "description": "Cross-program careers and transfer histories, spanning divisions.",
       "name": "Persons"
     },
     {
-      "description": "Published roster and coaching-staff movements \u2014 confirmed head-coach changes and transfers, newest first.",
+      "description": "Roster and coaching-staff movements. The default feed is curated (confirmed head-coach changes and transfers); Enterprise keys can read the resolved and observed resolver tiers.",
       "name": "Movements"
     },
     {
@@ -6244,6 +8048,10 @@
     {
       "description": "Async bulk exports: one dataset per job, gzipped CSV/JSONL, signed download URL. Usage-billed by size.",
       "name": "Exports"
+    },
+    {
+      "description": "Enterprise only: invite athletes to authorize your platform, then read coach contacts on their behalf with on_behalf_of. Every delegated read is audited and usage-billed. Enterprise agreements can also license the coach contact directory itself (see the Coach contacts section).",
+      "name": "Managed athletes"
     }
   ]
 }

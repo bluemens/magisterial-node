@@ -14,6 +14,8 @@ import type { ScopeParams } from "./players.js";
 
 export interface TeamListParams extends ScopeParams {
   conference?: string;
+  /** Filter to the school with this federal IPEDS UNITID. */
+  ipeds_unitid?: number;
   limit?: number;
   cursor?: string;
 }
@@ -57,10 +59,13 @@ export class Teams {
   }
 
   /** A team's coaching staff for a season (defaults to the most recent
-   * season on record). */
+   * season on record). `on_behalf_of` (Enterprise): the player id of a
+   * managed athlete who has authorized your account — contact fields are
+   * then evaluated against that athlete's verified claim, audited, and
+   * billed at the delegated coach-contact rate. */
   coaches(
     teamId: number,
-    params: ScopeParams & { season?: string },
+    params: ScopeParams & { season?: string; on_behalf_of?: number },
   ): Promise<TeamCoachesResponse> {
     return this.client.get(`/v1/teams/${teamId}/coaches`, { ...params });
   }

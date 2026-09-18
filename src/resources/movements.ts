@@ -11,6 +11,10 @@ export interface MovementListParams {
   sportPath?: string;
   /** ISO datetime; only movements published on/after. */
   since?: string;
+  /** Feed tier: 'published' (curated, every plan), 'resolved' (identity
+   * resolution finished; Enterprise), or 'observed' (every non-dismissed
+   * event including pending ones; Enterprise). Defaults to 'published'. */
+  status?: "published" | "resolved" | "observed";
   limit?: number;
   cursor?: string;
 }
@@ -32,6 +36,7 @@ export class Movements {
             kind: query.kind,
             sport_path: query.sportPath,
             since: query.since,
+            status: query.status,
             limit: query.limit,
             cursor: query.cursor,
           },

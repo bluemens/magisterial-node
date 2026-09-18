@@ -9,6 +9,7 @@ import {
   errorFromResponse,
 } from "./error.js";
 import { Alerts } from "./resources/alerts.js";
+import { Athletes } from "./resources/athletes.js";
 import { Exports } from "./resources/exports.js";
 import { Games } from "./resources/games.js";
 import { Movements } from "./resources/movements.js";
@@ -17,6 +18,7 @@ import { Players } from "./resources/players.js";
 import { Portal } from "./resources/portal.js";
 import { Query } from "./resources/query.js";
 import { Reference } from "./resources/reference.js";
+import { Schools } from "./resources/schools.js";
 import { Teams } from "./resources/teams.js";
 import { VERSION } from "./version.js";
 
@@ -64,6 +66,8 @@ export class Magisterial {
   readonly query: Query;
   readonly alerts: Alerts;
   readonly exports: Exports;
+  readonly schools: Schools;
+  readonly athletes: Athletes;
 
   #apiKey: string;
   #fetch: typeof globalThis.fetch;
@@ -96,6 +100,8 @@ export class Magisterial {
     this.query = new Query(this);
     this.alerts = new Alerts(this);
     this.exports = new Exports(this);
+    this.schools = new Schools(this);
+    this.athletes = new Athletes(this);
   }
 
   /** Perform a request and return decoded JSON, retrying 429/5xx and network

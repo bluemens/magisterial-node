@@ -34,6 +34,21 @@ export type GamePage = Schemas["GamePage"];
 export type TeamCoachEntry = Schemas["TeamCoachEntry"];
 export type TeamCoachesResponse = Schemas["TeamCoachesResponse"];
 
+export type SchoolRef = Schemas["SchoolRef"];
+export type SchoolTeamRef = Schemas["SchoolTeamRef"];
+export type SchoolDetail = Schemas["SchoolDetail"];
+export type SchoolPage = Schemas["SchoolPage"];
+
+export type FreshnessInfo = Schemas["FreshnessInfo"];
+export type TeamFreshness = Schemas["TeamFreshness"];
+
+export type ManagedAthleteCreateRequest = Schemas["ManagedAthleteCreateRequest"];
+export type ManagedAthleteEntry = Schemas["ManagedAthleteEntry"];
+export type ManagedAthletePage = Schemas["ManagedAthletePage"];
+export type ManagedAthleteRevokeResponse = Schemas["ManagedAthleteRevokeResponse"];
+export type ManagedAthleteAccessEntry = Schemas["ManagedAthleteAccessEntry"];
+export type ManagedAthleteAccessPage = Schemas["ManagedAthleteAccessPage"];
+
 export type ExportCreateRequest = Schemas["ExportCreateRequest"];
 export type ExportCreateResponse = Schemas["ExportCreateResponse"];
 export type ExportJobStatus = Schemas["ExportJobStatus"];

@@ -2,8 +2,9 @@
 
 The official TypeScript/JavaScript library for the [Magisterial](https://magisterial.ai)
 developer API — college sports data across NCAA D1/D2/D3, NAIA, and NJCAA: players,
-teams, rosters, cross-program careers, games, the live transfer portal, and an
-agent-backed natural-language query endpoint.
+teams, rosters, schools, cross-program careers, games, the live transfer portal, an
+agent-backed natural-language query endpoint, and (Enterprise) managed-athlete
+authorizations for delegated coach-contact lookups.
 
 - Interactive API reference: https://api.magisterial.ai/v1/docs
 - OpenAPI spec: https://api.magisterial.ai/v1/openapi.json
@@ -58,6 +59,19 @@ const run = await client.query.createAndPoll({
   gender: "men",
 });
 console.log(run.answer);
+
+// Schools: look a school up by its federal IPEDS UNITID, then list its programs
+const schools = await client.schools.list({ ipedsUnitid: 164465 });
+const school = await client.schools.get(schools.data[0].id);
+
+// Managed athletes (Enterprise): invite an athlete to authorize your account,
+// then read coach contacts on their behalf
+const grant = await client.athletes.create({ player_id: 184223 });
+const staff = await client.teams.coaches(1873, {
+  sport: "soccer",
+  division: "D3",
+  on_behalf_of: grant.player_id!,
+});
 ```
 
 ### Errors

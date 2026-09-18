@@ -324,6 +324,162 @@ describe("0.2.0 endpoints", () => {
   });
 });
 
+describe("0.4.0 endpoints", () => {
+  it("lists schools with filters, mapping ipedsUnitid to ipeds_unitid", async () => {
+    const { client } = makeClient((url, init) => {
+      expect(init.method).toBe("GET");
+      expect(url).toContain("/v1/schools?");
+      expect(url).toContain("q=Amherst");
+      expect(url).toContain("state=MA");
+      expect(url).toContain("ipeds_unitid=164465");
+      return json(200, {
+        data: [{ id: 812, name: "Amherst College", state: "MA", ipeds_unitid: 164465 }],
+        next_cursor: null,
+        has_more: false,
+      });
+    });
+    const page = await client.schools.list({ q: "Amherst", state: "MA", ipedsUnitid: 164465 });
+    expect(page.data[0].name).toBe("Amherst College");
+  });
+
+  it("gets one school with its programs", async () => {
+    const { client } = makeClient((url) => {
+      expect(url).toContain("/v1/schools/812");
+      return json(200, {
+        id: 812,
+        name: "Amherst College",
+        teams: [{ id: 1873, name: "Amherst", sport_path: "mens-soccer" }],
+      });
+    });
+    const school = await client.schools.get(812);
+    expect(school.teams?.[0].sport_path).toBe("mens-soccer");
+  });
+
+  it("creates a managed athlete invitation and is not auto-retried", async () => {
+    let calls = 0;
+    let seenBody: Record<string, unknown> = {};
+    const { client } = makeClient((url, init) => {
+      calls++;
+      expect(init.method).toBe("POST");
+      expect(url).toContain("/v1/athletes");
+      seenBody = JSON.parse(String(init.body));
+      return json(429, errorBody("rate_limited", "rate_limit_exceeded", "Slow down."));
+    });
+    const error = await client.athletes
+      .create({ player_id: 13232, sport_path: "mens-soccer", organization_name: "Northstar" })
+      .catch((e) => e);
+    expect(error).toBeInstanceOf(RateLimitError);
+    expect(calls).toBe(1);
+    expect(seenBody).toEqual({
+      player_id: 13232,
+      sport_path: "mens-soccer",
+      organization_name: "Northstar",
+    });
+  });
+
+  it("creates a managed athlete invitation successfully", async () => {
+    const { client } = makeClient(() =>
+      json(201, { id: "grant_1", status: "invited", player_id: 13232 }),
+    );
+    const entry = await client.athletes.create({ player_id: 13232 });
+    expect(entry.id).toBe("grant_1");
+    expect(entry.status).toBe("invited");
+  });
+
+  it("lists managed athletes filtered by status", async () => {
+    const { client } = makeClient((url, init) => {
+      expect(init.method).toBe("GET");
+      expect(url).toContain("/v1/athletes?");
+      expect(url).toContain("status=active");
+      return json(200, {
+        data: [{ id: "grant_1", status: "active" }],
+        next_cursor: null,
+        has_more: false,
+      });
+    });
+    const page = await client.athletes.list({ status: "active" });
+    expect(page.data[0].status).toBe("active");
+  });
+
+  it("gets one managed athlete by grant id", async () => {
+    const { client } = makeClient((url) => {
+      expect(url).toContain("/v1/athletes/grant_1");
+      return json(200, { id: "grant_1", status: "active" });
+    });
+    const entry = await client.athletes.get("grant_1");
+    expect(entry.status).toBe("active");
+  });
+
+  it("resends a managed athlete invite and is not auto-retried", async () => {
+    let calls = 0;
+    const { client } = makeClient((url, init) => {
+      calls++;
+      expect(init.method).toBe("POST");
+      expect(url).toContain("/v1/athletes/grant_1/resend");
+      return json(429, errorBody("rate_limited", "rate_limit_exceeded", "Slow down."));
+    });
+    const error = await client.athletes.resendInvite("grant_1").catch((e) => e);
+    expect(error).toBeInstanceOf(RateLimitError);
+    expect(calls).toBe(1);
+  });
+
+  it("revokes a managed athlete authorization", async () => {
+    const { client } = makeClient((url, init) => {
+      expect(init.method).toBe("DELETE");
+      expect(url).toContain("/v1/athletes/grant_1");
+      return json(200, { id: "grant_1", status: "revoked" });
+    });
+    const result = await client.athletes.revoke("grant_1");
+    expect(result.status).toBe("revoked");
+  });
+
+  it("lists a managed athlete's delegated-access audit log", async () => {
+    const { client } = makeClient((url) => {
+      expect(url).toContain("/v1/athletes/grant_1/access?");
+      expect(url).toContain("limit=10");
+      return json(200, {
+        data: [{ id: 1, grant_id: "grant_1", capability: "team_coaches" }],
+        next_cursor: null,
+        has_more: false,
+      });
+    });
+    const page = await client.athletes.listAccess("grant_1", { limit: 10 });
+    expect(page.data[0].capability).toBe("team_coaches");
+  });
+
+  it("fetches team coaches on behalf of a managed athlete", async () => {
+    const { client } = makeClient((url) => {
+      expect(url).toContain("/v1/teams/1873/coaches?");
+      expect(url).toContain("on_behalf_of=13232");
+      return json(200, { season: "2025-26", data: [{ name: "Sam Blake", role: "Head Coach" }] });
+    });
+    const staff = await client.teams.coaches(1873, {
+      sport: "soccer",
+      division: "D3",
+      on_behalf_of: 13232,
+    });
+    expect(staff.data![0].name).toBe("Sam Blake");
+  });
+
+  it("lists teams filtered by IPEDS UNITID", async () => {
+    const { client } = makeClient((url) => {
+      expect(url).toContain("/v1/teams?");
+      expect(url).toContain("ipeds_unitid=164465");
+      return json(200, { data: [], next_cursor: null, has_more: false });
+    });
+    await client.teams.list({ sport: "soccer", division: "D3", ipeds_unitid: 164465 });
+  });
+
+  it("lists movements filtered by feed tier", async () => {
+    const { client } = makeClient((url) => {
+      expect(url).toContain("/v1/movements?");
+      expect(url).toContain("status=resolved");
+      return json(200, { data: [], next_cursor: null, has_more: false });
+    });
+    await client.movements.list({ status: "resolved" });
+  });
+});
+
 describe("query polling", () => {
   it("createAndPoll reaches done", async () => {
     const statuses = ["queued", "running", "done"][Symbol.iterator]();

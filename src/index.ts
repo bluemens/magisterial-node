@@ -31,6 +31,12 @@ export type { AlertCreateParams } from "./resources/alerts.js";
 export type { GameListParams } from "./resources/games.js";
 export type { MovementListParams } from "./resources/movements.js";
 export type { ExportCreateParams, ExportPollOptions } from "./resources/exports.js";
+export type { SchoolListParams } from "./resources/schools.js";
+export type {
+  ManagedAthleteCreateParams,
+  ManagedAthleteListParams,
+  ManagedAthleteAccessListParams,
+} from "./resources/athletes.js";
 
 import { Magisterial } from "./client.js";
 export default Magisterial;
