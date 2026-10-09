@@ -211,6 +211,10 @@ export interface paths {
          *     rate-limit by IP). The count totals are a cached snapshot refreshed about
          *     every 6 hours; record-level freshness lives on each team, roster, and
          *     coaching-staff response.
+         *
+         *     `sport`, `gender` and `division` pick rows out of the matrix; they never
+         *     recompute a count, so every number still describes the row it sits on
+         *     (a sport's own totals stay its totals across all divisions).
          */
         get: operations["get_coverage"];
         put?: never;
@@ -305,6 +309,9 @@ export interface paths {
          * Queryable filter fields for a sport
          * @description The filter and stat vocabulary per sport — the keys accepted by
          *     POST /v1/players/search (`sort_by`, filter fields) and by alert `filters`.
+         *     `divisions_by_sport_gender` gives the divisions each gender of a sport is
+         *     offered in (men's volleyball has fewer than women's; lacrosse is the same
+         *     for both genders).
          */
         get: operations["get_filter_catalog"];
         put?: never;
@@ -369,8 +376,10 @@ export interface paths {
         };
         /**
          * List published movements
-         * @description Roster and coaching-staff movements, newest first. Cross-division; no
-         *     scope parameters. The default `published` tier is the curated feed our
+         * @description Roster and coaching-staff movements, newest first. Cross-sport and
+         *     cross-division: no scope is required, and every filter is optional, so
+         *     `school_id=` alone is one school's movements in all of its sports. The
+         *     default `published` tier is the curated feed our
          *     editors (or the auto-publish policy: confirmed head-coach changes,
          *     portal-corroborated transfers) released. Enterprise keys can read the
          *     resolver stream with `status=resolved` (identity resolved but not
@@ -443,9 +452,12 @@ export interface paths {
         put?: never;
         /**
          * Search players
-         * @description Filter and rank players within a sport/division scope. Sortable stat
-         *     fields come from GET /v1/filters/catalog. Results paginate with an opaque
-         *     `cursor`; pass `next_cursor` back to fetch the following page.
+         * @description Filter and rank players within a sport/division scope: bio fields by
+         *     name (with a `_not` twin where exclusion makes sense), height through
+         *     `height_inches_min` / `height_inches_max`, and every season stat of the
+         *     sport through `stats`, keyed by the stat fields GET /v1/filters/catalog
+         *     lists. Results paginate with an opaque `cursor`; pass `next_cursor` back
+         *     to fetch the following page.
          */
         post: operations["search_players"];
         delete?: never;
@@ -509,12 +521,13 @@ export interface paths {
          * Transfer portal (subscription-bound and usage-billed)
          * @description Live transfer-portal entries for a sport/division, newest first.
          *
-         *     API billing is required in addition to, not instead of, application
-         *     authority: the key must delegate `portal.entry.read`, and the current
-         *     actor must be an active verified coach on an account with the Max plan for
-         *     the sport. `contacts` additionally requires the exact
-         *     `portal.contact.read` scope under the same actor/plan policy. Use `since`
-         *     for incremental polling.
+         *     Requires a paid plan with API billing enabled; no coaching plan is
+         *     needed. Plus and Premium bill each request; Developer Pro and above
+         *     include it. The key must delegate `portal.entry.read`, and
+         *     the current actor must be an active verified coach. `contacts`
+         *     additionally requires the exact `portal.contact.read` scope under the
+         *     same actor policy. Use `since` for incremental polling. An entry with no
+         *     readable `initiated_date` is left out of an `initiated_date` range.
          */
         get: operations["list_portal_entries"];
         put?: never;
@@ -580,9 +593,14 @@ export interface paths {
         /**
          * List schools
          * @description Institutions, alphabetical, with the federal IPEDS UNITID where matched.
-         *     Cross-division and cross-sport; no scope parameters. Look a school up by
+         *     Cross-division and cross-sport; no scope is required. Look a school up by
          *     `ipeds_unitid` to map your own records onto ours, then fetch its programs
          *     with GET /v1/schools/{school_id}.
+         *
+         *     `sport`, `gender`, `division` and `conference` describe one program: a
+         *     school matches when a single team of its meets all of them, so
+         *     `sport=soccer&gender=women&division=D3` is the schools with a D3 women's
+         *     soccer team.
          */
         get: operations["list_schools"];
         put?: never;
@@ -645,10 +663,10 @@ export interface paths {
         };
         /**
          * List teams
-         * @description Teams in the requested sport/division scope, alphabetical, optionally
-         *     filtered to one conference or to one school by IPEDS UNITID. Each team
-         *     carries its `school` (id, slug, athletics domain, IPEDS UNITID).
-         *     Paginates with an opaque `cursor`.
+         * @description Teams in the requested sport/division scope, alphabetical. Filter by
+         *     name, conference, or the school behind the team (id, IPEDS UNITID, state,
+         *     city, control). Each team carries its `school` (id, slug, athletics
+         *     domain, IPEDS UNITID). Paginates with an opaque `cursor`.
          */
         get: operations["list_teams"];
         put?: never;
@@ -694,13 +712,12 @@ export interface paths {
          *     latest season held; pass `season` for a historical staff. `email` and
          *     `phone` are populated in three cases: the key owner's own verified player
          *     claim allows coach-outreach reads; `on_behalf_of` names a managed athlete
-         *     who authorized the account (Enterprise); or the account's Enterprise
-         *     agreement licenses the coach contact directory and the key carries the
-         *     exact `coach.contact.directory_read` scope (see the Coach contacts
-         *     section). Delegated and licensed reads are usage-billed per request. A
-         *     delegated request that cannot be authorized fails with 403 rather than
-         *     silently returning nulls. `freshness` says when the staff page was last
-         *     read.
+         *     who authorized the account (Enterprise); or the account's Enterprise plan
+         *     includes the coach directory and the key carries the exact
+         *     `coach.contact.directory_read` scope (see the Coach contacts section).
+         *     None of these is metered. A delegated request that cannot be authorized
+         *     fails with 403 rather than silently returning nulls. `freshness` says when
+         *     the staff page was last read.
          */
         get: operations["get_team_coaches"];
         put?: never;
@@ -723,7 +740,8 @@ export interface paths {
          * @description Roster for one team-season — identity fields only, never contact info.
          *     Defaults to the latest season held and paginates with an opaque `cursor`.
          *     `freshness` says when the roster page was last read and when the next
-         *     check is due.
+         *     check is due. Position, class year and jersey filters read the season's
+         *     own roster row, so a past season is filtered by what the player was then.
          */
         get: operations["get_team_roster"];
         put?: never;
@@ -774,7 +792,7 @@ export interface components {
             };
             /**
              * Gender
-             * @description 'men' or 'women'; ignored for single-gender sports.
+             * @description 'men' or 'women'. Defaults to 'men' for a sport with both; ignored for single-gender sports.
              */
             gender?: string | null;
             /**
@@ -928,11 +946,498 @@ export interface components {
         };
         /**
          * ApiErrorResponse
-         * @description Envelope returned for every 4xx/5xx from /v1, except 422 request
-         *     validation errors which use FastAPI's standard `{"detail": [...]}` shape.
+         * @description Envelope returned for every 4xx/5xx from /v1.
          */
         ApiErrorResponse: {
             error: components["schemas"]["ApiErrorDetail"];
+        };
+        /**
+         * ApiValidationErrorResponse
+         * @description A request that failed validation (422): the same envelope, with
+         *     `error.code` 'validation_error' and `error.fields` naming each offending
+         *     field (`field`, `message`, `type`).
+         */
+        ApiValidationErrorResponse: {
+            /**
+             * Detail
+             * @deprecated
+             * @description Deprecated, removed on 2027-01-12: the validation list as FastAPI words it. Read `error.fields`.
+             * @default null
+             */
+            detail: unknown[] | null;
+            error: components["schemas"]["ApiErrorDetail"];
+        };
+        /**
+         * BaseballSoftballStats
+         * @description Season stats for baseball and softball: the stat fields GET /v1/filters/catalog lists for the sport. Every field is present on every row; null means the source did not publish it.
+         */
+        BaseballSoftballStats: {
+            /**
+             * A Field
+             * @description A (Fielding)
+             * @default null
+             */
+            a_field: number | null;
+            /**
+             * Ab
+             * @description AB
+             * @default null
+             */
+            ab: number | null;
+            /**
+             * Ba
+             * @description AVG
+             * @default null
+             */
+            ba: number | null;
+            /**
+             * Baa
+             * @description BAA
+             * @default null
+             */
+            baa: number | null;
+            /**
+             * Bb
+             * @description BB
+             * @default null
+             */
+            bb: number | null;
+            /**
+             * Bb Allowed
+             * @description BB Allowed
+             * @default null
+             */
+            bb_allowed: number | null;
+            /**
+             * Bf
+             * @description Batters Faced
+             * @default null
+             */
+            bf: number | null;
+            /**
+             * Cs
+             * @description CS
+             * @default null
+             */
+            cs: number | null;
+            /**
+             * Cs Field
+             * @description CS (Fielding)
+             * @default null
+             */
+            cs_field: number | null;
+            /**
+             * Doubles
+             * @description 2B
+             * @default null
+             */
+            doubles: number | null;
+            /**
+             * Dp
+             * @description DP
+             * @default null
+             */
+            dp: number | null;
+            /**
+             * E
+             * @description E
+             * @default null
+             */
+            e: number | null;
+            /**
+             * Er
+             * @description ER
+             * @default null
+             */
+            er: number | null;
+            /**
+             * Era
+             * @description ERA
+             * @default null
+             */
+            era: number | null;
+            /**
+             * Fpct
+             * @description FLD%
+             * @default null
+             */
+            fpct: number | null;
+            /**
+             * Gp
+             * @description GP
+             * @default null
+             */
+            gp: number | null;
+            /**
+             * Gp Field
+             * @description GP (Fielding)
+             * @default null
+             */
+            gp_field: number | null;
+            /**
+             * Gp Pitch
+             * @description GP (Pitching)
+             * @default null
+             */
+            gp_pitch: number | null;
+            /**
+             * Gs
+             * @description GS
+             * @default null
+             */
+            gs: number | null;
+            /**
+             * Gs Pitch
+             * @description GS (Pitching)
+             * @default null
+             */
+            gs_pitch: number | null;
+            /**
+             * H
+             * @description H
+             * @default null
+             */
+            h: number | null;
+            /**
+             * H Allowed
+             * @description Hits Allowed
+             * @default null
+             */
+            h_allowed: number | null;
+            /**
+             * Hbp
+             * @description HBP
+             * @default null
+             */
+            hbp: number | null;
+            /**
+             * Hr
+             * @description HR
+             * @default null
+             */
+            hr: number | null;
+            /**
+             * Hr Allowed
+             * @description HR Allowed
+             * @default null
+             */
+            hr_allowed: number | null;
+            /**
+             * Ip
+             * @description IP
+             * @default null
+             */
+            ip: number | null;
+            /**
+             * K So
+             * @description SO
+             * @default null
+             */
+            k_so: number | null;
+            /**
+             * K So Pitch
+             * @description SO (Pitching)
+             * @default null
+             */
+            k_so_pitch: number | null;
+            /**
+             * L
+             * @description L
+             * @default null
+             */
+            l: number | null;
+            /**
+             * Obp
+             * @description OBP
+             * @default null
+             */
+            obp: number | null;
+            /**
+             * Ops
+             * @description OPS
+             * @default null
+             */
+            ops: number | null;
+            /**
+             * Pb
+             * @description PB
+             * @default null
+             */
+            pb: number | null;
+            /**
+             * Po
+             * @description PO
+             * @default null
+             */
+            po: number | null;
+            /**
+             * R
+             * @description R
+             * @default null
+             */
+            r: number | null;
+            /**
+             * R Allowed
+             * @description Runs Allowed
+             * @default null
+             */
+            r_allowed: number | null;
+            /**
+             * Rbi
+             * @description RBI
+             * @default null
+             */
+            rbi: number | null;
+            /**
+             * Sb
+             * @description SB
+             * @default null
+             */
+            sb: number | null;
+            /**
+             * Sba
+             * @description SB Against
+             * @default null
+             */
+            sba: number | null;
+            /**
+             * Sf
+             * @description SF
+             * @default null
+             */
+            sf: number | null;
+            /**
+             * Sh
+             * @description SH
+             * @default null
+             */
+            sh: number | null;
+            /**
+             * Slg
+             * @description SLG
+             * @default null
+             */
+            slg: number | null;
+            /**
+             * Sv
+             * @description SV
+             * @default null
+             */
+            sv: number | null;
+            /**
+             * Tb
+             * @description TB
+             * @default null
+             */
+            tb: number | null;
+            /**
+             * Triples
+             * @description 3B
+             * @default null
+             */
+            triples: number | null;
+            /**
+             * W
+             * @description W
+             * @default null
+             */
+            w: number | null;
+            /**
+             * Whip
+             * @description WHIP
+             * @default null
+             */
+            whip: number | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * BasketballStats
+         * @description Season stats for basketball: the stat fields GET /v1/filters/catalog lists for the sport. Every field is present on every row; null means the source did not publish it.
+         */
+        BasketballStats: {
+            /**
+             * Ast
+             * @description AST
+             * @default null
+             */
+            ast: number | null;
+            /**
+             * Ast Avg
+             * @description APG
+             * @default null
+             */
+            ast_avg: number | null;
+            /**
+             * Blk
+             * @description BLK
+             * @default null
+             */
+            blk: number | null;
+            /**
+             * Blk Avg
+             * @description BPG
+             * @default null
+             */
+            blk_avg: number | null;
+            /**
+             * Def Reb
+             * @description DREB
+             * @default null
+             */
+            def_reb: number | null;
+            /**
+             * Fg Pct
+             * @description FG%
+             * @default null
+             */
+            fg_pct: number | null;
+            /**
+             * Fga
+             * @description FGA
+             * @default null
+             */
+            fga: number | null;
+            /**
+             * Fgm
+             * @description FGM
+             * @default null
+             */
+            fgm: number | null;
+            /**
+             * Fgm Avg
+             * @description FGM/G
+             * @default null
+             */
+            fgm_avg: number | null;
+            /**
+             * Ft Pct
+             * @description FT%
+             * @default null
+             */
+            ft_pct: number | null;
+            /**
+             * Fta
+             * @description FTA
+             * @default null
+             */
+            fta: number | null;
+            /**
+             * Ftm
+             * @description FTM
+             * @default null
+             */
+            ftm: number | null;
+            /**
+             * Gp
+             * @description GP
+             * @default null
+             */
+            gp: number | null;
+            /**
+             * Gs
+             * @description GS
+             * @default null
+             */
+            gs: number | null;
+            /**
+             * Min Avg
+             * @description MPG
+             * @default null
+             */
+            min_avg: number | null;
+            /**
+             * Min Tot
+             * @description Minutes
+             * @default null
+             */
+            min_tot: number | null;
+            /**
+             * Off Reb
+             * @description OREB
+             * @default null
+             */
+            off_reb: number | null;
+            /**
+             * Pf
+             * @description PF
+             * @default null
+             */
+            pf: number | null;
+            /**
+             * Pts
+             * @description PTS
+             * @default null
+             */
+            pts: number | null;
+            /**
+             * Pts Avg
+             * @description PPG
+             * @default null
+             */
+            pts_avg: number | null;
+            /**
+             * Reb Avg
+             * @description RPG
+             * @default null
+             */
+            reb_avg: number | null;
+            /**
+             * Stl
+             * @description STL
+             * @default null
+             */
+            stl: number | null;
+            /**
+             * Stl Avg
+             * @description SPG
+             * @default null
+             */
+            stl_avg: number | null;
+            /**
+             * Three Pt A
+             * @description 3PA
+             * @default null
+             */
+            three_pt_a: number | null;
+            /**
+             * Three Pt M
+             * @description 3PM
+             * @default null
+             */
+            three_pt_m: number | null;
+            /**
+             * Three Pt M Avg
+             * @description 3PM/G
+             * @default null
+             */
+            three_pt_m_avg: number | null;
+            /**
+             * Three Pt Pct
+             * @description 3P%
+             * @default null
+             */
+            three_pt_pct: number | null;
+            /**
+             * Tot Reb
+             * @description REB
+             * @default null
+             */
+            tot_reb: number | null;
+            /**
+             * Turnovers
+             * @description TO
+             * @default null
+             */
+            turnovers: number | null;
+            /**
+             * Turnovers Avg
+             * @description TO/G
+             * @default null
+             */
+            turnovers_avg: number | null;
+        } & {
+            [key: string]: unknown;
         };
         /**
          * ExportCreateRequest
@@ -940,7 +1445,8 @@ export interface components {
          *
          *     One export = one dataset in one sport/division scope, written as a single
          *     gzipped flat file. Use the optional filters to keep large datasets under
-         *     the row cap.
+         *     the row cap. A field this body does not declare is a 422: a mistyped
+         *     filter must not become an unfiltered (and billed) export.
          * @example {
          *       "conference": "NESCAC",
          *       "dataset": "players",
@@ -975,7 +1481,7 @@ export interface components {
             format: string;
             /**
              * Gender
-             * @description 'men' or 'women'; ignored for single-gender sports.
+             * @description 'men' or 'women'. Defaults to 'men' for a sport with both; ignored for single-gender sports.
              */
             gender?: string | null;
             /**
@@ -1017,6 +1523,7 @@ export interface components {
          *       "dataset": "players",
          *       "download_expires_at": "2026-07-21T16:40:00Z",
          *       "download_url": "https://...r2.cloudflarestorage.com/...",
+         *       "error": null,
          *       "expires_at": "2026-07-28T16:20:19Z",
          *       "export_id": "b3f9c1d2-4a5e-4f6b-8c7d-9e0f1a2b3c4d",
          *       "finished_at": "2026-07-21T16:20:19Z",
@@ -1108,6 +1615,392 @@ export interface components {
              * @example eyJvZmZzZXQiOiAyNX0=
              */
             next_cursor?: string | null;
+        };
+        /**
+         * FootballStats
+         * @description Season stats for football: the stat fields GET /v1/filters/catalog lists for the sport. Every field is present on every row; null means the source did not publish it.
+         */
+        FootballStats: {
+            /**
+             * Ff
+             * @description Forced Fumbles
+             * @default null
+             */
+            ff: number | null;
+            /**
+             * Fg Att
+             * @description FG Attempts
+             * @default null
+             */
+            fg_att: number | null;
+            /**
+             * Fg Long
+             * @description Longest FG
+             * @default null
+             */
+            fg_long: number | null;
+            /**
+             * Fg Made
+             * @description FG Made
+             * @default null
+             */
+            fg_made: number | null;
+            /**
+             * Fg Pct
+             * @description FG%
+             * @default null
+             */
+            fg_pct: number | null;
+            /**
+             * Fr
+             * @description Fumble Recoveries
+             * @default null
+             */
+            fr: number | null;
+            /**
+             * Fr Td
+             * @description Fumble Return TD
+             * @default null
+             */
+            fr_td: number | null;
+            /**
+             * Fr Yds
+             * @description Fumble Return Yards
+             * @default null
+             */
+            fr_yds: number | null;
+            /**
+             * Fumbles
+             * @description Fumbles
+             * @default null
+             */
+            fumbles: number | null;
+            /**
+             * Fumbles Lost
+             * @description Fumbles Lost
+             * @default null
+             */
+            fumbles_lost: number | null;
+            /**
+             * Gp
+             * @description GP
+             * @default null
+             */
+            gp: number | null;
+            /**
+             * Gs
+             * @description GS
+             * @default null
+             */
+            gs: number | null;
+            /**
+             * Int Td
+             * @description INT Return TD
+             * @default null
+             */
+            int_td: number | null;
+            /**
+             * Int Yds
+             * @description INT Return Yards
+             * @default null
+             */
+            int_yds: number | null;
+            /**
+             * Interceptions
+             * @description Interceptions
+             * @default null
+             */
+            interceptions: number | null;
+            /**
+             * Kr
+             * @description Kick Returns
+             * @default null
+             */
+            kr: number | null;
+            /**
+             * Kr Avg
+             * @description KR Average
+             * @default null
+             */
+            kr_avg: number | null;
+            /**
+             * Kr Long
+             * @description Longest KR
+             * @default null
+             */
+            kr_long: number | null;
+            /**
+             * Kr Td
+             * @description KR TD
+             * @default null
+             */
+            kr_td: number | null;
+            /**
+             * Kr Yds
+             * @description KR Yards
+             * @default null
+             */
+            kr_yds: number | null;
+            /**
+             * Pass Att
+             * @description Pass Attempts
+             * @default null
+             */
+            pass_att: number | null;
+            /**
+             * Pass Cmp
+             * @description Completions
+             * @default null
+             */
+            pass_cmp: number | null;
+            /**
+             * Pass Cmp Pct
+             * @description Completion %
+             * @default null
+             */
+            pass_cmp_pct: number | null;
+            /**
+             * Pass Int
+             * @description Interceptions Thrown
+             * @default null
+             */
+            pass_int: number | null;
+            /**
+             * Pass Long
+             * @description Longest Pass
+             * @default null
+             */
+            pass_long: number | null;
+            /**
+             * Pass Rating
+             * @description Pass Efficiency
+             * @default null
+             */
+            pass_rating: number | null;
+            /**
+             * Pass Td
+             * @description Passing TD
+             * @default null
+             */
+            pass_td: number | null;
+            /**
+             * Pass Yds
+             * @description Passing Yards
+             * @default null
+             */
+            pass_yds: number | null;
+            /**
+             * Pass Yds Per Att
+             * @description Yards/Attempt
+             * @default null
+             */
+            pass_yds_per_att: number | null;
+            /**
+             * Passes Defended
+             * @description Passes Defended
+             * @default null
+             */
+            passes_defended: number | null;
+            /**
+             * Penalties
+             * @description Penalties
+             * @default null
+             */
+            penalties: number | null;
+            /**
+             * Penalty Yds
+             * @description Penalty Yards
+             * @default null
+             */
+            penalty_yds: number | null;
+            /**
+             * Pr
+             * @description Punt Returns
+             * @default null
+             */
+            pr: number | null;
+            /**
+             * Pr Avg
+             * @description PR Average
+             * @default null
+             */
+            pr_avg: number | null;
+            /**
+             * Pr Long
+             * @description Longest PR
+             * @default null
+             */
+            pr_long: number | null;
+            /**
+             * Pr Td
+             * @description PR TD
+             * @default null
+             */
+            pr_td: number | null;
+            /**
+             * Pr Yds
+             * @description PR Yards
+             * @default null
+             */
+            pr_yds: number | null;
+            /**
+             * Punt Avg
+             * @description Punt Average
+             * @default null
+             */
+            punt_avg: number | null;
+            /**
+             * Punt Long
+             * @description Longest Punt
+             * @default null
+             */
+            punt_long: number | null;
+            /**
+             * Punt Yds
+             * @description Punt Yards
+             * @default null
+             */
+            punt_yds: number | null;
+            /**
+             * Punts
+             * @description Punts
+             * @default null
+             */
+            punts: number | null;
+            /**
+             * Punts Inside 20
+             * @description Punts Inside 20
+             * @default null
+             */
+            punts_inside_20: number | null;
+            /**
+             * Qb Hurries
+             * @description QB Hurries
+             * @default null
+             */
+            qb_hurries: number | null;
+            /**
+             * Rec
+             * @description Receptions
+             * @default null
+             */
+            rec: number | null;
+            /**
+             * Rec Long
+             * @description Longest Reception
+             * @default null
+             */
+            rec_long: number | null;
+            /**
+             * Rec Td
+             * @description Receiving TD
+             * @default null
+             */
+            rec_td: number | null;
+            /**
+             * Rec Yds
+             * @description Receiving Yards
+             * @default null
+             */
+            rec_yds: number | null;
+            /**
+             * Rec Yds Per Rec
+             * @description Yards/Reception
+             * @default null
+             */
+            rec_yds_per_rec: number | null;
+            /**
+             * Rush Att
+             * @description Rush Attempts
+             * @default null
+             */
+            rush_att: number | null;
+            /**
+             * Rush Long
+             * @description Longest Rush
+             * @default null
+             */
+            rush_long: number | null;
+            /**
+             * Rush Td
+             * @description Rushing TD
+             * @default null
+             */
+            rush_td: number | null;
+            /**
+             * Rush Yds
+             * @description Rushing Yards
+             * @default null
+             */
+            rush_yds: number | null;
+            /**
+             * Rush Yds Per Att
+             * @description Yards/Carry
+             * @default null
+             */
+            rush_yds_per_att: number | null;
+            /**
+             * Sack Yds
+             * @description Sack Yards
+             * @default null
+             */
+            sack_yds: number | null;
+            /**
+             * Sacks
+             * @description Sacks
+             * @default null
+             */
+            sacks: number | null;
+            /**
+             * Safeties
+             * @description Safeties
+             * @default null
+             */
+            safeties: number | null;
+            /**
+             * Tackles Assist
+             * @description Assisted Tackles
+             * @default null
+             */
+            tackles_assist: number | null;
+            /**
+             * Tackles Solo
+             * @description Solo Tackles
+             * @default null
+             */
+            tackles_solo: number | null;
+            /**
+             * Tackles Total
+             * @description Total Tackles
+             * @default null
+             */
+            tackles_total: number | null;
+            /**
+             * Tfl
+             * @description TFL
+             * @default null
+             */
+            tfl: number | null;
+            /**
+             * Tfl Yds
+             * @description TFL Yards
+             * @default null
+             */
+            tfl_yds: number | null;
+            /**
+             * Xp Att
+             * @description XP Attempts
+             * @default null
+             */
+            xp_att: number | null;
+            /**
+             * Xp Made
+             * @description XP Made
+             * @default null
+             */
+            xp_made: number | null;
+        } & {
+            [key: string]: unknown;
         };
         /**
          * FreshnessInfo
@@ -1288,10 +2181,229 @@ export interface components {
              */
             id?: unknown | null;
         };
-        /** HTTPValidationError */
-        HTTPValidationError: {
-            /** Detail */
-            detail?: components["schemas"]["ValidationError"][];
+        /**
+         * LacrosseStats
+         * @description Season stats for lacrosse: the stat fields GET /v1/filters/catalog lists for the sport. Every field is present on every row; null means the source did not publish it.
+         */
+        LacrosseStats: {
+            /**
+             * A
+             * @description Assists
+             * @default null
+             */
+            a: number | null;
+            /**
+             * Ct
+             * @description Caused Turnovers
+             * @default null
+             */
+            ct: number | null;
+            /**
+             * Dc
+             * @description Draw Controls
+             * @default null
+             */
+            dc: number | null;
+            /**
+             * Fo Pct
+             * @description Faceoff %
+             * @default null
+             */
+            fo_pct: number | null;
+            /**
+             * Fo Taken
+             * @description Faceoffs Taken
+             * @default null
+             */
+            fo_taken: number | null;
+            /**
+             * Fo Won
+             * @description Faceoffs Won
+             * @default null
+             */
+            fo_won: number | null;
+            /**
+             * Fouls
+             * @description Fouls
+             * @default null
+             */
+            fouls: number | null;
+            /**
+             * Fpg
+             * @description Free-Position Goals
+             * @default null
+             */
+            fpg: number | null;
+            /**
+             * Fps
+             * @description Free-Position Shots
+             * @default null
+             */
+            fps: number | null;
+            /**
+             * G
+             * @description Goals
+             * @default null
+             */
+            g: number | null;
+            /**
+             * G Gp
+             * @description GP (Goalie)
+             * @default null
+             */
+            g_gp: number | null;
+            /**
+             * G Gs
+             * @description GS (Goalie)
+             * @default null
+             */
+            g_gs: number | null;
+            /**
+             * G Seconds
+             * @description Goalie Seconds
+             * @default null
+             */
+            g_seconds: number | null;
+            /**
+             * Ga
+             * @description GA
+             * @default null
+             */
+            ga: number | null;
+            /**
+             * Gaa
+             * @description GAA
+             * @default null
+             */
+            gaa: number | null;
+            /**
+             * Gb
+             * @description Ground Balls
+             * @default null
+             */
+            gb: number | null;
+            /**
+             * Gc
+             * @description Green Cards
+             * @default null
+             */
+            gc: number | null;
+            /**
+             * Gp
+             * @description GP
+             * @default null
+             */
+            gp: number | null;
+            /**
+             * Gs
+             * @description GS
+             * @default null
+             */
+            gs: number | null;
+            /**
+             * Gwg
+             * @description Game-Winning Goals
+             * @default null
+             */
+            gwg: number | null;
+            /**
+             * L
+             * @description L
+             * @default null
+             */
+            l: number | null;
+            /**
+             * Man Down G
+             * @description Man-Down Goals
+             * @default null
+             */
+            man_down_g: number | null;
+            /**
+             * Man Up G
+             * @description Man-Up Goals
+             * @default null
+             */
+            man_up_g: number | null;
+            /**
+             * Pen
+             * @description Penalties
+             * @default null
+             */
+            pen: number | null;
+            /**
+             * Pim Seconds
+             * @description Penalty Seconds
+             * @default null
+             */
+            pim_seconds: number | null;
+            /**
+             * Pts
+             * @description Points
+             * @default null
+             */
+            pts: number | null;
+            /**
+             * Rc
+             * @description Red Cards
+             * @default null
+             */
+            rc: number | null;
+            /**
+             * Sh
+             * @description Shots
+             * @default null
+             */
+            sh: number | null;
+            /**
+             * Sh Pct
+             * @description Shot %
+             * @default null
+             */
+            sh_pct: number | null;
+            /**
+             * Sog
+             * @description SOG
+             * @default null
+             */
+            sog: number | null;
+            /**
+             * Sog Pct
+             * @description SOG %
+             * @default null
+             */
+            sog_pct: number | null;
+            /**
+             * Sv
+             * @description Saves
+             * @default null
+             */
+            sv: number | null;
+            /**
+             * Sv Pct
+             * @description Save %
+             * @default null
+             */
+            sv_pct: number | null;
+            /**
+             * Turnovers
+             * @description Turnovers
+             * @default null
+             */
+            turnovers: number | null;
+            /**
+             * W
+             * @description W
+             * @default null
+             */
+            w: number | null;
+            /**
+             * Yc
+             * @description Yellow Cards
+             * @default null
+             */
+            yc: number | null;
+        } & {
+            [key: string]: unknown;
         };
         /**
          * ManagedAthleteAccessEntry
@@ -1459,7 +2571,7 @@ export interface components {
             division?: string | null;
             /**
              * Event Type
-             * @description player_added | player_removed | coach_added | coach_removed | title_changed
+             * @description player_added | player_removed | coach_added | coach_removed | title_changed. The resolved and observed tiers can also carry roster_rollover and attrs_changed.
              */
             event_type: string;
             /** Id */
@@ -1496,7 +2608,7 @@ export interface components {
             resolution_kind?: string | null;
             /**
              * Resolution Status
-             * @description Raw resolver outcome: linked_transfer | linked_move | new_freshman | new_hire | departed_unknown | roster_rollover | reappeared | pending.
+             * @description Raw resolver outcome. Players: linked_transfer | new_freshman | graduated | departed_unknown | roster_rollover | reappeared. Coaches: linked_move | new_hire | departed_unknown | title_change_confirmed (a title change checked and found real, e.g. a promotion to head coach). Either kind: pending (observed tier only). Dismissed events are never returned.
              */
             resolution_status?: string | null;
             /**
@@ -1591,6 +2703,22 @@ export interface components {
             to_title?: string | null;
         };
         /**
+         * NumberRange
+         * @description An inclusive range; give either bound or both.
+         */
+        NumberRange: {
+            /**
+             * Max
+             * @description At most this.
+             */
+            max?: number | null;
+            /**
+             * Min
+             * @description At least this.
+             */
+            min?: number | null;
+        };
+        /**
          * PlayerDetail
          * @description A single player's profile with season stats, accolades, and (when the
          *     player is linked to a person) their cross-program career.
@@ -1598,38 +2726,129 @@ export interface components {
          *       "accolades": [
          *         {
          *           "award": "All-NESCAC First Team",
-         *           "season": "2025-26"
+         *           "season": "2026"
          *         }
          *       ],
-         *       "career": {
-         *         "stints": [
-         *           {
-         *             "seasons": [
-         *               "2024-25",
-         *               "2025-26"
-         *             ],
-         *             "team": "Amherst"
-         *           }
-         *         ]
-         *       },
+         *       "bats": null,
+         *       "career": null,
          *       "class_year": "Junior",
          *       "conference": "NESCAC",
          *       "division": "D3",
+         *       "gender": "men",
+         *       "headshot_url": null,
          *       "height": "5-10",
+         *       "height_inches": 70,
+         *       "high_school": "Lincoln",
+         *       "home_city": "Portland",
+         *       "home_country": "USA",
+         *       "home_state": "OR",
          *       "hometown": "Portland, OR",
          *       "id": 184223,
          *       "is_verified": false,
+         *       "jersey_number": "8",
+         *       "major": "Economics",
+         *       "minor": null,
          *       "name": "Jordan Rivera",
          *       "person_id": 90211,
          *       "position": "Midfielder",
-         *       "season_stats": [
+         *       "sport": "soccer",
+         *       "sport_path": "mens-soccer",
+         *       "stats_by_season": [
          *         {
-         *           "games_played": 18,
-         *           "goals": 7,
-         *           "season": "2025-26"
+         *           "season": "2026",
+         *           "stats": {
+         *             "a": 5,
+         *             "cbo": null,
+         *             "g": 7,
+         *             "ga": null,
+         *             "gaa": null,
+         *             "gp": 18,
+         *             "gs": 17,
+         *             "gw": null,
+         *             "l": null,
+         *             "min": 1422,
+         *             "pk_att": null,
+         *             "pk_made": null,
+         *             "pts": 19,
+         *             "rc": null,
+         *             "sf": null,
+         *             "sh": null,
+         *             "sh_pct": null,
+         *             "sho": null,
+         *             "sog": null,
+         *             "sog_pct": null,
+         *             "sv": null,
+         *             "sv_pct": null,
+         *             "t": null,
+         *             "w": null,
+         *             "yc": null
+         *           },
+         *           "team_id": 1873
+         *         },
+         *         {
+         *           "season": "2025",
+         *           "stats": {
+         *             "a": 4,
+         *             "cbo": null,
+         *             "g": 3,
+         *             "ga": null,
+         *             "gaa": null,
+         *             "gp": 16,
+         *             "gs": 9,
+         *             "gw": null,
+         *             "l": null,
+         *             "min": 987,
+         *             "pk_att": null,
+         *             "pk_made": null,
+         *             "pts": 10,
+         *             "rc": null,
+         *             "sf": null,
+         *             "sh": null,
+         *             "sh_pct": null,
+         *             "sho": null,
+         *             "sog": null,
+         *             "sog_pct": null,
+         *             "sv": null,
+         *             "sv_pct": null,
+         *             "t": null,
+         *             "w": null,
+         *             "yc": null
+         *           },
+         *           "team_id": 1873
          *         }
          *       ],
-         *       "team": "Amherst"
+         *       "stats_totals": {
+         *         "a": 9,
+         *         "cbo": null,
+         *         "g": 10,
+         *         "ga": null,
+         *         "gaa": null,
+         *         "gp": 34,
+         *         "gs": 26,
+         *         "gw": null,
+         *         "l": null,
+         *         "min": 2409,
+         *         "pk_att": null,
+         *         "pk_made": null,
+         *         "pts": 29,
+         *         "rc": null,
+         *         "sf": null,
+         *         "sh": null,
+         *         "sh_pct": null,
+         *         "sho": null,
+         *         "sog": null,
+         *         "sog_pct": null,
+         *         "sv": null,
+         *         "sv_pct": null,
+         *         "t": null,
+         *         "w": null,
+         *         "yc": null
+         *       },
+         *       "team": "Amherst",
+         *       "team_id": 1873,
+         *       "team_logo_url": "https://magisterial.ai/logos/amherst.png",
+         *       "throws": null,
+         *       "track_bests": []
          *     }
          */
         PlayerDetail: {
@@ -1639,45 +2858,132 @@ export interface components {
              */
             accolades?: unknown;
             /**
+             * Bats
+             * @description Baseball and softball: 'L', 'R' or 'S'.
+             */
+            bats?: string | null;
+            /**
              * Career
-             * @description Cross-program career topology (stints across schools), when linked.
+             * @description When the player is linked to a person: one entry per school, in order, each with its own `stats_by_season` and `stats_totals`.
              */
             career?: unknown;
-            /** Class Year */
+            /**
+             * Class Year
+             * @description e.g. 'Freshman', 'Sophomore', 'Junior', 'Senior'.
+             */
             class_year?: string | null;
             /** Conference */
             conference?: string | null;
-            /** Division */
+            /**
+             * Division
+             * @description e.g. 'D1', 'D2', 'D3', 'NAIA', 'NJCAA-D1'.
+             */
             division?: string | null;
+            /**
+             * Gender
+             * @description 'men' or 'women'.
+             */
+            gender?: string | null;
             /** Headshot Url */
             headshot_url?: string | null;
-            /** Height */
+            /**
+             * Height
+             * @description Formatted height, e.g. '6-2'.
+             */
             height?: string | null;
-            /** Hometown */
+            /** Height Inches */
+            height_inches?: number | null;
+            /** High School */
+            high_school?: string | null;
+            /** Home City */
+            home_city?: string | null;
+            /** Home Country */
+            home_country?: string | null;
+            /** Home State */
+            home_state?: string | null;
+            /**
+             * Hometown
+             * @description As published, e.g. 'Portland, OR'.
+             */
             hometown?: string | null;
-            /** Id */
+            /**
+             * Id
+             * @description Player id; use with GET /v1/players/{player_id}.
+             */
             id?: number | null;
-            /** Is Verified */
+            /**
+             * Is Verified
+             * @description True when the athlete has claimed this profile.
+             */
             is_verified?: boolean | null;
+            /**
+             * Jersey Number
+             * @description As published, e.g. '7' or '00'.
+             */
+            jersey_number?: string | null;
+            /** Major */
+            major?: string | null;
+            /** Minor */
+            minor?: string | null;
             /** Name */
             name?: string | null;
             /**
              * Person Id
              * @description Cross-program person id; use with GET /v1/persons/{person_id}.
              */
-            person_id?: unknown | null;
+            person_id?: number | null;
             /** Position */
             position?: string | null;
             /**
              * Season Stats
-             * @description Per-season stat rows; shape varies by sport.
+             * @deprecated
+             * @description Deprecated, removed on 2027-01-12: use `stats_by_season`, `stats_totals` and `track_bests`. An object keyed 'season_<year>' (and 'cumulative_null'), each a one-item list holding the season row.
              */
             season_stats?: unknown;
+            /**
+             * Sport
+             * @description Sport, as in the request: 'soccer', 'track-and-field', ...
+             */
+            sport?: string | null;
+            /**
+             * Sport Path
+             * @description Sport and gender as one key, e.g. 'womens-soccer'; matches teams, games and movements.
+             */
+            sport_path?: string | null;
+            /**
+             * Stats By Season
+             * @description One entry per season at this team, newest first.
+             */
+            stats_by_season?: components["schemas"]["PlayerSeasonStats"][];
+            /**
+             * Stats Totals
+             * @description Totals across `stats_by_season`: counting stats summed, headline rates recomputed from the totals, the rest null. Same fields as a season's `stats`.
+             */
+            stats_totals?: {
+                [key: string]: unknown;
+            };
             /**
              * Team
              * @description Team/school name.
              */
             team?: string | null;
+            /**
+             * Team Id
+             * @description Team id; use with GET /v1/teams/{team_id}.
+             */
+            team_id?: number | null;
+            /** Team Logo Url */
+            team_logo_url?: string | null;
+            /**
+             * Throws
+             * @description Baseball and softball: 'L' or 'R'.
+             */
+            throws?: string | null;
+            /**
+             * Track Bests
+             * @description Track and field: best mark per event and discipline, across every season held and per season.
+             */
+            track_bests?: components["schemas"]["TrackBest"][];
         };
         /**
          * PlayerSearchPage
@@ -1704,24 +3010,60 @@ export interface components {
          * @description Public body for POST /v1/players/search.
          *
          *     Scope (`sport`/`gender`/`division`) is required and bounds every result.
-         *     The remaining fields are a curated, sport-agnostic subset of the app's
-         *     manual-search filters; richer catalog-driven filters come in a later rev.
+         *     Everything else is a filter, and every filter is optional. The fields are
+         *     the ones GET /v1/filters/catalog lists for the sport: bio fields by name,
+         *     and every season stat through `stats`. A field this endpoint does not
+         *     know is a 422, never ignored.
          * @example {
-         *       "conference": "NESCAC",
+         *       "class_year_not": "Senior / Graduate",
+         *       "conference": [
+         *         "NESCAC",
+         *         "UAA"
+         *       ],
          *       "division": "D3",
          *       "gender": "men",
+         *       "height_inches_min": 70,
          *       "limit": 25,
          *       "position": "Midfielder",
-         *       "sort_by": "goals",
+         *       "sort_by": "g",
          *       "sort_order": "descending",
-         *       "sport": "soccer"
+         *       "sport": "soccer",
+         *       "stats": {
+         *         "g": {
+         *           "min": 5
+         *         },
+         *         "gp": {
+         *           "min": 10
+         *         }
+         *       }
          *     }
          */
         PlayerSearchRequest: {
-            /** Class Year */
-            class_year?: string | null;
-            /** Conference */
-            conference?: string | null;
+            /**
+             * Bats
+             * @description Baseball and softball: 'L', 'R' or 'S'. One value, an array of values, or a comma-separated string (any of).
+             */
+            bats?: string | string[] | null;
+            /**
+             * Class Year
+             * @description 'Freshman', 'Sophomore', 'Junior' or 'Senior / Graduate'. One value, an array of values, or a comma-separated string (any of).
+             */
+            class_year?: string | string[] | null;
+            /**
+             * Class Year Not
+             * @description Exclude these values. Players with no value for the field are left out too.
+             */
+            class_year_not?: string | string[] | null;
+            /**
+             * Conference
+             * @description Conference, by full name or abbreviation ('UAA'); GET /v1/conferences lists them. One value, an array of values, or a comma-separated string (any of).
+             */
+            conference?: string | string[] | null;
+            /**
+             * Conference Not
+             * @description Exclude these values. Players with no value for the field are left out too.
+             */
+            conference_not?: string | string[] | null;
             /**
              * Cursor
              * @description Opaque pagination cursor from a prior response.
@@ -1734,26 +3076,98 @@ export interface components {
             division: string;
             /**
              * Gender
-             * @description 'men' or 'women'; ignored for single-gender sports.
+             * @description 'men' or 'women'. Defaults to 'men' for a sport with both; ignored for single-gender sports.
              */
             gender?: string | null;
-            /** Hometown */
+            /**
+             * Height Inches Max
+             * @description Height at most this many inches.
+             */
+            height_inches_max?: number | null;
+            /**
+             * Height Inches Min
+             * @description Height at least this many inches.
+             */
+            height_inches_min?: number | null;
+            /**
+             * High School
+             * @description High school, exact. One value, an array of values, or a comma-separated string (any of).
+             */
+            high_school?: string | string[] | null;
+            /**
+             * Home Country
+             * @description Home country. One value, an array of values, or a comma-separated string (any of).
+             */
+            home_country?: string | string[] | null;
+            /**
+             * Home Country Not
+             * @description Exclude these values. Players with no value for the field are left out too.
+             */
+            home_country_not?: string | string[] | null;
+            /**
+             * Home State
+             * @description Home state or province, as a name or a postal code ('Ohio' or 'OH'). One value, an array of values, or a comma-separated string (any of).
+             */
+            home_state?: string | string[] | null;
+            /**
+             * Home State Not
+             * @description Exclude these values. Players with no value for the field are left out too.
+             */
+            home_state_not?: string | string[] | null;
+            /**
+             * Hometown
+             * @description Home town, e.g. 'Rochester'; matches the spellings rosters use.
+             */
             hometown?: string | null;
+            /**
+             * Jersey Number
+             * @description Jersey number as published, e.g. '7' or '00'. One value, an array of values, or a comma-separated string (any of).
+             */
+            jersey_number?: string | string[] | null;
             /**
              * Limit
              * @description Page size (max 100).
              * @default 25
              */
             limit: number;
-            /** Major */
-            major?: string | null;
-            /** Position */
-            position?: string | null;
-            /** Season */
-            season?: string | null;
+            /**
+             * Major
+             * @description Academic major: one value is a contains match, an array is exact any-of.
+             */
+            major?: string | string[] | null;
+            /**
+             * Minor
+             * @description Academic minor: one value is a contains match, an array is exact any-of.
+             */
+            minor?: string | string[] | null;
+            /**
+             * Name
+             * @description Player name search. Every word must appear in the name, in any order, ignoring case, accents and punctuation: 'jack', 'hob', 'Jack Hobday' and 'Hobday, Jack' all find Jack Hobday. A name that matches nobody falls back to close spellings.
+             */
+            name?: string | null;
+            /**
+             * Player Id
+             * @description Only these player ids.
+             */
+            player_id?: number[] | null;
+            /**
+             * Position
+             * @description Position, as listed by GET /v1/filters/catalog; matches every spelling rosters use for it. One value, an array of values, or a comma-separated string (any of).
+             */
+            position?: string | string[] | null;
+            /**
+             * Position Not
+             * @description Exclude these values. Players with no value for the field are left out too.
+             */
+            position_not?: string | string[] | null;
+            /**
+             * Season
+             * @description Season of the stat rows, e.g. '2025'; defaults to the current season. One value, an array of values, or a comma-separated string (any of).
+             */
+            season?: string | string[] | null;
             /**
              * Sort By
-             * @description Stat field to sort by.
+             * @description A sortable field from GET /v1/filters/catalog (`sort_fields`): any season stat of the sport, 'height_inches' or 'total_accolades'.
              */
             sort_by?: string | null;
             /**
@@ -1767,13 +3181,79 @@ export interface components {
              * @description e.g. 'soccer', 'basketball', 'baseball'.
              */
             sport: string;
-            /** Team Name */
-            team_name?: string | null;
+            /**
+             * Stats
+             * @description Season-stat ranges, keyed by the sport's stat field from GET /v1/filters/catalog (`stats_by_sport`), e.g. {"g": {"min": 10}, "gaa": {"max": 1.2}}. Bounds are inclusive.
+             */
+            stats?: {
+                [key: string]: components["schemas"]["NumberRange"];
+            };
+            /**
+             * Team Name
+             * @description Team (school) name; resolved to the program it names. One value, an array of values, or a comma-separated string (any of).
+             */
+            team_name?: string | string[] | null;
+            /**
+             * Team Name Not
+             * @description Exclude these values. Players with no value for the field are left out too.
+             */
+            team_name_not?: string | string[] | null;
+            /**
+             * Throws
+             * @description Baseball and softball: 'L' or 'R'. One value, an array of values, or a comma-separated string (any of).
+             */
+            throws?: string | string[] | null;
+            /**
+             * Track Discipline
+             * @description Track & field: 'indoor', 'outdoor' or 'xc'. One value, an array of values, or a comma-separated string (any of).
+             */
+            track_discipline?: string | string[] | null;
+            /**
+             * Track Event
+             * @description Track & field: event code(s), e.g. '400m' or 'shot_put'. Results rank by best mark in the event.
+             */
+            track_event?: string | string[] | null;
+            /**
+             * Track Marks
+             * @description Track & field: best-mark ranges per event code, in the event's own unit (seconds, meters or points), e.g. {"5000m": {"max": 840}}.
+             */
+            track_marks?: {
+                [key: string]: components["schemas"]["NumberRange"];
+            };
+            /**
+             * Track Season
+             * @description Track & field: season label, the academic year's end year ('2027' is 2026-27). One value, an array of values, or a comma-separated string (any of).
+             */
+            track_season?: string | string[] | null;
+        };
+        /**
+         * PlayerSeasonStats
+         * @description One season of one player's stats.
+         */
+        PlayerSeasonStats: {
+            /**
+             * Season
+             * @description Season label, e.g. '2026'.
+             */
+            season?: string | null;
+            /**
+             * Stats
+             * @description The season's stats under the field names GET /v1/filters/catalog lists for the sport (`stats_by_sport`), so a stat is filtered, sorted and read under one name. The fields are those of the stat schema for the row's `sport` (SoccerStats, BasketballStats, BaseballSoftballStats, VolleyballStats, FootballStats, LacrosseStats; `x-schema-by-sport` maps them). Every stat field of the sport is present; null means the source did not publish it. Empty for track and field, which reports marks in `track`.
+             */
+            stats?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Team Id
+             * @description The team the season was played for.
+             */
+            team_id?: number | null;
         };
         /**
          * PlayerSeasonsResponse
-         * @description Season-history view for one player. All three keys are always present;
-         *     `track_performances` is populated for track & field athletes only.
+         * @description Season-history view for one player. Every key is always present;
+         *     `track_bests` and `track_performances` are populated for track & field
+         *     athletes only.
          */
         PlayerSeasonsResponse: {
             /**
@@ -1783,9 +3263,27 @@ export interface components {
             accolades?: unknown;
             /**
              * Season Stats
-             * @description Per-season stat rows; shape varies by sport.
+             * @deprecated
+             * @description Deprecated, removed on 2027-01-12: use `stats_by_season`, `stats_totals` and `track_bests`.
              */
             season_stats?: unknown;
+            /**
+             * Stats By Season
+             * @description One entry per season at this team, newest first.
+             */
+            stats_by_season?: components["schemas"]["PlayerSeasonStats"][];
+            /**
+             * Stats Totals
+             * @description Totals across `stats_by_season`; same fields as a season's `stats`.
+             */
+            stats_totals?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Track Bests
+             * @description Track and field: best mark per event and discipline.
+             */
+            track_bests?: components["schemas"]["TrackBest"][];
             /**
              * Track Performances
              * @description Track & field performance list; null for other sports.
@@ -1794,29 +3292,74 @@ export interface components {
         };
         /**
          * PlayerSummary
-         * @description A player row as returned by search — identity plus a sport-shaped stat
-         *     bag. Contact fields (email/phone/social) are intentionally omitted.
+         * @description A player row as returned by search: the profile plus one season's
+         *     stats. Contact fields (email/phone/social) are intentionally omitted.
          * @example {
+         *       "bats": null,
          *       "class_year": "Junior",
          *       "conference": "NESCAC",
          *       "division": "D3",
-         *       "headshot_url": "https://api.magisterial.ai/api/public/img?u=...",
+         *       "gender": "men",
+         *       "headshot_url": null,
          *       "height": "5-10",
+         *       "height_inches": 70,
+         *       "high_school": "Lincoln",
+         *       "home_city": "Portland",
+         *       "home_country": "USA",
+         *       "home_state": "OR",
          *       "hometown": "Portland, OR",
          *       "id": 184223,
          *       "is_verified": false,
+         *       "jersey_number": "8",
+         *       "major": "Economics",
+         *       "minor": null,
          *       "name": "Jordan Rivera",
+         *       "person_id": 90211,
          *       "position": "Midfielder",
-         *       "season": "2025-26",
+         *       "season": "2026",
+         *       "sport": "soccer",
+         *       "sport_path": "mens-soccer",
          *       "stats": {
-         *         "assists": 5,
-         *         "games_played": 18,
-         *         "goals": 7
+         *         "a": 5,
+         *         "cbo": null,
+         *         "g": 7,
+         *         "ga": null,
+         *         "gaa": null,
+         *         "gp": 18,
+         *         "gs": 17,
+         *         "gw": 2,
+         *         "l": null,
+         *         "min": 1422,
+         *         "pk_att": 2,
+         *         "pk_made": 1,
+         *         "pts": 19,
+         *         "rc": 0,
+         *         "sf": null,
+         *         "sh": 41,
+         *         "sh_pct": 0.171,
+         *         "sho": null,
+         *         "sog": 22,
+         *         "sog_pct": 0.537,
+         *         "sv": null,
+         *         "sv_pct": null,
+         *         "t": null,
+         *         "w": null,
+         *         "yc": 3
          *       },
-         *       "team": "Amherst"
+         *       "team": "Amherst",
+         *       "team_id": 1873,
+         *       "team_logo_url": "https://magisterial.ai/logos/amherst.png",
+         *       "team_ranking": null,
+         *       "throws": null,
+         *       "track": null
          *     }
          */
         PlayerSummary: {
+            /**
+             * Bats
+             * @description Baseball and softball: 'L', 'R' or 'S'.
+             */
+            bats?: string | null;
             /**
              * Class Year
              * @description e.g. 'Freshman', 'Sophomore', 'Junior', 'Senior'.
@@ -1826,9 +3369,14 @@ export interface components {
             conference?: string | null;
             /**
              * Division
-             * @description e.g. 'D1', 'D2', 'D3', 'NAIA', 'NJCAA'.
+             * @description e.g. 'D1', 'D2', 'D3', 'NAIA', 'NJCAA-D1'.
              */
             division?: string | null;
+            /**
+             * Gender
+             * @description 'men' or 'women'.
+             */
+            gender?: string | null;
             /** Headshot Url */
             headshot_url?: string | null;
             /**
@@ -1836,7 +3384,20 @@ export interface components {
              * @description Formatted height, e.g. '6-2'.
              */
             height?: string | null;
-            /** Hometown */
+            /** Height Inches */
+            height_inches?: number | null;
+            /** High School */
+            high_school?: string | null;
+            /** Home City */
+            home_city?: string | null;
+            /** Home Country */
+            home_country?: string | null;
+            /** Home State */
+            home_state?: string | null;
+            /**
+             * Hometown
+             * @description As published, e.g. 'Portland, OR'.
+             */
             hometown?: string | null;
             /**
              * Id
@@ -1848,18 +3409,42 @@ export interface components {
              * @description True when the athlete has claimed this profile.
              */
             is_verified?: boolean | null;
+            /**
+             * Jersey Number
+             * @description As published, e.g. '7' or '00'.
+             */
+            jersey_number?: string | null;
+            /** Major */
+            major?: string | null;
+            /** Minor */
+            minor?: string | null;
             /** Name */
             name?: string | null;
+            /**
+             * Person Id
+             * @description Cross-program person id; use with GET /v1/persons/{person_id}.
+             */
+            person_id?: number | null;
             /** Position */
             position?: string | null;
             /**
              * Season
-             * @description Season the stat bag belongs to, e.g. '2025-26'.
+             * @description Season the stats belong to, e.g. '2026'.
              */
             season?: string | null;
             /**
+             * Sport
+             * @description Sport, as in the request: 'soccer', 'track-and-field', ...
+             */
+            sport?: string | null;
+            /**
+             * Sport Path
+             * @description Sport and gender as one key, e.g. 'womens-soccer'; matches teams, games and movements.
+             */
+            sport_path?: string | null;
+            /**
              * Stats
-             * @description Sport-shaped stat fields; keys vary by sport (see GET /v1/filters/catalog).
+             * @description The season's stats under the field names GET /v1/filters/catalog lists for the sport (`stats_by_sport`), so a stat is filtered, sorted and read under one name. The fields are those of the stat schema for the row's `sport` (SoccerStats, BasketballStats, BaseballSoftballStats, VolleyballStats, FootballStats, LacrosseStats; `x-schema-by-sport` maps them). Every stat field of the sport is present; null means the source did not publish it. Empty for track and field, which reports marks in `track`. Deprecated, removed on 2027-01-12: until then this object also carries the keys it held before 2026-10-09 (copies of the profile fields above, the soccer spellings 'sh%', 'sog%', 'sv%', 'yc-rc', 'pg-pa', team-ranking keys and track keys). Read the typed fields instead.
              */
             stats?: {
                 [key: string]: unknown;
@@ -1869,14 +3454,30 @@ export interface components {
              * @description Team/school name.
              */
             team?: string | null;
+            /**
+             * Team Id
+             * @description Team id; use with GET /v1/teams/{team_id}.
+             */
+            team_id?: number | null;
+            /** Team Logo Url */
+            team_logo_url?: string | null;
+            team_ranking?: components["schemas"]["TeamRanking"] | null;
+            /**
+             * Throws
+             * @description Baseball and softball: 'L' or 'R'.
+             */
+            throws?: string | null;
+            /** @description Track and field athletes only. */
+            track?: components["schemas"]["TrackSummary"] | null;
         };
         /**
          * PortalEntry
          * @description One live transfer-portal entry. `contacts` is present only for callers
          *     whose key delegates `portal.contact.read` and whose current actor is an
-         *     active verified coach on a Max account for the requested sport.
+         *     active verified coach.
          * @example {
          *       "conference": "GLIAC",
+         *       "contacts": null,
          *       "designated_student_athlete": false,
          *       "division": "D2",
          *       "first_seen_at": "2026-06-30T14:05:00Z",
@@ -1886,10 +3487,12 @@ export interface components {
          *       "last_seen_at": "2026-07-20T02:10:00Z",
          *       "last_updated_date": "2026-07-02",
          *       "name": "Casey Morgan",
+         *       "person_id": 90211,
+         *       "player_id": 482113,
          *       "sport_path": "womens-basketball",
          *       "status": "INC",
          *       "team": "Grand Valley State",
-         *       "year": "SO"
+         *       "year": "2025-26"
          *     }
          */
         PortalEntry: {
@@ -1897,7 +3500,7 @@ export interface components {
             conference?: string | null;
             /**
              * Contacts
-             * @description Protected athlete contact info (email/phone/social); requires portal.contact.read plus current active verified coach and Max sport authority.
+             * @description Protected athlete contact info (email/phone/social); requires portal.contact.read plus a current active verified coach.
              */
             contacts?: {
                 [key: string]: unknown;
@@ -1911,7 +3514,10 @@ export interface components {
              * @description When this entry first appeared in our feed.
              */
             first_seen_at?: string | null;
-            /** Id */
+            /**
+             * Id
+             * @description Portal entry id (not a player id).
+             */
             id?: string | null;
             /**
              * Initiated Date
@@ -1932,6 +3538,16 @@ export interface components {
             last_updated_date?: string | null;
             /** Name */
             name?: string | null;
+            /**
+             * Person Id
+             * @description Cross-program person id for the linked player; use with GET /v1/persons/{person_id}. Null when unlinked or not yet clustered.
+             */
+            person_id?: number | null;
+            /**
+             * Player Id
+             * @description Our player record for this athlete, or null when the entry is not yet linked. Usually their stint at the portal school; for athletes who re-entered before appearing on that roster it is their prior school's record. Use with GET /v1/players/{player_id} in that player's own division.
+             */
+            player_id?: number | null;
             /** Sport Path */
             sport_path?: string | null;
             /**
@@ -1946,7 +3562,7 @@ export interface components {
             team?: string | null;
             /**
              * Year
-             * @description Class year code, e.g. 'FR', 'SO', 'JR', 'SR'.
+             * @description Portal cycle the entry belongs to, e.g. '2025-26'.
              */
             year?: string | null;
         };
@@ -1991,7 +3607,7 @@ export interface components {
             division: string;
             /**
              * Gender
-             * @description 'men' or 'women'; ignored for single-gender sports.
+             * @description 'men' or 'women'. Defaults to 'men' for a sport with both; ignored for single-gender sports.
              */
             gender?: string | null;
             /**
@@ -2029,6 +3645,7 @@ export interface components {
          * @example {
          *       "answer": "The top three D1 scorers this season are ...",
          *       "created_at": "2026-07-21T16:20:00Z",
+         *       "error": null,
          *       "finished_at": "2026-07-21T16:20:34Z",
          *       "run_id": "9f8a1c2e-6f0b-4f2a-8f0d-3f2b1a9c8e7d",
          *       "started_at": "2026-07-21T16:20:01Z",
@@ -2078,10 +3695,18 @@ export interface components {
          * @description A roster member — identity only, no contact fields.
          * @example {
          *       "class_year": "Junior",
+         *       "headshot_url": null,
+         *       "height": "5-10",
+         *       "height_inches": 70,
+         *       "high_school": "Lincoln",
+         *       "home_city": "Portland",
+         *       "home_country": "USA",
+         *       "home_state": "OR",
          *       "hometown": "Portland, OR",
          *       "id": 184223,
          *       "is_verified": false,
          *       "jersey_number": "8",
+         *       "membership_source": null,
          *       "name": "Jordan Rivera",
          *       "person_id": 90211,
          *       "position": "Midfielder"
@@ -2092,6 +3717,21 @@ export interface components {
             class_year?: string | null;
             /** Headshot Url */
             headshot_url?: string | null;
+            /**
+             * Height
+             * @description Formatted height, e.g. '6-2'.
+             */
+            height?: string | null;
+            /** Height Inches */
+            height_inches?: number | null;
+            /** High School */
+            high_school?: string | null;
+            /** Home City */
+            home_city?: string | null;
+            /** Home Country */
+            home_country?: string | null;
+            /** Home State */
+            home_state?: string | null;
             /** Hometown */
             hometown?: string | null;
             /**
@@ -2103,6 +3743,11 @@ export interface components {
             is_verified?: boolean | null;
             /** Jersey Number */
             jersey_number?: string | null;
+            /**
+             * Membership Source
+             * @description How we know this player was on the team that season. 'box_score': the player appears in the team's box scores that season, but no roster page we captured listed them (a season whose page was never captured, or a player later removed from it). Expect the name and the player's stats; position, class year, jersey, height and hometown are usually missing. 'portal_discovery': a transfer-portal entrant we matched to this team's live roster before the roster's own season rows were written. null: recorded before provenance tracking, overwhelmingly from the team's roster page or an association roster feed. Season rosters are a permanent record: players who left mid-season stay listed.
+             */
+            membership_source?: string | null;
             /** Name */
             name?: string | null;
             /** Person Id */
@@ -2264,6 +3909,164 @@ export interface components {
             sport_path?: string | null;
         };
         /**
+         * SoccerStats
+         * @description Season stats for soccer: the stat fields GET /v1/filters/catalog lists for the sport. Every field is present on every row; null means the source did not publish it.
+         */
+        SoccerStats: {
+            /**
+             * A
+             * @description Assists
+             * @default null
+             */
+            a: number | null;
+            /**
+             * Cbo
+             * @description Combined Shutouts
+             * @default null
+             */
+            cbo: number | null;
+            /**
+             * G
+             * @description Goals
+             * @default null
+             */
+            g: number | null;
+            /**
+             * Ga
+             * @description GA
+             * @default null
+             */
+            ga: number | null;
+            /**
+             * Gaa
+             * @description GAA
+             * @default null
+             */
+            gaa: number | null;
+            /**
+             * Gp
+             * @description GP
+             * @default null
+             */
+            gp: number | null;
+            /**
+             * Gs
+             * @description GS
+             * @default null
+             */
+            gs: number | null;
+            /**
+             * Gw
+             * @description Game-Winning Goals
+             * @default null
+             */
+            gw: number | null;
+            /**
+             * L
+             * @description L
+             * @default null
+             */
+            l: number | null;
+            /**
+             * Min
+             * @description Minutes
+             * @default null
+             */
+            min: number | null;
+            /**
+             * Pk Att
+             * @description Penalty Kick Attempts
+             * @default null
+             */
+            pk_att: number | null;
+            /**
+             * Pk Made
+             * @description Penalty Kicks Made
+             * @default null
+             */
+            pk_made: number | null;
+            /**
+             * Pts
+             * @description Points
+             * @default null
+             */
+            pts: number | null;
+            /**
+             * Rc
+             * @description Red Cards
+             * @default null
+             */
+            rc: number | null;
+            /**
+             * Sf
+             * @description Shots Faced
+             * @default null
+             */
+            sf: number | null;
+            /**
+             * Sh
+             * @description Shots
+             * @default null
+             */
+            sh: number | null;
+            /**
+             * Sh Pct
+             * @description Shot %
+             * @default null
+             */
+            sh_pct: number | null;
+            /**
+             * Sho
+             * @description Shutouts
+             * @default null
+             */
+            sho: number | null;
+            /**
+             * Sog
+             * @description SOG
+             * @default null
+             */
+            sog: number | null;
+            /**
+             * Sog Pct
+             * @description SOG %
+             * @default null
+             */
+            sog_pct: number | null;
+            /**
+             * Sv
+             * @description Saves
+             * @default null
+             */
+            sv: number | null;
+            /**
+             * Sv Pct
+             * @description Save %
+             * @default null
+             */
+            sv_pct: number | null;
+            /**
+             * T
+             * @description T
+             * @default null
+             */
+            t: number | null;
+            /**
+             * W
+             * @description W
+             * @default null
+             */
+            w: number | null;
+            /**
+             * Yc
+             * @description Yellow Cards
+             * @default null
+             */
+            yc: number | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
          * SportEntry
          * @description A supported sport and the genders it carries.
          */
@@ -2317,12 +4120,13 @@ export interface components {
          *     verified player role permits player-to-coach outreach for the sport.
          * @example {
          *       "bio_url": "https://athletics.amherst.edu/coaches/justin-serpone",
+         *       "email": null,
          *       "headshot_url": "https://api.magisterial.ai/api/public/img?u=...",
          *       "id": 18234,
          *       "is_head_coach": true,
          *       "name": "Justin Serpone",
          *       "person_id": 5121,
-         *       "profile_slug": "justin-serpone",
+         *       "profile_slug": null,
          *       "role": "Head Men's Soccer Coach",
          *       "season": "2025"
          *     }
@@ -2366,7 +4170,7 @@ export interface components {
             phone?: string | null;
             /**
              * Profile Slug
-             * @description Public profile slug on magisterial.ai, when minted.
+             * @description Deprecated, always null, removed in the next SDK release. Public coach profile pages on magisterial.ai were retired.
              */
             profile_slug?: string | null;
             /**
@@ -2484,6 +4288,27 @@ export interface components {
             next_cursor?: string | null;
         };
         /**
+         * TeamRanking
+         * @description The team's national ranking, when the request filters or sorts by a
+         *     ranking field. Field names are the filter names.
+         */
+        TeamRanking: {
+            /** National Rank */
+            national_rank?: number | null;
+            /** National Rating Value */
+            national_rating_value?: number | null;
+            /** Ranking Is Final */
+            ranking_is_final?: boolean | null;
+            /** Ranking Label */
+            ranking_label?: string | null;
+            /** Ranking Release Date */
+            ranking_release_date?: string | null;
+            /** Ranking Season */
+            ranking_season?: string | null;
+            /** Ranking System */
+            ranking_system?: string | null;
+        };
+        /**
          * TeamSummary
          * @description A team as returned by the teams list.
          * @example {
@@ -2526,6 +4351,93 @@ export interface components {
              * @description Gendered sport key, e.g. 'mens-soccer'.
              */
             sport_path?: string | null;
+        };
+        /**
+         * TrackBest
+         * @description One best mark in one event. Exactly one of `best_mark_seconds`,
+         *     `best_mark_meters` and `best_points` is set, by the event's measurement:
+         *     the three names the filter catalog uses for track marks.
+         */
+        TrackBest: {
+            /**
+             * Best Mark Meters
+             * @description Distances and heights: higher is better.
+             */
+            best_mark_meters?: number | null;
+            /**
+             * Best Mark Seconds
+             * @description Times: lower is better.
+             */
+            best_mark_seconds?: number | null;
+            /**
+             * Best Points
+             * @description Combined events: higher is better.
+             */
+            best_points?: number | null;
+            /**
+             * Discipline
+             * @description 'indoor', 'outdoor' or 'xc'.
+             */
+            discipline?: string | null;
+            /**
+             * Event Code
+             * @description Event code, e.g. '400m', 'shot_put'.
+             */
+            event_code?: string | null;
+            /** Event Name */
+            event_name?: string | null;
+            /**
+             * Is Top Event
+             * @description Search rows only. True when the mark is the athlete's strongest event rather than a rank in a searched event.
+             */
+            is_top_event?: boolean | null;
+            /**
+             * Measurement Type
+             * @description 'time', 'distance', 'height' or 'points'.
+             */
+            measurement_type?: string | null;
+            /**
+             * Most Recent
+             * @description Player detail only: date of the latest result in the event.
+             */
+            most_recent?: string | null;
+            /**
+             * Num Performances
+             * @description Player detail only: results behind this best.
+             */
+            num_performances?: number | null;
+            /**
+             * Rank
+             * @description Search rows ranked by `track_event` only: the athlete's place in that event and discipline.
+             */
+            rank?: number | null;
+            /**
+             * Season
+             * @description Season of the mark; null for a best across every season held.
+             */
+            season?: string | null;
+            /**
+             * Window
+             * @description What the best was taken over, e.g. 'Career' or 'Selected seasons'.
+             */
+            window?: string | null;
+        };
+        /**
+         * TrackSummary
+         * @description A track and field athlete on a search row.
+         */
+        TrackSummary: {
+            best?: components["schemas"]["TrackBest"] | null;
+            /**
+             * Disciplines
+             * @description Primary first.
+             */
+            disciplines?: string[];
+            /**
+             * Primary Discipline
+             * @description Standard discipline group, e.g. 'sprints', 'distance', 'throws'.
+             */
+            primary_discipline?: string | null;
         };
         /**
          * TransferListResponse
@@ -2575,14 +4487,205 @@ export interface components {
              */
             to_team_id?: number | null;
         };
-        /** ValidationError */
-        ValidationError: {
-            /** Location */
-            loc: (string | number)[];
-            /** Message */
-            msg: string;
-            /** Error Type */
-            type: string;
+        /**
+         * VolleyballStats
+         * @description Season stats for volleyball: the stat fields GET /v1/filters/catalog lists for the sport. Every field is present on every row; null means the source did not publish it.
+         */
+        VolleyballStats: {
+            /**
+             * Aces Per Set
+             * @description Aces/Set
+             * @default null
+             */
+            aces_per_set: number | null;
+            /**
+             * Assists
+             * @description Assists
+             * @default null
+             */
+            assists: number | null;
+            /**
+             * Assists Per Set
+             * @description Assists/Set
+             * @default null
+             */
+            assists_per_set: number | null;
+            /**
+             * Attacks
+             * @description Attack Attempts
+             * @default null
+             */
+            attacks: number | null;
+            /**
+             * Ball Handling Errors
+             * @description Ball-Handling Errors
+             * @default null
+             */
+            ball_handling_errors: number | null;
+            /**
+             * Block Assists
+             * @description Block Assists
+             * @default null
+             */
+            block_assists: number | null;
+            /**
+             * Block Errors
+             * @description Block Errors
+             * @default null
+             */
+            block_errors: number | null;
+            /**
+             * Blocks Per Set
+             * @description Blocks/Set
+             * @default null
+             */
+            blocks_per_set: number | null;
+            /**
+             * Blocks Solo
+             * @description Solo Blocks
+             * @default null
+             */
+            blocks_solo: number | null;
+            /**
+             * Digs
+             * @description Digs
+             * @default null
+             */
+            digs: number | null;
+            /**
+             * Digs Per Set
+             * @description Digs/Set
+             * @default null
+             */
+            digs_per_set: number | null;
+            /**
+             * Double Double Matches Counted
+             * @description Matches Counted for Double-Doubles
+             * @default null
+             */
+            double_double_matches_counted: number | null;
+            /**
+             * Double Doubles
+             * @description Double-Doubles
+             * @default null
+             */
+            double_doubles: number | null;
+            /**
+             * Errors
+             * @description Attack Errors
+             * @default null
+             */
+            errors: number | null;
+            /**
+             * Hit Pct
+             * @description Hitting %
+             * @default null
+             */
+            hit_pct: number | null;
+            /**
+             * Kills
+             * @description Kills
+             * @default null
+             */
+            kills: number | null;
+            /**
+             * Kills Per Set
+             * @description Kills/Set
+             * @default null
+             */
+            kills_per_set: number | null;
+            /**
+             * Matches Played
+             * @description Matches
+             * @default null
+             */
+            matches_played: number | null;
+            /**
+             * Matches Started
+             * @description Matches Started
+             * @default null
+             */
+            matches_started: number | null;
+            /**
+             * Points
+             * @description Points
+             * @default null
+             */
+            points: number | null;
+            /**
+             * Points Per Set
+             * @description Points per Set
+             * @default null
+             */
+            points_per_set: number | null;
+            /**
+             * Reception Attempts
+             * @description Reception Attempts
+             * @default null
+             */
+            reception_attempts: number | null;
+            /**
+             * Reception Errors
+             * @description Reception Errors
+             * @default null
+             */
+            reception_errors: number | null;
+            /**
+             * Reception Pct
+             * @description Reception Percentage
+             * @default null
+             */
+            reception_pct: number | null;
+            /**
+             * Service Aces
+             * @description Aces
+             * @default null
+             */
+            service_aces: number | null;
+            /**
+             * Service Attempts
+             * @description Service Attempts
+             * @default null
+             */
+            service_attempts: number | null;
+            /**
+             * Service Errors
+             * @description Service Errors
+             * @default null
+             */
+            service_errors: number | null;
+            /**
+             * Sets Played
+             * @description Sets
+             * @default null
+             */
+            sets_played: number | null;
+            /**
+             * Setting Attempts
+             * @description Setting Attempts
+             * @default null
+             */
+            setting_attempts: number | null;
+            /**
+             * Setting Errors
+             * @description Setting Errors
+             * @default null
+             */
+            setting_errors: number | null;
+            /**
+             * Total Blocks
+             * @description Total Blocks
+             * @default null
+             */
+            total_blocks: number | null;
+            /**
+             * Triple Doubles
+             * @description Triple-Doubles
+             * @default null
+             */
+            triple_doubles: number | null;
+        } & {
+            [key: string]: unknown;
         };
     };
     responses: never;
@@ -2707,13 +4810,13 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description Validation Error */
+            /** @description The request failed validation; `error.fields` names each field. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
             /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
@@ -2783,13 +4886,13 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description Validation Error */
+            /** @description The request failed validation; `error.fields` names each field. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
             /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
@@ -2861,13 +4964,13 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description Validation Error */
+            /** @description The request failed validation; `error.fields` names each field. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
             /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
@@ -2922,13 +5025,13 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description Validation Error */
+            /** @description The request failed validation; `error.fields` names each field. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
             /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
@@ -2982,13 +5085,13 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description Validation Error */
+            /** @description The request failed validation; `error.fields` names each field. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
             /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
@@ -3040,13 +5143,13 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description Validation Error */
+            /** @description The request failed validation; `error.fields` names each field. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
             /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
@@ -3098,13 +5201,13 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description Validation Error */
+            /** @description The request failed validation; `error.fields` names each field. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
             /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
@@ -3159,13 +5262,13 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description Validation Error */
+            /** @description The request failed validation; `error.fields` names each field. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
             /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
@@ -3217,13 +5320,13 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description Validation Error */
+            /** @description The request failed validation; `error.fields` names each field. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
             /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
@@ -3244,8 +5347,10 @@ export interface operations {
                 sport: string;
                 /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
                 division: string;
-                /** @description 'men' or 'women'. */
+                /** @description 'men' or 'women'. Defaults to 'men' for a sport with both (soccer, basketball, volleyball, lacrosse, track-and-field), so pass 'women' for the women's side; ignored for single-gender sports. */
                 gender?: string | null;
+                /** @description Case-insensitive name contains. */
+                q?: string | null;
             };
             header?: never;
             path?: never;
@@ -3280,13 +5385,13 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description Validation Error */
+            /** @description The request failed validation; `error.fields` names each field. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
             /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
@@ -3302,7 +5407,14 @@ export interface operations {
     };
     get_coverage: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Only these sports, e.g. 'soccer' or 'soccer,basketball'. */
+                sport?: string | null;
+                /** @description 'men' or 'women': only that side's rows in every `genders` list. */
+                gender?: string | null;
+                /** @description Only these divisions in every `divisions` list. One value, or several separated by commas (any of). */
+                division?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -3360,6 +5472,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The request failed validation; `error.fields` names each field. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
             /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
@@ -3459,13 +5580,13 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description Validation Error */
+            /** @description The request failed validation; `error.fields` names each field. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
             /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
@@ -3537,13 +5658,13 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description Validation Error */
+            /** @description The request failed validation; `error.fields` names each field. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
             /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
@@ -3613,13 +5734,13 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description Validation Error */
+            /** @description The request failed validation; `error.fields` names each field. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
             /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
@@ -3638,6 +5759,8 @@ export interface operations {
             query?: {
                 /** @description Sport to scope the catalog to. */
                 sport?: string | null;
+                /** @description 'men' or 'women'. Defaults to 'men' for a sport with both (soccer, basketball, volleyball, lacrosse, track-and-field), so pass 'women' for the women's side; ignored for single-gender sports. */
+                gender?: string | null;
             };
             header?: never;
             path?: never;
@@ -3645,7 +5768,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Filter catalog: per-sport filter fields, stat fields, and enum values. */
+            /** @description Filter catalog: the filter fields per section (`sections`), each sport's stat fields (`stats_by_sport`), sortable fields (`sort_fields`) and enum values. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -3653,25 +5776,201 @@ export interface operations {
                 content: {
                     /**
                      * @example {
-                     *       "sports": {
+                     *       "divisions_by_sport_gender": {
                      *         "soccer": {
-                     *           "filters": [
-                     *             {
-                     *               "key": "position",
-                     *               "type": "enum",
-                     *               "values": [
-                     *                 "Goalkeeper",
-                     *                 "Defender"
-                     *               ]
-                     *             }
+                     *           "men": [
+                     *             "D1",
+                     *             "D2",
+                     *             "D3",
+                     *             "NAIA",
+                     *             "USCAA",
+                     *             "NCCAA-D1",
+                     *             "NCCAA-D2",
+                     *             "NJCAA-D1",
+                     *             "NJCAA-D2",
+                     *             "NJCAA-D3",
+                     *             "3C2A",
+                     *             "NWAC"
                      *           ],
-                     *           "stats": [
-                     *             {
-                     *               "key": "goals",
-                     *               "label": "Goals"
-                     *             }
+                     *           "women": [
+                     *             "D1",
+                     *             "D2",
+                     *             "D3",
+                     *             "NAIA",
+                     *             "USCAA",
+                     *             "NCCAA-D1",
+                     *             "NCCAA-D2",
+                     *             "NJCAA-D1",
+                     *             "NJCAA-D2",
+                     *             "NJCAA-D3",
+                     *             "3C2A",
+                     *             "NWAC"
                      *           ]
                      *         }
+                     *       },
+                     *       "ops_by_type": {
+                     *         "int": [
+                     *           "eq",
+                     *           "gt",
+                     *           "gte",
+                     *           "in",
+                     *           "lt",
+                     *           "lte",
+                     *           "neq",
+                     *           "not_in"
+                     *         ],
+                     *         "string": [
+                     *           "contains",
+                     *           "eq",
+                     *           "in",
+                     *           "neq",
+                     *           "not_in"
+                     *         ]
+                     *       },
+                     *       "sections": {
+                     *         "player": [
+                     *           {
+                     *             "field": "position",
+                     *             "label": "Position",
+                     *             "manual_search_operators": [
+                     *               "contains",
+                     *               "eq",
+                     *               "in",
+                     *               "neq",
+                     *               "not_in"
+                     *             ],
+                     *             "manual_search_supported": true,
+                     *             "maximum_request_key": null,
+                     *             "minimum_request_key": null,
+                     *             "normalize": "position",
+                     *             "ops": [
+                     *               "contains",
+                     *               "eq",
+                     *               "in",
+                     *               "neq",
+                     *               "not_in"
+                     *             ],
+                     *             "range_request_key": null,
+                     *             "request_key": "position",
+                     *             "sortable": false,
+                     *             "type": "string",
+                     *             "values": [
+                     *               "GK",
+                     *               "DEF",
+                     *               "MID",
+                     *               "FWD"
+                     *             ],
+                     *             "values_endpoint": true
+                     *           },
+                     *           {
+                     *             "field": "home_state",
+                     *             "label": "Home State",
+                     *             "manual_search_operators": [
+                     *               "contains",
+                     *               "eq",
+                     *               "in",
+                     *               "neq",
+                     *               "not_in"
+                     *             ],
+                     *             "manual_search_supported": true,
+                     *             "maximum_request_key": null,
+                     *             "minimum_request_key": null,
+                     *             "normalize": "home_state",
+                     *             "ops": [
+                     *               "contains",
+                     *               "eq",
+                     *               "in",
+                     *               "neq",
+                     *               "not_in"
+                     *             ],
+                     *             "range_request_key": null,
+                     *             "request_key": "hometown_state",
+                     *             "sortable": false,
+                     *             "type": "string",
+                     *             "values": null,
+                     *             "values_endpoint": true
+                     *           }
+                     *         ]
+                     *       },
+                     *       "sort_fields": {
+                     *         "player": {
+                     *           "soccer": [
+                     *             "a",
+                     *             "cbo",
+                     *             "g",
+                     *             "ga",
+                     *             "gaa",
+                     *             "gp"
+                     *           ]
+                     *         }
+                     *       },
+                     *       "sport_genders": {
+                     *         "soccer": [
+                     *           "men",
+                     *           "women"
+                     *         ]
+                     *       },
+                     *       "stats_by_sport": {
+                     *         "soccer": [
+                     *           {
+                     *             "field": "g",
+                     *             "label": "Goals",
+                     *             "manual_search_operators": [
+                     *               "gt",
+                     *               "gte",
+                     *               "lt",
+                     *               "lte"
+                     *             ],
+                     *             "manual_search_supported": true,
+                     *             "maximum_request_key": "max_goals",
+                     *             "minimum_request_key": "min_goals",
+                     *             "normalize": null,
+                     *             "ops": [
+                     *               "eq",
+                     *               "gt",
+                     *               "gte",
+                     *               "in",
+                     *               "lt",
+                     *               "lte",
+                     *               "neq",
+                     *               "not_in"
+                     *             ],
+                     *             "range_request_key": "stat_ranges.g",
+                     *             "request_key": null,
+                     *             "sortable": true,
+                     *             "type": "int",
+                     *             "values": null,
+                     *             "values_endpoint": false
+                     *           },
+                     *           {
+                     *             "field": "sh_pct",
+                     *             "label": "Shot %",
+                     *             "manual_search_operators": [
+                     *               "gt",
+                     *               "gte",
+                     *               "lt",
+                     *               "lte"
+                     *             ],
+                     *             "manual_search_supported": true,
+                     *             "maximum_request_key": null,
+                     *             "minimum_request_key": null,
+                     *             "normalize": null,
+                     *             "ops": [
+                     *               "eq",
+                     *               "gt",
+                     *               "gte",
+                     *               "lt",
+                     *               "lte",
+                     *               "neq"
+                     *             ],
+                     *             "range_request_key": "stat_ranges.sh_pct",
+                     *             "request_key": null,
+                     *             "sortable": true,
+                     *             "type": "float",
+                     *             "values": null,
+                     *             "values_endpoint": false
+                     *           }
+                     *         ]
                      *       }
                      *     }
                      */
@@ -3687,13 +5986,13 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description Validation Error */
+            /** @description The request failed validation; `error.fields` names each field. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
             /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
@@ -3714,18 +6013,60 @@ export interface operations {
                 sport: string;
                 /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
                 division: string;
-                /** @description 'men' or 'women'. */
+                /** @description 'men' or 'women'. Defaults to 'men' for a sport with both (soccer, basketball, volleyball, lacrosse, track-and-field), so pass 'women' for the women's side; ignored for single-gender sports. */
                 gender?: string | null;
-                /** @description Only games this team played (either side). */
-                team_id?: number | null;
-                /** @description Championship year, e.g. '2025'. */
+                /** @description Only games these teams played, home or away. One value, or several separated by commas (any of). */
+                team_id?: string | null;
+                /** @description With `team_id`: only games against these teams (a head-to-head). One value, or several separated by commas (any of). */
+                opponent_id?: string | null;
+                /** @description Home team ids. One value, or several separated by commas (any of). */
+                home_team_id?: string | null;
+                /** @description Away team ids. One value, or several separated by commas (any of). */
+                away_team_id?: string | null;
+                /** @description Only games these teams won. One value, or several separated by commas (any of). */
+                winner_team_id?: string | null;
+                /** @description Championship year, e.g. '2025'. One value, or several separated by commas (any of). */
                 season?: string | null;
-                /** @description ISO date; only games on/after this date. */
-                date_from?: string | null;
-                /** @description ISO date; only games on/before this date. */
-                date_to?: string | null;
-                /** @description scheduled | final | postponed | cancelled | forfeit */
+                /** @description scheduled | final | postponed | cancelled | forfeit. One value, or several separated by commas (any of). */
                 status?: string | null;
+                /** @description Exclude these values (comma-separated). Rows with no value for the field are left out too. */
+                status_not?: string | null;
+                /** @description ISO date; only games on/after this date. */
+                game_date_min?: string | null;
+                /** @description ISO date; only games on/before this date. */
+                game_date_max?: string | null;
+                /** @description Older name for `game_date_min`. */
+                date_from?: string | null;
+                /** @description Older name for `game_date_max`. */
+                date_to?: string | null;
+                /** @description Only games involving a team from this conference (that season's membership). Conference, by its full name or its abbreviation: 'University Athletic Association (UAA)', 'University Athletic Association' and 'UAA' are the same conference. GET /v1/conferences lists them. One value, or several separated by commas (any of). */
+                conference?: string | null;
+                /** @description true: both teams share a conference; false: they do not. */
+                conference_game?: boolean | null;
+                /** @description true: neutral-site games only; false: the rest. */
+                neutral_site?: boolean | null;
+                /** @description Case-insensitive venue contains. */
+                venue?: string | null;
+                /** @description Case-insensitive location (city, state) contains. */
+                location?: string | null;
+                /** @description Attendance at least this. */
+                attendance_min?: number | null;
+                /** @description Attendance at most this. */
+                attendance_max?: number | null;
+                /** @description Home score at least this. */
+                home_score_min?: number | null;
+                /** @description Home score at most this. */
+                home_score_max?: number | null;
+                /** @description Away score at least this. */
+                away_score_min?: number | null;
+                /** @description Away score at most this. */
+                away_score_max?: number | null;
+                /** @description true: only games with a `boxscore_url`; false: only those without. */
+                has_boxscore?: boolean | null;
+                /** @description game_date (default) | attendance | home_score | away_score. */
+                sort_by?: string | null;
+                /** @description 'ascending' or 'descending'. */
+                sort_order?: string;
                 limit?: number;
                 cursor?: string | null;
             };
@@ -3762,13 +6103,13 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description Validation Error */
+            /** @description The request failed validation; `error.fields` names each field. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
             /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
@@ -3789,7 +6130,7 @@ export interface operations {
                 sport: string;
                 /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
                 division: string;
-                /** @description 'men' or 'women'. */
+                /** @description 'men' or 'women'. Defaults to 'men' for a sport with both (soccer, basketball, volleyball, lacrosse, track-and-field), so pass 'women' for the women's side; ignored for single-gender sports. */
                 gender?: string | null;
             };
             header?: never;
@@ -3836,13 +6177,13 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description Validation Error */
+            /** @description The request failed validation; `error.fields` names each field. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
             /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
@@ -3861,10 +6202,38 @@ export interface operations {
             query?: {
                 /** @description 'player' or 'coach'. */
                 kind?: string | null;
-                /** @description Full sport path, e.g. 'womens-volleyball'. */
+                /** @description player_added | player_removed | coach_added | coach_removed | title_changed (the resolved and observed tiers also carry roster_rollover and attrs_changed). One value, or several separated by commas (any of). */
+                event_type?: string | null;
+                /** @description Full sport path, e.g. 'womens-volleyball'. One value, or several separated by commas (any of). */
                 sport_path?: string | null;
+                /** @description Sport, e.g. 'soccer': both genders unless `gender` is given. One value, or several separated by commas (any of). */
+                sport?: string | null;
+                /** @description 'men' or 'women': that side of `sport`, or of every sport. */
+                gender?: string | null;
+                /** @description Division of the team, e.g. 'D3' or 'D1,D2'. 'D1' includes football's FBS and FCS. */
+                division?: string | null;
+                /** @description Season the movement belongs to, e.g. '2026'. One value, or several separated by commas (any of). */
+                season?: string | null;
+                /** @description Team ids. One value, or several separated by commas (any of). */
+                team_id?: string | null;
+                /** @description School ids: every program of the school, across sports. One value, or several separated by commas (any of). */
+                school_id?: string | null;
+                /** @description Federal IPEDS UNITID of the school. */
+                ipeds_unitid?: number | null;
+                /** @description Conference of the team. Conference, by its full name or its abbreviation: 'University Athletic Association (UAA)', 'University Athletic Association' and 'UAA' are the same conference. GET /v1/conferences lists them. One value, or several separated by commas (any of). */
+                conference?: string | null;
+                /** @description Exclude these values (comma-separated). Rows with no value for the field are left out too. */
+                conference_not?: string | null;
+                /** @description Two-letter US state code of the school. One value, or several separated by commas (any of). */
+                state?: string | null;
+                /** @description Exclude these values (comma-separated). Rows with no value for the field are left out too. */
+                state_not?: string | null;
+                /** @description Resolver outcome, e.g. 'linked_transfer' or 'new_hire' (see the `resolution_status` field). One value, or several separated by commas (any of). */
+                resolution_status?: string | null;
                 /** @description ISO datetime; only movements at/after this time. Compared against published_at on the published tier and observed_at on the resolved and observed tiers. */
                 since?: string | null;
+                /** @description ISO datetime; only movements at/before this time (same clock as `since`). */
+                until?: string | null;
                 /** @description Feed tier: 'published' (curated, every plan), 'resolved' (identity resolution finished; Enterprise), or 'observed' (every non-dismissed event including pending ones; Enterprise). */
                 status?: string;
                 limit?: number;
@@ -3894,13 +6263,13 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description Validation Error */
+            /** @description The request failed validation; `error.fields` names each field. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
             /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
@@ -3919,7 +6288,7 @@ export interface operations {
             query: {
                 /** @description Sport scope, e.g. 'soccer'. */
                 sport: string;
-                /** @description 'men' or 'women'. */
+                /** @description 'men' or 'women'. Defaults to 'men' for a sport with both (soccer, basketball, volleyball, lacrosse, track-and-field), so pass 'women' for the women's side; ignored for single-gender sports. */
                 gender?: string | null;
             };
             header?: never;
@@ -3966,13 +6335,13 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description Validation Error */
+            /** @description The request failed validation; `error.fields` names each field. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
             /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
@@ -4015,13 +6384,13 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description Validation Error */
+            /** @description The request failed validation; `error.fields` names each field. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
             /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
@@ -4075,13 +6444,13 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description Validation Error */
+            /** @description The request failed validation; `error.fields` names each field. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
             /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
@@ -4102,7 +6471,7 @@ export interface operations {
                 sport: string;
                 /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
                 division: string;
-                /** @description 'men' or 'women'. */
+                /** @description 'men' or 'women'. Defaults to 'men' for a sport with both (soccer, basketball, volleyball, lacrosse, track-and-field), so pass 'women' for the women's side; ignored for single-gender sports. */
                 gender?: string | null;
             };
             header?: never;
@@ -4149,13 +6518,13 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description Validation Error */
+            /** @description The request failed validation; `error.fields` names each field. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
             /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
@@ -4176,7 +6545,7 @@ export interface operations {
                 sport: string;
                 /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
                 division: string;
-                /** @description 'men' or 'women'. */
+                /** @description 'men' or 'women'. Defaults to 'men' for a sport with both (soccer, basketball, volleyball, lacrosse, track-and-field), so pass 'women' for the women's side; ignored for single-gender sports. */
                 gender?: string | null;
             };
             header?: never;
@@ -4223,13 +6592,13 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description Validation Error */
+            /** @description The request failed validation; `error.fields` names each field. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
             /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
@@ -4250,12 +6619,44 @@ export interface operations {
                 sport: string;
                 /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
                 division: string;
-                /** @description 'men' or 'women'. */
+                /** @description 'men' or 'women'. Defaults to 'men' for a sport with both (soccer, basketball, volleyball, lacrosse, track-and-field), so pass 'women' for the women's side; ignored for single-gender sports. */
                 gender?: string | null;
-                /** @description Record status filter, e.g. 'INC' (active). */
+                /** @description NCAA record status: INC (active), REACT, WTH (withdrawn), SIG (signed), MAT (matriculated). One value, or several separated by commas (any of). */
                 status?: string | null;
+                /** @description Exclude these values (comma-separated). Rows with no value for the field are left out too. */
+                status_not?: string | null;
+                /** @description Portal cycle the entry belongs to, e.g. '2025-26'. One value, or several separated by commas (any of). */
+                year?: string | null;
+                /** @description Case-insensitive athlete name contains. */
+                q?: string | null;
+                /** @description School the athlete is leaving, exactly as the entry's `team`. One value, or several separated by commas (any of). */
+                team?: string | null;
+                /** @description Exclude these values (comma-separated). Rows with no value for the field are left out too. */
+                team_not?: string | null;
+                /** @description Conference of the school the athlete is leaving: the NCAA's name as on the entry ('Atlantic Coast Conference'), or the abbreviation our teams use for it ('ACC'). One value, or several separated by commas (any of). */
+                conference?: string | null;
+                /** @description Exclude these values (comma-separated). Rows with no value for the field are left out too. */
+                conference_not?: string | null;
+                /** @description true: graduate transfers only; false: the rest. */
+                is_grad_transfer?: boolean | null;
+                /** @description true: designated student-athletes only; false: the rest. */
+                designated_student_athlete?: boolean | null;
+                /** @description Only entries matched to these player ids. One value, or several separated by commas (any of). */
+                player_id?: string | null;
+                /** @description true: only entries matched to a roster player (`player_id` set); false: only unmatched. */
+                has_player?: boolean | null;
+                /** @description ISO date; entered the portal on/after this date. */
+                initiated_date_min?: string | null;
+                /** @description ISO date; entered the portal on/before this date. */
+                initiated_date_max?: string | null;
                 /** @description ISO 8601 — only entries first seen at/after this time. */
                 since?: string | null;
+                /** @description ISO 8601 — only entries first seen at/before this time. */
+                until?: string | null;
+                /** @description first_seen_at (default) | initiated_date | last_seen_at. */
+                sort_by?: string | null;
+                /** @description 'ascending' or 'descending'. */
+                sort_order?: string;
                 limit?: number;
                 cursor?: string | null;
             };
@@ -4310,13 +6711,13 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description Validation Error */
+            /** @description The request failed validation; `error.fields` names each field. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
             /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
@@ -4388,13 +6789,13 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description Validation Error */
+            /** @description The request failed validation; `error.fields` names each field. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
             /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
@@ -4464,13 +6865,13 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description Validation Error */
+            /** @description The request failed validation; `error.fields` names each field. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
             /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
@@ -4489,10 +6890,30 @@ export interface operations {
             query?: {
                 /** @description Case-insensitive name contains. */
                 q?: string | null;
-                /** @description Two-letter US state code. */
-                state?: string | null;
+                /** @description School ids. One value, or several separated by commas (any of). */
+                id?: string | null;
+                /** @description School slugs. One value, or several separated by commas (any of). */
+                slug?: string | null;
                 /** @description Exact federal IPEDS UNITID. */
                 ipeds_unitid?: number | null;
+                /** @description Athletics site domain, e.g. 'athletics.cmu.edu'. One value, or several separated by commas (any of). */
+                athletics_domain?: string | null;
+                /** @description Two-letter US state code of the school. One value, or several separated by commas (any of). */
+                state?: string | null;
+                /** @description Exclude these values (comma-separated). Rows with no value for the field are left out too. */
+                state_not?: string | null;
+                /** @description City of the school. One value, or several separated by commas (any of). */
+                city?: string | null;
+                /** @description 'Public', 'Private nonprofit' or 'Private for-profit'. One value, or several separated by commas (any of). */
+                control?: string | null;
+                /** @description Only schools that field this sport, e.g. 'soccer'. One value, or several separated by commas (any of). */
+                sport?: string | null;
+                /** @description 'men' or 'women': the side of `sport` (or of any sport) the school must field. */
+                gender?: string | null;
+                /** @description Only schools with a program in these divisions, e.g. 'D3' or 'D2,D3'. */
+                division?: string | null;
+                /** @description Only schools with a program in this conference. Conference, by its full name or its abbreviation: 'University Athletic Association (UAA)', 'University Athletic Association' and 'UAA' are the same conference. GET /v1/conferences lists them. One value, or several separated by commas (any of). */
+                conference?: string | null;
                 limit?: number;
                 cursor?: string | null;
             };
@@ -4520,13 +6941,13 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description Validation Error */
+            /** @description The request failed validation; `error.fields` names each field. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
             /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
@@ -4578,13 +6999,13 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description Validation Error */
+            /** @description The request failed validation; `error.fields` names each field. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
             /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
@@ -4643,12 +7064,30 @@ export interface operations {
                 sport: string;
                 /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
                 division: string;
-                /** @description 'men' or 'women'. */
+                /** @description 'men' or 'women'. Defaults to 'men' for a sport with both (soccer, basketball, volleyball, lacrosse, track-and-field), so pass 'women' for the women's side; ignored for single-gender sports. */
                 gender?: string | null;
-                /** @description Filter to one conference. */
-                conference?: string | null;
+                /** @description Case-insensitive team name contains. */
+                q?: string | null;
+                /** @description Exact team name. One value, or several separated by commas (any of). */
+                name?: string | null;
+                /** @description Team ids. One value, or several separated by commas (any of). */
+                id?: string | null;
+                /** @description School ids. One value, or several separated by commas (any of). */
+                school_id?: string | null;
                 /** @description Filter to the school with this federal IPEDS UNITID. */
                 ipeds_unitid?: number | null;
+                /** @description Conference, by its full name or its abbreviation: 'University Athletic Association (UAA)', 'University Athletic Association' and 'UAA' are the same conference. GET /v1/conferences lists them. One value, or several separated by commas (any of). */
+                conference?: string | null;
+                /** @description Exclude these values (comma-separated). Rows with no value for the field are left out too. */
+                conference_not?: string | null;
+                /** @description Two-letter US state code of the school. One value, or several separated by commas (any of). */
+                state?: string | null;
+                /** @description Exclude these values (comma-separated). Rows with no value for the field are left out too. */
+                state_not?: string | null;
+                /** @description City of the school. One value, or several separated by commas (any of). */
+                city?: string | null;
+                /** @description 'Public', 'Private nonprofit' or 'Private for-profit'. One value, or several separated by commas (any of). */
+                control?: string | null;
                 limit?: number;
                 cursor?: string | null;
             };
@@ -4685,13 +7124,13 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description Validation Error */
+            /** @description The request failed validation; `error.fields` names each field. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
             /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
@@ -4712,7 +7151,7 @@ export interface operations {
                 sport: string;
                 /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
                 division: string;
-                /** @description 'men' or 'women'. */
+                /** @description 'men' or 'women'. Defaults to 'men' for a sport with both (soccer, basketball, volleyball, lacrosse, track-and-field), so pass 'women' for the women's side; ignored for single-gender sports. */
                 gender?: string | null;
             };
             header?: never;
@@ -4759,13 +7198,13 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description Validation Error */
+            /** @description The request failed validation; `error.fields` names each field. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
             /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
@@ -4786,11 +7225,17 @@ export interface operations {
                 sport: string;
                 /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
                 division: string;
-                /** @description 'men' or 'women'. */
+                /** @description 'men' or 'women'. Defaults to 'men' for a sport with both (soccer, basketball, volleyball, lacrosse, track-and-field), so pass 'women' for the women's side; ignored for single-gender sports. */
                 gender?: string | null;
                 /** @description Season to return (championship year, e.g. '2025'); defaults to the latest held. */
                 season?: string | null;
-                /** @description Enterprise: player id of a managed athlete who has authorized your account. Contact fields are then evaluated against that athlete's verified claim, audited, and billed at the delegated coach-contact rate. */
+                /** @description Case-insensitive coach name contains. */
+                q?: string | null;
+                /** @description Case-insensitive title contains, e.g. 'assistant' or 'goalkeeper'. */
+                role?: string | null;
+                /** @description true: head coaches only; false: the rest of the staff. */
+                is_head_coach?: boolean | null;
+                /** @description Enterprise: player id of a managed athlete who has authorized your account. Contact fields are then evaluated against that athlete's verified claim and the read is recorded in the athlete's access log. */
                 on_behalf_of?: number | null;
             };
             header?: never;
@@ -4837,13 +7282,13 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description Validation Error */
+            /** @description The request failed validation; `error.fields` names each field. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
             /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
@@ -4864,10 +7309,30 @@ export interface operations {
                 sport: string;
                 /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
                 division: string;
-                /** @description 'men' or 'women'. */
+                /** @description 'men' or 'women'. Defaults to 'men' for a sport with both (soccer, basketball, volleyball, lacrosse, track-and-field), so pass 'women' for the women's side; ignored for single-gender sports. */
                 gender?: string | null;
                 /** @description Roster season (4-digit year, e.g. '2026'); defaults to the latest held. */
                 season?: string | null;
+                /** @description Case-insensitive player name contains. */
+                q?: string | null;
+                /** @description Position, as listed by GET /v1/filters/catalog; matches every spelling rosters use for it ('Forward' also finds 'F' and 'Fwd'). One value, or several separated by commas (any of). */
+                position?: string | null;
+                /** @description Exclude these values (comma-separated). Rows with no value for the field are left out too. */
+                position_not?: string | null;
+                /** @description 'Freshman', 'Sophomore', 'Junior' or 'Senior / Graduate'; matches every spelling rosters use. One value, or several separated by commas (any of). */
+                class_year?: string | null;
+                /** @description Exclude these values (comma-separated). Rows with no value for the field are left out too. */
+                class_year_not?: string | null;
+                /** @description Jersey number as published, e.g. '7' or '00'. One value, or several separated by commas (any of). */
+                jersey_number?: string | null;
+                /** @description Home state or province, as a name or a postal code ('Ohio' or 'OH'). One value, or several separated by commas (any of). */
+                home_state?: string | null;
+                /** @description Home country. One value, or several separated by commas (any of). */
+                home_country?: string | null;
+                /** @description true: only athletes who claimed their profile; false: only unclaimed. */
+                is_verified?: boolean | null;
+                /** @description 'roster' (listed on a roster page or feed; the entries whose `membership_source` is null) or 'box_score'. One value, or several separated by commas (any of). */
+                membership_source?: string | null;
                 limit?: number;
                 cursor?: string | null;
             };
@@ -4915,13 +7380,13 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description Validation Error */
+            /** @description The request failed validation; `error.fields` names each field. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
             /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */

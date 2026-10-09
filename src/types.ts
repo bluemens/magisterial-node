@@ -13,6 +13,60 @@ export type PlayerSummary = Schemas["PlayerSummary"];
 export type PlayerDetail = Schemas["PlayerDetail"];
 export type PlayerSeasonsResponse = Schemas["PlayerSeasonsResponse"];
 export type PlayerSearchPage = Schemas["PlayerSearchPage"];
+export type PlayerSeasonStats = Schemas["PlayerSeasonStats"];
+export type TeamRanking = Schemas["TeamRanking"];
+export type TrackBest = Schemas["TrackBest"];
+export type TrackSummary = Schemas["TrackSummary"];
+
+// One stat schema per sport: the stat fields GET /v1/filters/catalog lists
+// for it. Every field is present on every row; null means the source did not
+// publish it.
+export type SoccerStats = Schemas["SoccerStats"];
+export type BasketballStats = Schemas["BasketballStats"];
+export type BaseballSoftballStats = Schemas["BaseballSoftballStats"];
+export type VolleyballStats = Schemas["VolleyballStats"];
+export type FootballStats = Schemas["FootballStats"];
+export type LacrosseStats = Schemas["LacrosseStats"];
+
+/** Sport (as passed in a request) -> the shape of its `stats` objects. */
+export interface StatsBySport {
+  soccer: SoccerStats;
+  basketball: BasketballStats;
+  baseball: BaseballSoftballStats;
+  softball: BaseballSoftballStats;
+  volleyball: VolleyballStats;
+  football: FootballStats;
+  lacrosse: LacrosseStats;
+}
+
+/** `stats` for a sport named as a literal ("soccer"); an untyped record for
+ * a sport only known at run time, and for track and field. */
+export type StatsFor<S extends string> = S extends keyof StatsBySport
+  ? StatsBySport[S]
+  : { [key: string]: unknown };
+
+/** A search row whose `stats` is typed by the sport searched. */
+export type PlayerSummaryOf<S extends string> = Omit<PlayerSummary, "stats"> & {
+  stats?: StatsFor<S>;
+};
+
+type SeasonsOf<S extends string> = {
+  stats_by_season?: Array<Omit<PlayerSeasonStats, "stats"> & { stats?: StatsFor<S> }>;
+  stats_totals?: StatsFor<S>;
+};
+
+/** A player whose season stats are typed by the sport requested. */
+export type PlayerDetailOf<S extends string> = Omit<
+  PlayerDetail,
+  "stats_by_season" | "stats_totals"
+> &
+  SeasonsOf<S>;
+
+export type PlayerSeasonsResponseOf<S extends string> = Omit<
+  PlayerSeasonsResponse,
+  "stats_by_season" | "stats_totals"
+> &
+  SeasonsOf<S>;
 
 export type TeamSummary = Schemas["TeamSummary"];
 export type TeamDetail = Schemas["TeamDetail"];
@@ -72,3 +126,4 @@ export type PublicQueryRequest = Schemas["PublicQueryRequest"];
 
 export type ApiErrorDetail = Schemas["ApiErrorDetail"];
 export type ApiErrorResponse = Schemas["ApiErrorResponse"];
+export type ApiValidationErrorResponse = Schemas["ApiValidationErrorResponse"];

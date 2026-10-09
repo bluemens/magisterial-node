@@ -182,6 +182,52 @@ describe("pagination", () => {
     expect(bodies[1].division).toBe(mixedScope);
   });
 
+  it("types a search row's stats by the sport searched", async () => {
+    const row = {
+      id: 184223, name: "Jordan Rivera", team_id: 1873, person_id: 90211,
+      sport: "soccer", gender: "men", home_state: "OR", season: "2026",
+      // every stat field of the sport, null when unpublished; the keys the
+      // API returned before 2026-10-09 ride along until 2027-01-12
+      stats: { gp: 18, g: 7, sh_pct: 0.171, yc: 3, rc: 0, pk_made: 1, pk_att: 2, sv: null,
+               "sh%": 0.171, "yc-rc": "3-0", team_id: 1873 },
+    };
+    const { client } = makeClient((_url, init) => {
+      expect(JSON.parse(String(init.body)).sort_by).toBe("g");
+      return json(200, { data: [row], next_cursor: null, has_more: false });
+    });
+
+    const page = await client.players.search({ sport: "soccer", division: "D3", sort_by: "g" });
+    const top = page.data[0];
+    // number | null | undefined: no cast, because `sport` was a literal
+    const goals: number | null | undefined = top.stats?.g;
+    const yellows: number | null | undefined = top.stats?.yc;
+    expect([goals, yellows, top.stats?.sv, top.team_id, top.home_state]).toEqual([7, 3, null, 1873, "OR"]);
+
+    // A sport only known at run time keeps the open record.
+    const sport: string = "soccer";
+    const loose = await client.players.search({ sport, division: "D3", sort_by: "g" });
+    const value: unknown = loose.data[0].stats?.g;
+    expect(value).toBe(7);
+  });
+
+  it("lists a player's seasons newest first with the same stat object", async () => {
+    const { client } = makeClient(() =>
+      json(200, {
+        id: 184223, sport: "soccer",
+        stats_by_season: [
+          { season: "2026", team_id: 1873, stats: { gp: 18, g: 7 } },
+          { season: "2025", team_id: 1873, stats: { gp: 16, g: 3 } },
+        ],
+        stats_totals: { gp: 34, g: 10 },
+        track_bests: [],
+      }),
+    );
+    const detail = await client.players.get(184223, { sport: "soccer", division: "D3" });
+    expect(detail.stats_by_season?.map((s) => s.season)).toEqual(["2026", "2025"]);
+    const first: number | null | undefined = detail.stats_by_season?.[0].stats?.g;
+    expect([first, detail.stats_totals?.g]).toEqual([7, 10]);
+  });
+
   it("exposes the current page without following", async () => {
     const { client } = makeClient(() =>
       json(200, { data: [player(1)], next_cursor: "c2", has_more: true }),
