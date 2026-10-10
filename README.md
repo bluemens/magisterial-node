@@ -35,10 +35,10 @@ const page = await client.players.search({
   division: "D1,NAIA,NJCAA-D1",
   gender: "women",
   position: "Forward",
-  sort_by: "goals",
+  sort_by: "g",
 });
 for await (const player of page) {
-  console.log(player.name, player.team, player.stats?.goals);
+  console.log(player.name, player.team, player.stats?.g);
 }
 
 // One player's full profile
@@ -73,6 +73,41 @@ const staff = await client.teams.coaches(1873, {
   on_behalf_of: grant.player_id!,
 });
 ```
+
+### Stats
+
+A stat has one name everywhere: the field names `client.reference.filterCatalog()`
+lists for a sport (`stats_by_sport`) are what you sort by and what every
+`stats` object holds. Every stat field of the sport is present on every row;
+`null` means the source did not publish it.
+
+```ts
+// `sport` as a literal types each row's stats for that sport
+const page = await client.players.search({ sport: "soccer", division: "D3", sort_by: "g" });
+const top = page.data[0];
+top.stats?.g;        // number | null
+top.stats?.sh_pct;   // number | null
+top.stats?.yc;       // yellow cards
+
+const detail = await client.players.get(top.id!, { sport: "soccer", division: "D3" });
+for (const season of detail.stats_by_season ?? []) {   // newest first
+  console.log(season.season, season.team_id, season.stats?.g);
+}
+detail.stats_totals?.g;
+```
+
+`types.SoccerStats`, `BasketballStats`, `BaseballSoftballStats`,
+`VolleyballStats`, `FootballStats` and `LacrosseStats` are the per-sport
+shapes (`types.StatsBySport` maps a sport to its shape). Track and field has
+no season stats: a search row reports the athlete's best mark in
+`player.track`, and `detail.track_bests` lists the best per event.
+
+A player row carries its profile at the top level (`team_id`, `person_id`,
+`sport`, `gender`, `jersey_number`, `home_state`, `height_inches`, ...).
+Until 2027-01-12 the API also returns the keys it returned before 2026-10-09
+(copies of those fields and the soccer keys `sh%`, `sog%`, `sv%`, `yc-rc`,
+`pg-pa` inside `stats`, and `season_stats` on a player); read the fields
+above instead.
 
 ### Errors
 

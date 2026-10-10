@@ -1,7 +1,11 @@
 // Reference data: sports, divisions, conferences, filter catalog, coverage.
 
 import type { Magisterial } from "../client.js";
-import type { SportListResponse, StringListResponse } from "../types.js";
+import type {
+  FilterCatalogResponse,
+  SportListResponse,
+  StringListResponse,
+} from "../types.js";
 
 export class Reference {
   constructor(private client: Magisterial) {}
@@ -31,8 +35,9 @@ export class Reference {
   }
 
   /** Queryable/sortable fields per sport (feeds players.search sortBy and
-   * alert filter DSLs). */
-  filterCatalog(params: { sport?: string } = {}): Promise<Record<string, unknown>> {
+   * alert filter DSLs). Each field lists the operators `search_ops` and
+   * `alert_ops` accept. */
+  filterCatalog(params: { sport?: string } = {}): Promise<FilterCatalogResponse> {
     return this.client.get("/v1/filters/catalog", params);
   }
 }
