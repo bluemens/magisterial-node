@@ -78,6 +78,7 @@ export type TransferRecord = Schemas["TransferRecord"];
 export type TransferListResponse = Schemas["TransferListResponse"];
 
 export type MovementSubject = Schemas["MovementSubject"];
+export type MovementCounterpart = Schemas["MovementCounterpart"];
 export type MovementEntry = Schemas["MovementEntry"];
 export type MovementPage = Schemas["MovementPage"];
 
@@ -122,7 +123,15 @@ export type AlertDeleteResponse = Schemas["AlertDeleteResponse"];
 export type AlertCreateRequest = Schemas["AlertCreateRequest"];
 
 export type PlayerSearchRequest = Schemas["PlayerSearchRequest"];
+export type NearPoint = Schemas["NearPoint"];
 export type PublicQueryRequest = Schemas["PublicQueryRequest"];
+
+// GET /v1/filters/catalog: the names every /v1 endpoint filters, sorts and reports by.
+export type FilterCatalogResponse = Schemas["FilterCatalogResponse"];
+export type FilterCatalogField = Schemas["FilterCatalogField"];
+export type FilterCatalogStatField = Schemas["FilterCatalogStatField"];
+export type FilterCatalogSortFields = Schemas["FilterCatalogSortFields"];
+export type FilterCatalogTrackSeason = Schemas["FilterCatalogTrackSeason"];
 
 export type ApiErrorDetail = Schemas["ApiErrorDetail"];
 export type ApiErrorResponse = Schemas["ApiErrorResponse"];

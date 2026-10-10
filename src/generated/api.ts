@@ -19,11 +19,19 @@ export interface paths {
         get: operations["list_alerts"];
         put?: never;
         /**
-         * Create alert (usage-billed monthly)
-         * @description Watch the transfer portal for entries matching a filter set. Billed per
-         *     active alert per calendar month, charged on creation. Matches push to
-         *     webhook endpoints registered in the console (event `alert.triggered`);
-         *     GET /v1/alerts/{alert_id}/matches remains available for polling.
+         * Create alert (verified coach, usage-billed monthly)
+         * @description Watch the transfer portal for entries matching a filter set. Matches
+         *     push to webhook endpoints registered in the console (event
+         *     `alert.triggered`); GET /v1/alerts/{alert_id}/matches remains available
+         *     for polling.
+         *
+         *     Requires a paid plan with API billing enabled; no coaching plan is
+         *     needed. Plus and Premium bill each active alert per calendar month,
+         *     charged on creation; Developer Pro and above include it. The key must
+         *     delegate `automation.portal_trigger.use` (and
+         *     `automation.portal_filter.use` or `automation.player_filter.use` for the
+         *     filter sections it uses), and the current actor must be an active
+         *     verified coach.
          */
         post: operations["create_alert"];
         delete?: never;
@@ -234,9 +242,13 @@ export interface paths {
         };
         /**
          * List divisions
-         * @description Atomic values for the `division` scope parameter. Clients may comma-join
-         *     any non-empty sport-valid subset, e.g. 'D1,NAIA,NJCAA-D1'. Combinations are
-         *     intentionally not enumerated by this endpoint.
+         * @description Values for the `division` scope parameter. With `sport` (and `gender`)
+         *     the list is exactly what that sport accepts, so any comma-joined subset of
+         *     it is a valid `division`, e.g. 'D1,NAIA,NJCAA-D1'. Without `sport` it is
+         *     every division code across all sports; not every code is valid for every
+         *     sport, so pass `sport` (or read `divisions` on GET /v1/sports) before
+         *     building a scope. Football's 'D1' is the combined view of 'D1-FBS' and
+         *     'D1-FCS': request the combined code or the subdivisions, not both.
          */
         get: operations["list_divisions"];
         put?: never;
@@ -305,14 +317,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Queryable filter fields for a sport
-         * @description The filter and stat vocabulary per sport — the keys accepted by
-         *     POST /v1/players/search (`sort_by`, filter fields) and by alert `filters`.
-         *     `divisions_by_sport_gender` gives the divisions each gender of a sport is
-         *     offered in (men's volleyball has fewer than women's; lacrosse is the same
-         *     for both genders).
-         */
+        /** Queryable filter fields for a sport */
         get: operations["get_filter_catalog"];
         put?: never;
         post?: never;
@@ -379,15 +384,23 @@ export interface paths {
          * @description Roster and coaching-staff movements, newest first. Cross-sport and
          *     cross-division: no scope is required, and every filter is optional, so
          *     `school_id=` alone is one school's movements in all of its sports. The
-         *     default `published` tier is the curated feed our
-         *     editors (or the auto-publish policy: confirmed head-coach changes,
-         *     portal-corroborated transfers) released. Enterprise keys can read the
-         *     resolver stream with `status=resolved` (identity resolved but not
-         *     editorially published) or `status=observed` (every non-dismissed event,
-         *     including pending ones), each row carrying its `resolution_status` so you
-         *     choose the confidence threshold. `person_id` links into
-         *     GET /v1/persons/{person_id}; `transfer_id` is the transfer edge a player
-         *     movement minted.
+         *     default `published` tier carries what is confirmed: a transfer once it is
+         *     resolved to the transfer it made (`transfer_id`), reported as the arrival
+         *     at the new school and the departure from the old one; a coach's move once
+         *     it is resolved to the post at another school they held the season before;
+         *     and confirmed head-coach changes. Each event is reported at the school the
+         *     person joined or left. Enterprise keys can read the resolver stream with
+         *     `status=resolved` (identity resolved, including departures with no known
+         *     destination and new hires with no known previous post) or
+         *     `status=observed` (every non-dismissed event, including pending ones),
+         *     each row carrying its `resolution_status` so you choose the confidence
+         *     threshold. `person_id` links into GET /v1/persons/{person_id};
+         *     `transfer_id` is the transfer edge a player movement minted.
+         *
+         *     To poll, keep the newest `published_at` you have seen, pass it as `since`
+         *     on the next call, and drop rows whose `kind` and `id` you already hold
+         *     (`since` is inclusive). One call returns players and coaches together
+         *     unless `kind` is set.
          */
         get: operations["list_movements"];
         put?: never;
@@ -518,7 +531,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Transfer portal (subscription-bound and usage-billed)
+         * Transfer portal (verified coach, usage-billed)
          * @description Live transfer-portal entries for a sport/division, newest first.
          *
          *     Requires a paid plan with API billing enabled; no coaching plan is
@@ -553,6 +566,10 @@ export interface paths {
          *     the requested sport/division scope. Returns 202 with a `run_id`
          *     immediately — poll GET /v1/query/{run_id} (runs typically finish in under
          *     a minute). Billed by token usage once the run completes.
+         *
+         *     A question about the transfer portal is answered from the live feed when
+         *     the key delegates `portal.entry.read` and the current actor is an active
+         *     verified coach; no coaching plan is needed.
          */
         post: operations["create_query"];
         delete?: never;
@@ -620,9 +637,10 @@ export interface paths {
         };
         /**
          * Get a school and its programs
-         * @description One institution plus every program it fields across sports and
-         *     divisions (team ids for the scoped team endpoints). Identity only; stats
-         *     stay behind the sport/division-scoped endpoints.
+         * @description One institution plus every program it fields or fielded across sports
+         *     and divisions (team ids for the scoped team endpoints), each with its
+         *     program `status`. Identity only; stats stay behind the
+         *     sport/division-scoped endpoints.
          */
         get: operations["get_school"];
         put?: never;
@@ -642,8 +660,12 @@ export interface paths {
         };
         /**
          * List supported sports
-         * @description Every sport the API covers, with the genders each one carries. Use these
-         *     values for the `sport` and `gender` scope parameters on other endpoints.
+         * @description Every sport the API covers, the genders each one carries, and the
+         *     divisions each gender is offered in. Use these values for the `sport`,
+         *     `gender` and `division` scope parameters on other endpoints: a
+         *     comma-joined subset of a sport and gender's `divisions` is a valid
+         *     `division` (for football, send the combined 'D1' or its subdivisions
+         *     'D1-FBS' and 'D1-FCS', not both).
          */
         get: operations["list_sports"];
         put?: never;
@@ -666,7 +688,9 @@ export interface paths {
          * @description Teams in the requested sport/division scope, alphabetical. Filter by
          *     name, conference, or the school behind the team (id, IPEDS UNITID, state,
          *     city, control). Each team carries its `school` (id, slug, athletics
-         *     domain, IPEDS UNITID). Paginates with an opaque `cursor`.
+         *     domain, IPEDS UNITID) and its program `status`; pass `status=active` to
+         *     list only programs that currently compete. Paginates with an opaque
+         *     `cursor`.
          */
         get: operations["list_teams"];
         put?: never;
@@ -687,8 +711,8 @@ export interface paths {
         /**
          * Get a team
          * @description One team plus its per-season document/stat records, its `school`
-         *     (with IPEDS UNITID), and per data kind `freshness`. The team must be
-         *     visible in the requested sport/division scope.
+         *     (with IPEDS UNITID), its program `status`, and per data kind `freshness`.
+         *     The team must be visible in the requested sport/division scope.
          */
         get: operations["get_team"];
         put?: never;
@@ -710,14 +734,18 @@ export interface paths {
          * Get a team's coaching staff
          * @description Coaching staff for one team-season, head coach first. Defaults to the
          *     latest season held; pass `season` for a historical staff. `email` and
-         *     `phone` are populated in three cases: the key owner's own verified player
-         *     claim allows coach-outreach reads; `on_behalf_of` names a managed athlete
-         *     who authorized the account (Enterprise); or the account's Enterprise plan
-         *     includes the coach directory and the key carries the exact
-         *     `coach.contact.directory_read` scope (see the Coach contacts section).
-         *     None of these is metered. A delegated request that cannot be authorized
-         *     fails with 403 rather than silently returning nulls. `freshness` says when
-         *     the staff page was last read.
+         *     `phone` are populated in three cases: the account's plan includes the
+         *     coach directory (Developer Pro, Developer Ultra and Enterprise) and the
+         *     key carries the exact `coach.contact.directory_read` scope; the key
+         *     owner's own verified player claim allows coach-outreach reads; or
+         *     `on_behalf_of` names a managed athlete who authorized the account
+         *     (Enterprise). See the Coach contacts section. None of these is metered.
+         *     When contacts are withheld, `contacts_unavailable_reason` says why. A
+         *     coach who asked not to be contacted has `contact_opt_out` true and no
+         *     contact fields. A delegated request that cannot be authorized fails with
+         *     403 rather than silently returning nulls. `freshness` says when the staff
+         *     page was last read; `coverage` says what an empty list means (for example
+         *     'not_collected' when we have not read a staff page for this program yet).
          */
         get: operations["get_team_coaches"];
         put?: never;
@@ -740,8 +768,10 @@ export interface paths {
          * @description Roster for one team-season — identity fields only, never contact info.
          *     Defaults to the latest season held and paginates with an opaque `cursor`.
          *     `freshness` says when the roster page was last read and when the next
-         *     check is due. Position, class year and jersey filters read the season's
-         *     own roster row, so a past season is filtered by what the player was then.
+         *     check is due; `coverage` says what an empty list means (for example
+         *     'not_collected' when we have not read a source for this program yet).
+         *     Position, class year and jersey filters read the season's own roster row,
+         *     so a past season is filtered by what the player was then.
          */
         get: operations["get_team_roster"];
         put?: never;
@@ -763,7 +793,15 @@ export interface components {
          *       "division": "D1",
          *       "enabled": true,
          *       "filters": {
-         *         "position": "Goalkeeper"
+         *         "player": [
+         *           {
+         *             "field": "position",
+         *             "op": "in",
+         *             "value": [
+         *               "Goalkeeper"
+         *             ]
+         *           }
+         *         ]
          *       },
          *       "gender": "women",
          *       "name": "D1 women's soccer goalkeepers",
@@ -785,7 +823,7 @@ export interface components {
             enabled: boolean;
             /**
              * Filters
-             * @description Filter DSL; see /v1/filters/catalog and the docs.
+             * @description Conditions, grouped in sections: portal, player and stats, each a list of {field, op, value} objects that must all hold, and any_of, a list of two or more alternative sets of which one must hold. At least one condition beyond the sport and division is required. A key that is not a section, or a section that is not a list of condition objects, is a 400 invalid_filters. GET /v1/filters/catalog lists each section's fields and, as `alert_ops`, the operators each one accepts; a stats condition also names its `sport`.
              */
             filters: {
                 [key: string]: unknown;
@@ -863,7 +901,15 @@ export interface components {
          *       "division": "D1",
          *       "enabled": true,
          *       "filters": {
-         *         "position": "Goalkeeper"
+         *         "player": [
+         *           {
+         *             "field": "position",
+         *             "op": "in",
+         *             "value": [
+         *               "Goalkeeper"
+         *             ]
+         *           }
+         *         ]
          *       },
          *       "id": "5f2c1a9e-8d7b-4e6f-a1b2-c3d4e5f60718",
          *       "last_evaluated_at": "2026-07-21T09:00:00Z",
@@ -1615,6 +1661,373 @@ export interface components {
              * @example eyJvZmZzZXQiOiAyNX0=
              */
             next_cursor?: string | null;
+        };
+        /**
+         * FilterCatalogField
+         * @description One field of the filter vocabulary. `field` is the name every /v1
+         *     endpoint uses for it: in a request and in the rows that come back.
+         */
+        FilterCatalogField: {
+            /**
+             * Alert Ops
+             * @description The `op` values an alert predicate on the field accepts (POST /v1/alerts `filters`: {"<section>": [{"field", "op", "value"}]}); empty when alerts do not take the field.
+             * @example [
+             *       "contains",
+             *       "eq",
+             *       "in",
+             *       "neq",
+             *       "not_in"
+             *     ]
+             */
+            alert_ops?: string[];
+            /**
+             * Field
+             * @description The field's name on /v1.
+             * @example home_state
+             */
+            field: string;
+            /**
+             * Label
+             * @description Display name.
+             * @example Home State
+             */
+            label: string;
+            /**
+             * Manual Search Operators
+             * @deprecated
+             * @description Deprecated, removed on 2027-01-12: the operators of the app's own search. Read `search_ops`.
+             */
+            manual_search_operators?: string[];
+            /**
+             * Manual Search Supported
+             * @deprecated
+             * @description Deprecated, removed on 2027-01-12: whether the app's own search takes the field. Read `search_ops`.
+             * @default false
+             */
+            manual_search_supported: boolean;
+            /**
+             * Maximum Request Key
+             * @deprecated
+             * @description Deprecated, removed on 2027-01-12: a parameter name of the Magisterial app's own search, which no /v1 endpoint accepts.
+             */
+            maximum_request_key?: string | null;
+            /**
+             * Minimum Request Key
+             * @deprecated
+             * @description Deprecated, removed on 2027-01-12: a parameter name of the Magisterial app's own search, which no /v1 endpoint accepts.
+             */
+            minimum_request_key?: string | null;
+            /**
+             * Normalize
+             * @deprecated
+             * @description Deprecated, removed on 2027-01-12: the app's name for how it matches spellings.
+             */
+            normalize?: string | null;
+            /**
+             * Ops
+             * @deprecated
+             * @description Deprecated, removed on 2027-01-12: every operator of the field's type. Read `search_ops` and `alert_ops`.
+             */
+            ops?: string[];
+            /**
+             * Range Request Key
+             * @deprecated
+             * @description Deprecated, removed on 2027-01-12: a parameter name of the Magisterial app's own search, which no /v1 endpoint accepts.
+             */
+            range_request_key?: string | null;
+            /**
+             * Request Key
+             * @deprecated
+             * @description Deprecated, removed on 2027-01-12: a parameter name of the Magisterial app's own search, which no /v1 endpoint accepts.
+             */
+            request_key?: string | null;
+            /**
+             * Search Ops
+             * @description How POST /v1/players/search can filter on the field; empty when it cannot. 'eq' and 'in': send `<field>` as one value or as an array. 'neq' and 'not_in': `<field>_not`. 'gte' and 'lte': `<field>_min` and `<field>_max`. 'contains': `<field>` as one value is a contains match. 'within_miles': `<field>` as an object with latitude, longitude and miles.
+             * @example [
+             *       "eq",
+             *       "in",
+             *       "neq",
+             *       "not_in"
+             *     ]
+             */
+            search_ops?: string[];
+            /**
+             * Sortable
+             * @description Accepted as `sort_by` (see `sort_fields`).
+             * @default false
+             */
+            sortable: boolean;
+            /**
+             * Type
+             * @description 'string', 'int', 'float', 'bool', 'datetime' or 'geo'.
+             * @example string
+             */
+            type: string;
+            /**
+             * Values
+             * @description The canonical values, where the field has a closed set (positions, class years, ...). null: any value.
+             */
+            values?: string[] | null;
+            /**
+             * Values Endpoint
+             * @deprecated
+             * @description Deprecated, removed on 2027-01-12: whether the app has a typeahead for the field.
+             * @default false
+             */
+            values_endpoint: boolean;
+        };
+        /**
+         * FilterCatalogResponse
+         * @description GET /v1/filters/catalog: the names /v1 filters, sorts and reports by.
+         */
+        FilterCatalogResponse: {
+            /**
+             * Automation Features
+             * @deprecated
+             * @description Deprecated, removed on 2027-01-12: a feature list for the app's own alert builder.
+             */
+            automation_features?: string[];
+            /**
+             * Division Multi Select Supported
+             * @deprecated
+             * @description Deprecated, removed on 2027-01-12: always true: every `division` parameter takes a comma-separated list.
+             * @default true
+             */
+            division_multi_select_supported: boolean;
+            /**
+             * Division Scope Encoding
+             * @deprecated
+             * @description Deprecated, removed on 2027-01-12: always 'comma-separated'.
+             * @default comma-separated
+             */
+            division_scope_encoding: string;
+            /**
+             * Divisions
+             * @deprecated
+             * @description Deprecated, removed on 2027-01-12: GET /v1/divisions lists the divisions.
+             */
+            divisions?: string[];
+            /**
+             * Divisions By Sport
+             * @deprecated
+             * @description Deprecated, removed on 2027-01-12: both genders merged. Read `divisions_by_sport_gender`.
+             */
+            divisions_by_sport?: {
+                [key: string]: string[];
+            };
+            /**
+             * Divisions By Sport Gender
+             * @description The divisions each gender of a sport is offered in.
+             */
+            divisions_by_sport_gender: {
+                [key: string]: {
+                    [key: string]: string[];
+                };
+            };
+            /**
+             * Ops By Type
+             * @deprecated
+             * @description Deprecated, removed on 2027-01-12: every operator per field type. Read each field's `search_ops` and `alert_ops`.
+             */
+            ops_by_type?: {
+                [key: string]: string[];
+            };
+            /**
+             * Sections
+             * @description Fields per record type: 'player', 'coach', 'team', 'game', and 'portal' (empty unless the key can read the transfer portal).
+             */
+            sections: {
+                [key: string]: components["schemas"]["FilterCatalogField"][];
+            };
+            sort_fields: components["schemas"]["FilterCatalogSortFields"];
+            /**
+             * Sport Genders
+             * @description The genders each sport is offered in.
+             */
+            sport_genders: {
+                [key: string]: string[];
+            };
+            /**
+             * Stats By Sport
+             * @description Per sport, every season-stat field: the keys of `stats` in requests and responses. Track and field is listed as 'track' and holds best-mark fields.
+             */
+            stats_by_sport: {
+                [key: string]: components["schemas"]["FilterCatalogStatField"][];
+            };
+            /**
+             * Track Disciplines
+             * @description Values of `track_discipline`.
+             */
+            track_disciplines: string[];
+            /**
+             * Track Event Categories
+             * @description Track & field event categories.
+             */
+            track_event_categories: string[];
+            /**
+             * Track Seasons
+             * @description Values of `track_season`, newest first.
+             */
+            track_seasons: components["schemas"]["FilterCatalogTrackSeason"][];
+        };
+        /**
+         * FilterCatalogSortFields
+         * @description `sort_by` values. Player search sorts by `player[<sport>]`; GET /v1/games by `game`.
+         */
+        FilterCatalogSortFields: {
+            /** Coach */
+            coach: string[];
+            /** Game */
+            game: string[];
+            /**
+             * Player
+             * @description Per sport: the stat fields plus the sortable profile fields.
+             */
+            player: {
+                [key: string]: string[];
+            };
+            /**
+             * Team
+             * @description Per sport.
+             */
+            team: {
+                [key: string]: string[];
+            };
+        };
+        /**
+         * FilterCatalogStatField
+         * @description A season stat: a key of every `stats` object the sport returns.
+         */
+        FilterCatalogStatField: {
+            /**
+             * Alert Ops
+             * @description The `op` values an alert predicate on the field accepts (POST /v1/alerts `filters`: {"<section>": [{"field", "op", "value"}]}); empty when alerts do not take the field.
+             * @example [
+             *       "contains",
+             *       "eq",
+             *       "in",
+             *       "neq",
+             *       "not_in"
+             *     ]
+             */
+            alert_ops?: string[];
+            /**
+             * Field
+             * @description The field's name on /v1.
+             * @example home_state
+             */
+            field: string;
+            /**
+             * Filterable
+             * @description POST /v1/players/search takes a range on it: `stats: {"<field>": {"min": ..., "max": ...}}`. false: sort only.
+             * @default true
+             */
+            filterable: boolean;
+            /**
+             * Label
+             * @description Display name.
+             * @example Home State
+             */
+            label: string;
+            /**
+             * Manual Search Operators
+             * @deprecated
+             * @description Deprecated, removed on 2027-01-12: the operators of the app's own search. Read `search_ops`.
+             */
+            manual_search_operators?: string[];
+            /**
+             * Manual Search Supported
+             * @deprecated
+             * @description Deprecated, removed on 2027-01-12: whether the app's own search takes the field. Read `search_ops`.
+             * @default false
+             */
+            manual_search_supported: boolean;
+            /**
+             * Maximum Request Key
+             * @deprecated
+             * @description Deprecated, removed on 2027-01-12: a parameter name of the Magisterial app's own search, which no /v1 endpoint accepts.
+             */
+            maximum_request_key?: string | null;
+            /**
+             * Minimum Request Key
+             * @deprecated
+             * @description Deprecated, removed on 2027-01-12: a parameter name of the Magisterial app's own search, which no /v1 endpoint accepts.
+             */
+            minimum_request_key?: string | null;
+            /**
+             * Normalize
+             * @deprecated
+             * @description Deprecated, removed on 2027-01-12: the app's name for how it matches spellings.
+             */
+            normalize?: string | null;
+            /**
+             * Ops
+             * @deprecated
+             * @description Deprecated, removed on 2027-01-12: every operator of the field's type. Read `search_ops` and `alert_ops`.
+             */
+            ops?: string[];
+            /**
+             * Range Request Key
+             * @deprecated
+             * @description Deprecated, removed on 2027-01-12: a parameter name of the Magisterial app's own search, which no /v1 endpoint accepts.
+             */
+            range_request_key?: string | null;
+            /**
+             * Request Key
+             * @deprecated
+             * @description Deprecated, removed on 2027-01-12: a parameter name of the Magisterial app's own search, which no /v1 endpoint accepts.
+             */
+            request_key?: string | null;
+            /**
+             * Search Ops
+             * @description How POST /v1/players/search can filter on the field; empty when it cannot. 'eq' and 'in': send `<field>` as one value or as an array. 'neq' and 'not_in': `<field>_not`. 'gte' and 'lte': `<field>_min` and `<field>_max`. 'contains': `<field>` as one value is a contains match. 'within_miles': `<field>` as an object with latitude, longitude and miles.
+             * @example [
+             *       "eq",
+             *       "in",
+             *       "neq",
+             *       "not_in"
+             *     ]
+             */
+            search_ops?: string[];
+            /**
+             * Sortable
+             * @description Accepted as `sort_by` (see `sort_fields`).
+             * @default false
+             */
+            sortable: boolean;
+            /**
+             * Type
+             * @description 'string', 'int', 'float', 'bool', 'datetime' or 'geo'.
+             * @example string
+             */
+            type: string;
+            /**
+             * Values
+             * @description The canonical values, where the field has a closed set (positions, class years, ...). null: any value.
+             */
+            values?: string[] | null;
+            /**
+             * Values Endpoint
+             * @deprecated
+             * @description Deprecated, removed on 2027-01-12: whether the app has a typeahead for the field.
+             * @default false
+             */
+            values_endpoint: boolean;
+        };
+        /** FilterCatalogTrackSeason */
+        FilterCatalogTrackSeason: {
+            /**
+             * Label
+             * @example 2026-27
+             */
+            label: string;
+            /**
+             * Value
+             * @description Season label, the academic year's end year.
+             * @example 2027
+             */
+            value: string;
         };
         /**
          * FootballStats
@@ -2559,6 +2972,27 @@ export interface components {
             status: string;
         };
         /**
+         * MovementCounterpart
+         * @description The other school in a resolved move: where the person came from on an
+         *     addition, where they went on a removal. Present only when resolution
+         *     named a different school; never inferred from career history.
+         */
+        MovementCounterpart: {
+            /** Division */
+            division?: string | null;
+            /**
+             * School Id
+             * @description School id; see GET /v1/schools/{school_id}.
+             */
+            school_id?: number | null;
+            /** School Logo Url */
+            school_logo_url?: string | null;
+            /** School Name */
+            school_name?: string | null;
+            /** Team Id */
+            team_id?: number | null;
+        };
+        /**
          * MovementEntry
          * @description One roster/coaching movement event. The default `status=published` feed
          *     carries only events an editor (or the auto-publish policy) published; the
@@ -2567,6 +3001,8 @@ export interface components {
          *     its own confidence threshold.
          */
         MovementEntry: {
+            /** @description The other school in the move: the origin on player_added and coach_added, the destination on player_removed and coach_removed. Null when resolution found none, and always null on title_changed. */
+            counterpart?: components["schemas"]["MovementCounterpart"] | null;
             /** Division */
             division?: string | null;
             /**
@@ -2675,6 +3111,11 @@ export interface components {
              */
             class_year?: string | null;
             /**
+             * First Name
+             * @description Players only, when the roster source published the name in split form.
+             */
+            first_name?: string | null;
+            /**
              * From Title
              * @description Coaches, title changes only.
              */
@@ -2684,7 +3125,15 @@ export interface components {
              * @description Coaches only — head-coach role.
              */
             is_head?: boolean | null;
-            /** Name */
+            /**
+             * Last Name
+             * @description Players only; null as for `first_name`.
+             */
+            last_name?: string | null;
+            /**
+             * Name
+             * @description Full name in natural order.
+             */
             name?: string | null;
             /**
              * Position
@@ -2701,6 +3150,27 @@ export interface components {
              * @description Coaches, title changes only.
              */
             to_title?: string | null;
+        };
+        /**
+         * NearPoint
+         * @description Centre and radius of a hometown search.
+         */
+        NearPoint: {
+            /**
+             * Latitude
+             * @description Latitude of the centre point, in decimal degrees.
+             */
+            latitude: number;
+            /**
+             * Longitude
+             * @description Longitude of the centre point, in decimal degrees.
+             */
+            longitude: number;
+            /**
+             * Miles
+             * @description Radius in miles (at most 3000).
+             */
+            miles: number;
         };
         /**
          * NumberRange
@@ -2734,6 +3204,7 @@ export interface components {
          *       "class_year": "Junior",
          *       "conference": "NESCAC",
          *       "division": "D3",
+         *       "first_name": "Jordan",
          *       "gender": "men",
          *       "headshot_url": null,
          *       "height": "5-10",
@@ -2746,6 +3217,7 @@ export interface components {
          *       "id": 184223,
          *       "is_verified": false,
          *       "jersey_number": "8",
+         *       "last_name": "Rivera",
          *       "major": "Economics",
          *       "minor": null,
          *       "name": "Jordan Rivera",
@@ -2880,6 +3352,11 @@ export interface components {
              */
             division?: string | null;
             /**
+             * First Name
+             * @description Given name, when the roster source published the name in split form; null when it published one undivided name (use `name`).
+             */
+            first_name?: string | null;
+            /**
              * Gender
              * @description 'men' or 'women'.
              */
@@ -2921,11 +3398,19 @@ export interface components {
              * @description As published, e.g. '7' or '00'.
              */
             jersey_number?: string | null;
+            /**
+             * Last Name
+             * @description Family name, including any generational suffix; null as for `first_name`.
+             */
+            last_name?: string | null;
             /** Major */
             major?: string | null;
             /** Minor */
             minor?: string | null;
-            /** Name */
+            /**
+             * Name
+             * @description Full name in natural order, e.g. 'Jordan Rivera'.
+             */
             name?: string | null;
             /**
              * Person Id
@@ -3145,6 +3630,8 @@ export interface components {
              * @description Player name search. Every word must appear in the name, in any order, ignoring case, accents and punctuation: 'jack', 'hob', 'Jack Hobday' and 'Hobday, Jack' all find Jack Hobday. A name that matches nobody falls back to close spellings.
              */
             name?: string | null;
+            /** @description Only players whose hometown is within `miles` of this point. A player whose hometown has no coordinates never matches. */
+            near?: components["schemas"]["NearPoint"] | null;
             /**
              * Player Id
              * @description Only these player ids.
@@ -3299,6 +3786,7 @@ export interface components {
          *       "class_year": "Junior",
          *       "conference": "NESCAC",
          *       "division": "D3",
+         *       "first_name": "Jordan",
          *       "gender": "men",
          *       "headshot_url": null,
          *       "height": "5-10",
@@ -3311,6 +3799,7 @@ export interface components {
          *       "id": 184223,
          *       "is_verified": false,
          *       "jersey_number": "8",
+         *       "last_name": "Rivera",
          *       "major": "Economics",
          *       "minor": null,
          *       "name": "Jordan Rivera",
@@ -3373,6 +3862,11 @@ export interface components {
              */
             division?: string | null;
             /**
+             * First Name
+             * @description Given name, when the roster source published the name in split form; null when it published one undivided name (use `name`).
+             */
+            first_name?: string | null;
+            /**
              * Gender
              * @description 'men' or 'women'.
              */
@@ -3414,11 +3908,19 @@ export interface components {
              * @description As published, e.g. '7' or '00'.
              */
             jersey_number?: string | null;
+            /**
+             * Last Name
+             * @description Family name, including any generational suffix; null as for `first_name`.
+             */
+            last_name?: string | null;
             /** Major */
             major?: string | null;
             /** Minor */
             minor?: string | null;
-            /** Name */
+            /**
+             * Name
+             * @description Full name in natural order, e.g. 'Jordan Rivera'.
+             */
             name?: string | null;
             /**
              * Person Id
@@ -3536,7 +4038,10 @@ export interface components {
              * @description Date NCAA last updated the record.
              */
             last_updated_date?: string | null;
-            /** Name */
+            /**
+             * Name
+             * @description Full name in natural order.
+             */
             name?: string | null;
             /**
              * Person Id
@@ -3695,6 +4200,7 @@ export interface components {
          * @description A roster member — identity only, no contact fields.
          * @example {
          *       "class_year": "Junior",
+         *       "first_name": "Jordan",
          *       "headshot_url": null,
          *       "height": "5-10",
          *       "height_inches": 70,
@@ -3706,6 +4212,7 @@ export interface components {
          *       "id": 184223,
          *       "is_verified": false,
          *       "jersey_number": "8",
+         *       "last_name": "Rivera",
          *       "membership_source": null,
          *       "name": "Jordan Rivera",
          *       "person_id": 90211,
@@ -3715,6 +4222,11 @@ export interface components {
         RosterEntry: {
             /** Class Year */
             class_year?: string | null;
+            /**
+             * First Name
+             * @description Given name, when the roster source published the name in split form; null when it published one undivided name (use `name`).
+             */
+            first_name?: string | null;
             /** Headshot Url */
             headshot_url?: string | null;
             /**
@@ -3744,11 +4256,19 @@ export interface components {
             /** Jersey Number */
             jersey_number?: string | null;
             /**
+             * Last Name
+             * @description Family name, including any generational suffix; null as for `first_name`.
+             */
+            last_name?: string | null;
+            /**
              * Membership Source
              * @description How we know this player was on the team that season. 'box_score': the player appears in the team's box scores that season, but no roster page we captured listed them (a season whose page was never captured, or a player later removed from it). Expect the name and the player's stats; position, class year, jersey, height and hometown are usually missing. 'portal_discovery': a transfer-portal entrant we matched to this team's live roster before the roster's own season rows were written. null: recorded before provenance tracking, overwhelmingly from the team's roster page or an association roster feed. Season rosters are a permanent record: players who left mid-season stay listed.
              */
             membership_source?: string | null;
-            /** Name */
+            /**
+             * Name
+             * @description Full name in natural order, e.g. 'Jordan Rivera'.
+             */
             name?: string | null;
             /** Person Id */
             person_id?: number | null;
@@ -3760,6 +4280,11 @@ export interface components {
          * @description One page of roster members from one season.
          */
         RosterPage: {
+            /**
+             * Coverage
+             * @description Why `data` is populated or empty. 'held': roster members for this season are returned. 'season_not_held': other seasons are held, not the one requested. 'none_listed': the program's source page was read and lists no players. 'not_collected': we have not read a source for this program yet, so an empty list says nothing about the program. 'not_sponsored': the school's athletics site does not list this sport. 'discontinued': the program stopped competing and nothing is held for it.
+             */
+            coverage?: string | null;
             /** Data */
             data: components["schemas"]["RosterEntry"][];
             /** @description When this team's roster page was last read. */
@@ -3894,6 +4419,11 @@ export interface components {
         SchoolTeamRef: {
             /** Conference */
             conference?: string | null;
+            /**
+             * Discontinued At
+             * @description Date the program stopped competing; null while active.
+             */
+            discontinued_at?: string | null;
             /** Division */
             division?: string | null;
             /**
@@ -3907,6 +4437,11 @@ export interface components {
             name?: string | null;
             /** Sport Path */
             sport_path?: string | null;
+            /**
+             * Status
+             * @description 'active', or 'discontinued' when the program stopped competing (the school closed or dropped the sport). A discontinued program keeps its id and its historical rosters, staffs and games.
+             */
+            status?: string | null;
         };
         /**
          * SoccerStats
@@ -4068,9 +4603,31 @@ export interface components {
         };
         /**
          * SportEntry
-         * @description A supported sport and the genders it carries.
+         * @description A supported sport, the genders it carries, and the divisions each
+         *     gender is offered in (the valid values for `division` on scoped endpoints).
          */
         SportEntry: {
+            /**
+             * Divisions
+             * @description Per gender, the division codes valid for this sport. Football's 'D1' is the combined view of 'D1-FBS' and 'D1-FCS'; request either the combined code or the subdivisions, not both.
+             * @example {
+             *       "men": [
+             *         "D1",
+             *         "D2",
+             *         "D3",
+             *         "NAIA"
+             *       ],
+             *       "women": [
+             *         "D1",
+             *         "D2",
+             *         "D3",
+             *         "NAIA"
+             *       ]
+             *     }
+             */
+            divisions?: {
+                [key: string]: string[];
+            };
             /**
              * Genders
              * @example [
@@ -4115,17 +4672,19 @@ export interface components {
         };
         /**
          * TeamCoachEntry
-         * @description One member of a team's coaching staff for a season. `email` is populated
-         *     only when the key delegates `outreach.coach.read` and the current actor's
-         *     verified player role permits player-to-coach outreach for the sport.
+         * @description One member of a team's coaching staff for a season. `email` and `phone`
+         *     are populated when the response says `contacts_included` (see the Coach
+         *     contacts section) and the coach has not opted out of contact.
          * @example {
          *       "bio_url": "https://athletics.amherst.edu/coaches/justin-serpone",
+         *       "contact_opt_out": null,
          *       "email": null,
          *       "headshot_url": "https://api.magisterial.ai/api/public/img?u=...",
          *       "id": 18234,
          *       "is_head_coach": true,
          *       "name": "Justin Serpone",
          *       "person_id": 5121,
+         *       "phone": null,
          *       "profile_slug": null,
          *       "role": "Head Men's Soccer Coach",
          *       "season": "2025"
@@ -4143,8 +4702,13 @@ export interface components {
              */
             bio_url?: string | null;
             /**
+             * Contact Opt Out
+             * @description True when this coach asked not to be contacted, so `email` and `phone` are withheld; false otherwise. Null when the response has `contacts_included` false.
+             */
+            contact_opt_out?: boolean | null;
+            /**
              * Email
-             * @description Coach email; requires exact outreach.coach.read delegation and current verified player-role authority, else null.
+             * @description Published coach email. Null when the response has `contacts_included` false, when the coach opted out of contact, or when none is published.
              */
             email?: string | null;
             /** Headshot Url */
@@ -4165,7 +4729,7 @@ export interface components {
             person_id?: number | null;
             /**
              * Phone
-             * @description Published coach phone; requires the same outreach authority as email.
+             * @description Published coach phone; null in the same cases as `email`.
              */
             phone?: string | null;
             /**
@@ -4196,6 +4760,16 @@ export interface components {
              * @default false
              */
             contacts_included: boolean;
+            /**
+             * Contacts Unavailable Reason
+             * @description Why contact fields were withheld, when `contacts_included` is false. 'plan_required': the account's plan does not include the coach directory (Developer Pro and up do). 'key_scope_required': the plan includes it but this key lacks the coach.contact.directory_read scope. Null when contacts are included.
+             */
+            contacts_unavailable_reason?: string | null;
+            /**
+             * Coverage
+             * @description Why `data` is populated or empty. 'held': staff members for this season are returned. 'season_not_held': other seasons are held, not the one requested. 'none_listed': the program's source page was read and lists no staff. 'not_collected': we have not read a source for this program yet, so an empty list says nothing about the program. 'not_sponsored': the school's athletics site does not list this sport. 'discontinued': the program stopped competing and nothing is held for it.
+             */
+            coverage?: string | null;
             /** Data */
             data: components["schemas"]["TeamCoachEntry"][];
             /** @description When this team's staff page was last read. */
@@ -4211,6 +4785,7 @@ export interface components {
          * @description A single team plus its per-season document/stat records.
          * @example {
          *       "conference": "NESCAC",
+         *       "discontinued_at": null,
          *       "division": "D3",
          *       "id": 1873,
          *       "logo_url": "https://magisterial.ai/logos/amherst.png",
@@ -4225,12 +4800,18 @@ export interface components {
          *         "slug": "amherst",
          *         "state": "MA"
          *       },
-         *       "sport_path": "mens-soccer"
+         *       "sport_path": "mens-soccer",
+         *       "status": "active"
          *     }
          */
         TeamDetail: {
             /** Conference */
             conference?: string | null;
+            /**
+             * Discontinued At
+             * @description Date the program stopped competing; null while active.
+             */
+            discontinued_at?: string | null;
             /** Division */
             division?: string | null;
             /**
@@ -4256,6 +4837,11 @@ export interface components {
              * @description Gendered sport key, e.g. 'mens-soccer'.
              */
             sport_path?: string | null;
+            /**
+             * Status
+             * @description 'active', or 'discontinued' when the program stopped competing (the school closed or dropped the sport). A discontinued program keeps its id and its historical rosters, staffs and games.
+             */
+            status?: string | null;
         };
         /**
          * TeamFreshness
@@ -4313,6 +4899,7 @@ export interface components {
          * @description A team as returned by the teams list.
          * @example {
          *       "conference": "NESCAC",
+         *       "discontinued_at": null,
          *       "division": "D3",
          *       "id": 1873,
          *       "logo_url": "https://magisterial.ai/logos/amherst.png",
@@ -4327,12 +4914,18 @@ export interface components {
          *         "slug": "amherst",
          *         "state": "MA"
          *       },
-         *       "sport_path": "mens-soccer"
+         *       "sport_path": "mens-soccer",
+         *       "status": "active"
          *     }
          */
         TeamSummary: {
             /** Conference */
             conference?: string | null;
+            /**
+             * Discontinued At
+             * @description Date the program stopped competing; null while active.
+             */
+            discontinued_at?: string | null;
             /** Division */
             division?: string | null;
             /**
@@ -4351,6 +4944,11 @@ export interface components {
              * @description Gendered sport key, e.g. 'mens-soccer'.
              */
             sport_path?: string | null;
+            /**
+             * Status
+             * @description 'active', or 'discontinued' when the program stopped competing (the school closed or dropped the sport). A discontinued program keeps its id and its historical rosters, staffs and games.
+             */
+            status?: string | null;
         };
         /**
          * TrackBest
@@ -5496,7 +6094,12 @@ export interface operations {
     };
     list_divisions: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Return only the divisions valid for this sport, e.g. 'football'. */
+                sport?: string | null;
+                /** @description With `sport`: 'men' or 'women'. Omitted, a sport whose genders differ (volleyball) returns the divisions valid for either. */
+                gender?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -5519,6 +6122,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The request failed validation; `error.fields` names each field. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
             /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
@@ -5768,7 +6380,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Filter catalog: the filter fields per section (`sections`), each sport's stat fields (`stats_by_sport`), sortable fields (`sort_fields`) and enum values. */
+            /** @description The filter fields per record type (`sections`), each sport's stat fields (`stats_by_sport`), the sortable fields (`sort_fields`) and the closed value sets. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5790,7 +6402,8 @@ export interface operations {
                      *             "NJCAA-D2",
                      *             "NJCAA-D3",
                      *             "3C2A",
-                     *             "NWAC"
+                     *             "NWAC",
+                     *             "IND"
                      *           ],
                      *           "women": [
                      *             "D1",
@@ -5804,54 +6417,28 @@ export interface operations {
                      *             "NJCAA-D2",
                      *             "NJCAA-D3",
                      *             "3C2A",
-                     *             "NWAC"
+                     *             "NWAC",
+                     *             "IND"
                      *           ]
                      *         }
-                     *       },
-                     *       "ops_by_type": {
-                     *         "int": [
-                     *           "eq",
-                     *           "gt",
-                     *           "gte",
-                     *           "in",
-                     *           "lt",
-                     *           "lte",
-                     *           "neq",
-                     *           "not_in"
-                     *         ],
-                     *         "string": [
-                     *           "contains",
-                     *           "eq",
-                     *           "in",
-                     *           "neq",
-                     *           "not_in"
-                     *         ]
                      *       },
                      *       "sections": {
                      *         "player": [
                      *           {
+                     *             "alert_ops": [
+                     *               "eq",
+                     *               "in",
+                     *               "neq",
+                     *               "not_in"
+                     *             ],
                      *             "field": "position",
                      *             "label": "Position",
-                     *             "manual_search_operators": [
-                     *               "contains",
+                     *             "search_ops": [
                      *               "eq",
                      *               "in",
                      *               "neq",
                      *               "not_in"
                      *             ],
-                     *             "manual_search_supported": true,
-                     *             "maximum_request_key": null,
-                     *             "minimum_request_key": null,
-                     *             "normalize": "position",
-                     *             "ops": [
-                     *               "contains",
-                     *               "eq",
-                     *               "in",
-                     *               "neq",
-                     *               "not_in"
-                     *             ],
-                     *             "range_request_key": null,
-                     *             "request_key": "position",
                      *             "sortable": false,
                      *             "type": "string",
                      *             "values": [
@@ -5859,40 +6446,63 @@ export interface operations {
                      *               "DEF",
                      *               "MID",
                      *               "FWD"
-                     *             ],
-                     *             "values_endpoint": true
+                     *             ]
                      *           },
                      *           {
+                     *             "alert_ops": [
+                     *               "contains",
+                     *               "eq",
+                     *               "in",
+                     *               "neq",
+                     *               "not_in"
+                     *             ],
                      *             "field": "home_state",
                      *             "label": "Home State",
-                     *             "manual_search_operators": [
-                     *               "contains",
+                     *             "search_ops": [
                      *               "eq",
                      *               "in",
                      *               "neq",
                      *               "not_in"
                      *             ],
-                     *             "manual_search_supported": true,
-                     *             "maximum_request_key": null,
-                     *             "minimum_request_key": null,
-                     *             "normalize": "home_state",
-                     *             "ops": [
-                     *               "contains",
-                     *               "eq",
-                     *               "in",
-                     *               "neq",
-                     *               "not_in"
-                     *             ],
-                     *             "range_request_key": null,
-                     *             "request_key": "hometown_state",
                      *             "sortable": false,
                      *             "type": "string",
-                     *             "values": null,
-                     *             "values_endpoint": true
+                     *             "values": null
+                     *           },
+                     *           {
+                     *             "alert_ops": [
+                     *               "eq",
+                     *               "gt",
+                     *               "gte",
+                     *               "in",
+                     *               "lt",
+                     *               "lte",
+                     *               "neq",
+                     *               "not_in"
+                     *             ],
+                     *             "field": "height_inches",
+                     *             "label": "Height (in)",
+                     *             "search_ops": [
+                     *               "gte",
+                     *               "lte"
+                     *             ],
+                     *             "sortable": true,
+                     *             "type": "int",
+                     *             "values": null
                      *           }
                      *         ]
                      *       },
                      *       "sort_fields": {
+                     *         "coach": [
+                     *           "coach_name",
+                     *           "season",
+                     *           "team_name"
+                     *         ],
+                     *         "game": [
+                     *           "attendance",
+                     *           "away_score",
+                     *           "game_date",
+                     *           "home_score"
+                     *         ],
                      *         "player": {
                      *           "soccer": [
                      *             "a",
@@ -5901,6 +6511,13 @@ export interface operations {
                      *             "ga",
                      *             "gaa",
                      *             "gp"
+                     *           ]
+                     *         },
+                     *         "team": {
+                     *           "soccer": [
+                     *             "away_wins",
+                     *             "home_wins",
+                     *             "opponent_goals"
                      *           ]
                      *         }
                      *       },
@@ -5913,19 +6530,7 @@ export interface operations {
                      *       "stats_by_sport": {
                      *         "soccer": [
                      *           {
-                     *             "field": "g",
-                     *             "label": "Goals",
-                     *             "manual_search_operators": [
-                     *               "gt",
-                     *               "gte",
-                     *               "lt",
-                     *               "lte"
-                     *             ],
-                     *             "manual_search_supported": true,
-                     *             "maximum_request_key": "max_goals",
-                     *             "minimum_request_key": "min_goals",
-                     *             "normalize": null,
-                     *             "ops": [
+                     *             "alert_ops": [
                      *               "eq",
                      *               "gt",
                      *               "gte",
@@ -5935,27 +6540,19 @@ export interface operations {
                      *               "neq",
                      *               "not_in"
                      *             ],
-                     *             "range_request_key": "stat_ranges.g",
-                     *             "request_key": null,
-                     *             "sortable": true,
-                     *             "type": "int",
-                     *             "values": null,
-                     *             "values_endpoint": false
-                     *           },
-                     *           {
-                     *             "field": "sh_pct",
-                     *             "label": "Shot %",
-                     *             "manual_search_operators": [
-                     *               "gt",
+                     *             "field": "g",
+                     *             "filterable": true,
+                     *             "label": "Goals",
+                     *             "search_ops": [
                      *               "gte",
-                     *               "lt",
                      *               "lte"
                      *             ],
-                     *             "manual_search_supported": true,
-                     *             "maximum_request_key": null,
-                     *             "minimum_request_key": null,
-                     *             "normalize": null,
-                     *             "ops": [
+                     *             "sortable": true,
+                     *             "type": "int",
+                     *             "values": null
+                     *           },
+                     *           {
+                     *             "alert_ops": [
                      *               "eq",
                      *               "gt",
                      *               "gte",
@@ -5963,18 +6560,42 @@ export interface operations {
                      *               "lte",
                      *               "neq"
                      *             ],
-                     *             "range_request_key": "stat_ranges.sh_pct",
-                     *             "request_key": null,
+                     *             "field": "sh_pct",
+                     *             "filterable": true,
+                     *             "label": "Shot %",
+                     *             "search_ops": [
+                     *               "gte",
+                     *               "lte"
+                     *             ],
                      *             "sortable": true,
                      *             "type": "float",
-                     *             "values": null,
-                     *             "values_endpoint": false
+                     *             "values": null
                      *           }
                      *         ]
-                     *       }
+                     *       },
+                     *       "track_disciplines": [
+                     *         "indoor",
+                     *         "outdoor",
+                     *         "xc"
+                     *       ],
+                     *       "track_event_categories": [
+                     *         "distance",
+                     *         "hurdles",
+                     *         "jumps"
+                     *       ],
+                     *       "track_seasons": [
+                     *         {
+                     *           "label": "2026-27",
+                     *           "value": "2027"
+                     *         },
+                     *         {
+                     *           "label": "2025-26",
+                     *           "value": "2026"
+                     *         }
+                     *       ]
                      *     }
                      */
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["FilterCatalogResponse"];
                 };
             };
             /** @description Missing, malformed, or revoked API key. */
@@ -7088,6 +7709,8 @@ export interface operations {
                 city?: string | null;
                 /** @description 'Public', 'Private nonprofit' or 'Private for-profit'. One value, or several separated by commas (any of). */
                 control?: string | null;
+                /** @description 'active' for programs that currently compete, 'discontinued' for programs that stopped, 'all' (default) for both. Each team carries its own `status`. */
+                status?: string;
                 limit?: number;
                 cursor?: string | null;
             };
