@@ -12,6 +12,8 @@ export interface GameListParams extends ScopeParams {
   date_to?: string;
   /** 'scheduled' | 'final' | 'postponed' | 'cancelled' | 'forfeit' */
   status?: string;
+  /** Only games involving a team from this region, e.g. 'NJCAA Region IV'. */
+  region?: string;
   limit?: number;
   cursor?: string;
 }

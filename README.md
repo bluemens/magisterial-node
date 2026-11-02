@@ -64,6 +64,39 @@ console.log(run.answer);
 const schools = await client.schools.list({ ipedsUnitid: 164465 });
 const school = await client.schools.get(schools.data[0].id);
 
+// Roster filters by class standing and remaining eligibility
+const seniors = await client.teams.roster(1873, {
+  sport: "soccer",
+  division: "D3",
+  class_level: "SR,GR",
+  seasons_remaining_min: 1,
+  class_redshirt: true,
+});
+
+// Recruiting commitments and the incremental change log
+const commits = await client.commitments.list({ sport: "soccer", gender: "women", grad_year: "2027" });
+const changes = await client.commitments.changes({ since: "2026-10-01T00:00:00Z" });
+
+// Portal supply: counts per program and position group, no one named
+// (Developer Ultra and up); keep a copy current with the change log
+const supply = await client.portalSupply.list({ sport: "soccer", gender: "women", division: "D1" });
+const supplyChanges = await client.portalSupply.changes({ since: "2026-11-01T00:00:00Z" });
+
+// Golf, swimming & diving, and tennis
+const tournaments = await client.golf.listTournaments({ sport: "golf", division: "D1" });
+const times = await client.players.times(184223, {
+  sport: "swimming-and-diving",
+  division: "D1",
+  best_only: true,
+});
+const results = await client.swim.listMeetResults(12, { sport: "swimming-and-diving", division: "D1" });
+console.log(results.meetId); // each item is one event's results
+const ita = await client.tennis.listItaRankings({ sport: "tennis", division: "D1", type: "singles" });
+
+// Other new reads: client.teams.postseason / rankings, client.reference.regions /
+// eligibilityRules, client.movements.changes, client.golf.listRatings,
+// client.swim.listMeets / getMeet, client.tennis.listMatches
+
 // Managed athletes (Enterprise): invite an athlete to authorize your account,
 // then read coach contacts on their behalf
 const grant = await client.athletes.create({ player_id: 184223 });
@@ -132,7 +165,7 @@ exhausted — manage both in the [developer console](https://magisterial.ai/cons
 
 Idempotent requests (and `players.search`) are retried automatically on 429s, 5xx
 and connection failures — up to `maxRetries` (default 2), honoring the server's
-`Retry-After`. Billable creates (`query.create`, `alerts.create`) are never
+`Retry-After`. Billable or non-idempotent creates (`query.create`, `alerts.create`, `sandbox.createEvent`) are never
 retried automatically.
 
 ## Types

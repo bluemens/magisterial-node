@@ -181,6 +181,125 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/commitments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List college commitments
+         * @description College commitments, newest first, across every sport and division.
+         *     Each is one athlete committed to one program, reconciled across every
+         *     public source that lists it (`sources`): the national trackers, the
+         *     sport-specific directories, and the platforms where athletes record
+         *     their own commitments, which carry most of D2, D3, NAIA and junior
+         *     college. A commitment is published only once its program is resolved to
+         *     a team we hold (`team_id`).
+         *
+         *     `committed_on` is the best date any source gives and `committed_on_kind`
+         *     says what kind of date it is; `first_reported_at` is when we first read
+         *     it. To poll for new commitments pass the newest `first_reported_at` you
+         *     hold as `since` and drop ids you already have. That finds new
+         *     commitments, not changes to them (a signing, a decommitment, a
+         *     correction, a retraction): to keep a copy correct, poll GET
+         *     /v1/commitments/changes instead, or subscribe to the commitment.*
+         *     webhooks.
+         *
+         *     `athlete.person_id` identifies the athlete from the moment they commit and
+         *     stays theirs once they enroll (it is the `person_id` on their player
+         *     record, across transfers); `person_id` filters by it. Developer Pro and
+         *     up.
+         */
+        get: operations["list_commitments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/commitments/changes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List changes to published commitments
+         * @description The change log of GET /v1/commitments, oldest change first: every
+         *     commitment that is or was in the feed, in its current state, ordered by
+         *     when that state was last recorded. A commitment that changes (a signing,
+         *     a decommitment, a new source, a corrected date or program) comes back
+         *     with a higher `revision`; one that leaves the feed comes back with
+         *     `state` 'retracted' and the `reason`.
+         *
+         *     To sync, read pages until `has_more` is false, keep the last entry's
+         *     `changed_at`, and pass it as `since` on the next poll (`since` is
+         *     inclusive, so expect that entry again). Apply each entry by
+         *     `commitment.id`: store `commitment` when `state` is 'published', remove
+         *     what you hold when it is 'retracted'. An entry is the commitment's latest
+         *     state, not one event per change. A change to how a school is displayed is
+         *     not a revision. Changes are recorded within about a minute of the source
+         *     pass that found them; the commitment.* webhooks deliver the same changes.
+         *     Developer Pro and up.
+         */
+        get: operations["list_commitment_changes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/commitments/sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List commitment sources
+         * @description Every source the commitment feed reads: what its dates mean, whether
+         *     its rows are self-reported, how many published commitments it supports
+         *     now, and when it was last read (and last read in full). Developer Pro
+         *     and up.
+         */
+        get: operations["list_commitment_sources"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/commitments/{commitment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a commitment
+         * @description One published commitment. A retracted one is a 404 here and appears in
+         *     GET /v1/commitments/changes with its reason. Developer Pro and up.
+         */
+        get: operations["get_commitment"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/conferences": {
         parameters: {
             query?: never;
@@ -223,6 +342,10 @@ export interface paths {
          *     `sport`, `gender` and `division` pick rows out of the matrix; they never
          *     recompute a count, so every number still describes the row it sits on
          *     (a sport's own totals stay its totals across all divisions).
+         *
+         *     `games` counts games, so it is 0 for golf and swimming & diving, which
+         *     have none: their events are tournaments (GET /v1/golf/tournaments) and
+         *     meets (GET /v1/swim/meets).
          */
         get: operations["get_coverage"];
         put?: never;
@@ -249,8 +372,37 @@ export interface paths {
          *     sport, so pass `sport` (or read `divisions` on GET /v1/sports) before
          *     building a scope. Football's 'D1' is the combined view of 'D1-FBS' and
          *     'D1-FCS': request the combined code or the subdivisions, not both.
+         *
+         *     Where a sport lists 'NJCAA' after 'NJCAA-D1'/'-D2'/'-D3', the bare code is
+         *     the few junior-college programs the NJCAA lists with no division
+         *     published. It is not all of NJCAA: pass it with the levels to get every
+         *     junior college. Where 'NJCAA' is the only NJCAA code, it is that sport's
+         *     single NJCAA tier.
          */
         get: operations["list_divisions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/eligibility/rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Eligibility rules
+         * @description The rules every `eligibility` reading is made under, per governing
+         *     body, with the legislation or handbook each was read from. `rules_version`
+         *     is the version the readings carry; it goes up when a rule changes and
+         *     every reading is recomputed.
+         */
+        get: operations["get_eligibility_rules"];
         put?: never;
         post?: never;
         delete?: never;
@@ -361,9 +513,86 @@ export interface paths {
          * Get a game
          * @description One game with everything held for it: the fixture (`detail.game`), team
          *     and player box scores, play-by-play, and per-sport extras (drives, recaps).
-         *     Shape varies by sport. Ids come from GET /v1/games.
+         *     Shape varies by sport: ice hockey adds `penalties`; a tennis dual has no
+         *     box score or play-by-play and carries `dual` and `lines` (each doubles and
+         *     singles line) instead. Golf and swimming and diving have no games (their
+         *     events are tournaments and meets). Ids come from GET /v1/games.
          */
         get: operations["get_game"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/golf/ratings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List golf ratings
+         * @description magisterial's golf rating: our own head-to-head model over every
+         *     round we hold, for players or teams, ranked within each division in
+         *     scope. A rating is strokes per round better than the division's average
+         *     round (higher is better) with its standard error; `rank` is the rank
+         *     within the division. It is not an official ranking: the Clippd rankings
+         *     are in GET /v1/teams/{team_id}/rankings. Runs are dated (`as_of`); the
+         *     default is the latest.
+         */
+        get: operations["list_golf_ratings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/golf/tournaments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List golf tournaments
+         * @description College golf tournaments in the requested division scope, newest first.
+         *     Ids feed GET /v1/golf/tournaments/{tournament_id}, which carries the team
+         *     standings and every player's round scores. Golf has no games: its events
+         *     are tournaments.
+         */
+        get: operations["list_golf_tournaments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/golf/tournaments/{tournament_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a golf tournament
+         * @description One tournament with its team standings (each team's total, to-par and
+         *     score by round, and its lineup) and the individuals who played without a
+         *     team score. `round_scores` are indexed by round (index 0 is round 1), with
+         *     a null for a round not played; a team's round score is the sum of the
+         *     scores that counted that round. Player entries carry `player_id` where
+         *     the golfer is linked to a roster.
+         */
+        get: operations["get_golf_tournament"];
         put?: never;
         post?: never;
         delete?: never;
@@ -397,12 +626,54 @@ export interface paths {
          *     threshold. `person_id` links into GET /v1/persons/{person_id};
          *     `transfer_id` is the transfer edge a player movement minted.
          *
-         *     To poll, keep the newest `published_at` you have seen, pass it as `since`
-         *     on the next call, and drop rows whose `kind` and `id` you already hold
-         *     (`since` is inclusive). One call returns players and coaches together
-         *     unless `kind` is set.
+         *     To poll for new movements, keep the newest `published_at` you have seen,
+         *     pass it as `since` on the next call, and drop rows whose `kind` and `id`
+         *     you already hold (`since` is inclusive). That finds what was published,
+         *     not what changed afterwards: a correction leaves `published_at` as it
+         *     was, and a retracted movement is no longer returned at all. To keep a
+         *     copy of the feed correct, poll GET /v1/movements/changes instead. One
+         *     call returns players and coaches together unless `kind` is set. A
+         *     movement's key is (`kind`, `id`): ids are unique within a kind only.
          */
         get: operations["list_movements"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/movements/changes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List changes to published movements
+         * @description The change log of the published movement feed, oldest change first:
+         *     every movement that is or was in GET /v1/movements, in its current
+         *     state, ordered by when that state was last recorded. Polling it keeps a
+         *     copy of the feed correct, which polling GET /v1/movements by
+         *     `published_at` cannot: a movement that is corrected after publication
+         *     (its school, its counterpart, the person it is linked to) comes back
+         *     here with a higher `revision`, and one that is withdrawn comes back with
+         *     `state` 'retracted' and the `reason`.
+         *
+         *     To sync, read pages until `has_more` is false, then keep the last
+         *     entry's `changed_at` and pass it as `since` on the next poll (`since` is
+         *     inclusive, so expect that entry again). Apply each entry by
+         *     (`movement.kind`, `movement.id`): store `movement` when `state` is
+         *     'published', remove what you hold when it is 'retracted'. An entry is
+         *     the movement's latest state, not one event per change: a movement
+         *     corrected twice between two polls appears once, as it now stands. A
+         *     change to how a school is displayed (its name or logo) is not a
+         *     revision. A change is recorded here within about a minute of being
+         *     made. The movement webhooks deliver the same changes as they happen.
+         */
+        get: operations["list_movement_changes"];
         put?: never;
         post?: never;
         delete?: never;
@@ -423,6 +694,12 @@ export interface paths {
          * @description A person's full profile via their most recent stint, with the complete
          *     cross-program career attached. Careers span divisions, so only a sport
          *     (and optional gender) scope is required.
+         *
+         *     An id that was merged into another person returns that person (its `id`
+         *     and `person_id` are the surviving one). A committed athlete who is not on
+         *     a college roster yet has a person id but no stint: that is a 404
+         *     `person_not_on_roster`, and their commitments are at GET
+         *     /v1/commitments?person_id=.
          */
         get: operations["get_person"];
         put?: never;
@@ -442,8 +719,12 @@ export interface paths {
         };
         /**
          * Get a person's transfer history
-         * @description Every recorded school change for a person, oldest first. An unknown
-         *     person id returns an empty list. No division scope is required.
+         * @description Every recorded school change for a person, oldest first: one edge per
+         *     move, from each stint of the career to the next. Each carries how the
+         *     person was linked (`link_method`) and how certain the move is
+         *     (`confidence`). An unknown person id returns an empty list; an id merged
+         *     into another person returns that person's. No division scope is
+         *     required.
          */
         get: operations["list_person_transfers"];
         put?: never;
@@ -523,6 +804,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/players/{player_id}/times": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a swimmer's or diver's times
+         * @description An athlete's legal swims and dives, newest first: status OK, current,
+         *     and not below the physical floor for the distance (a mis-parsed row is
+         *     never a swim). Each carries the meet, event, round, place, `time_ms`
+         *     (lower is better) or dive `points`, and splits. Course is part of the
+         *     event: SCY, SCM and LCM times never compare. `best_only` reads a
+         *     personal-best sheet: one row per event. Exhibition swims are included and
+         *     marked `exhibition`.
+         */
+        get: operations["get_player_times"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/portal": {
         parameters: {
             query?: never;
@@ -543,6 +850,79 @@ export interface paths {
          *     readable `initiated_date` is left out of an `initiated_date` range.
          */
         get: operations["list_portal_entries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/portal/supply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List transfer portal supply by program and position
+         * @description Who is in the transfer portal at each program, without saying who:
+         *     one row per program and position group, holding counts. `in_portal` is
+         *     on the market now, `in_portal_returning` the part of those known not to
+         *     be in their last season, and `signed_out` the ones who signed or
+         *     enrolled elsewhere this cycle. With the rosters (GET /v1/teams/{team_id}/roster)
+         *     and commitments (GET /v1/commitments) this is what you need to project
+         *     the spots opening at a program: departures from class year, plus
+         *     `in_portal_returning`, minus commitments.
+         *
+         *     No row names a player: there is no name, class year, entry date or
+         *     per-person id, so nothing here joins to GET /v1/portal or /v1/movements.
+         *     The position group is the roster position's group in team sports and
+         *     football, the event group from results in track and field and in
+         *     swimming and diving, and the dual-match lineup tier in tennis. Golf has
+         *     no positions; its entries, and any entry not linked to a roster player,
+         *     count in the program's row with `lane` null.
+         *
+         *     Counts are taken once a day. Rows are ordered by sport, program and
+         *     lane. To keep a copy current, read this once and then poll GET
+         *     /v1/portal/supply/changes, or subscribe to portal_supply.changed.
+         *     Developer Ultra and up.
+         */
+        get: operations["list_portal_supply"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/portal/supply/changes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List changes to transfer portal supply
+         * @description The change log of GET /v1/portal/supply, oldest change first: every
+         *     program and position row, in its current state, ordered by when its
+         *     counts last changed. A row whose counts (or portal cycle) change comes
+         *     back with a higher `revision`; a program the portal no longer lists
+         *     anyone from comes back with every count at zero.
+         *
+         *     Counts are taken in a daily snapshot, and `changed_at` is midnight UTC
+         *     of the snapshot's date, not the moment anything happened: the feed does
+         *     not say when a player entered. To sync, read pages until `has_more` is
+         *     false, keep the last entry's `changed_at`, and pass it as `since` on the
+         *     next poll (`since` is inclusive, so expect that day's entries again).
+         *     Apply each entry by `supply.id`, replacing what you hold. A change to a
+         *     program's name or conference is not a revision. The portal_supply.changed
+         *     webhook delivers the same changes. Developer Ultra and up.
+         */
+        get: operations["list_portal_supply_changes"];
         put?: never;
         post?: never;
         delete?: never;
@@ -600,6 +980,89 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/rankings/ita": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List ITA player rankings
+         * @description The ITA's individual rankings: singles players or doubles pairs, from
+         *     the latest release of the season in each division in scope (or the
+         *     release a `season` and `release_date` name), by division then rank. Each
+         *     entry carries its release (`release_date`, `is_final`) so a poll and a
+         *     season's final ranking read apart. Team rankings are in
+         *     GET /v1/teams/{team_id}/rankings (`ranking_system` 'ITA').
+         */
+        get: operations["list_ita_rankings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/regions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List regions in a division
+         * @description The regions teams in the requested sport/division scope are in, in
+         *     the association's order ('NJCAA Region I' to 'NJCAA Region XXIV'):
+         *     valid values for `region` filters on other endpoints, and the values a
+         *     team's `region` takes. A region is an association's, not a conference:
+         *     the NJCAA's 24 regions hold its conferences, and a team in a region with
+         *     no conference has a region and no conference. Only NJCAA and NCCAA teams
+         *     have one, so any other scope lists none.
+         */
+        get: operations["list_regions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sandbox/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Trigger a sandbox event (test keys only)
+         * @description Make something happen in the sandbox world, so you can watch your alerts
+         *     and webhooks react without waiting for the real thing.
+         *
+         *     `portal_entry` adds an athlete to the sandbox transfer portal at a
+         *     program, evaluates every enabled sandbox alert on your account against the
+         *     new entry, records the matches, and pushes `alert.triggered` to your
+         *     registered webhook endpoints. `player_movement` and `coach_movement` add an
+         *     athlete or a coach to a program, which publishes a movement
+         *     (`GET /v1/movements`) and pushes `player_movement.published` or
+         *     `coach_movement.published` to endpoints subscribed to them. Every delivery
+         *     carries `"test": true`.
+         *
+         *     Only a test key (`mag_test_`) may call this; a live key gets a 403.
+         */
+        post: operations["create_sandbox_event"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/schools": {
         parameters: {
             query?: never;
@@ -614,7 +1077,12 @@ export interface paths {
          *     `ipeds_unitid` to map your own records onto ours, then fetch its programs
          *     with GET /v1/schools/{school_id}.
          *
-         *     `sport`, `gender`, `division` and `conference` describe one program: a
+         *     Each school carries its College Scorecard `profile` (admission rate, SAT
+         *     and ACT ranges, enrollment, tuition, net price, graduation and retention
+         *     rates, religious affiliation, campus setting, top majors), null where no
+         *     federal profile is held. The profile filters compare against it.
+         *
+         *     `sport`, `gender`, `division`, `conference` and `region` describe one program: a
          *     school matches when a single team of its meets all of them, so
          *     `sport=soccer&gender=women&division=D3` is the schools with a D3 women's
          *     soccer team.
@@ -639,8 +1107,8 @@ export interface paths {
          * Get a school and its programs
          * @description One institution plus every program it fields or fielded across sports
          *     and divisions (team ids for the scoped team endpoints), each with its
-         *     program `status`. Identity only; stats stay behind the
-         *     sport/division-scoped endpoints.
+         *     program `status`, and the institution's College Scorecard `profile`.
+         *     Athletics stats stay behind the sport/division-scoped endpoints.
          */
         get: operations["get_school"];
         put?: never;
@@ -676,6 +1144,82 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/swim/meets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List swimming & diving meets
+         * @description Swimming & diving meets that hold current results in the requested
+         *     sport, gender and division scope, newest first. A meet holds both
+         *     genders and often several divisions: it is listed when it has results in
+         *     the scope you ask for. Dual meets and invitationals are partial and
+         *     growing; conference and national championships are the backbone. Ids feed
+         *     GET /v1/swim/meets/{meet_id}. Swimming and diving has no games: its
+         *     events are meets.
+         */
+        get: operations["list_swim_meets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/swim/meets/{meet_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a swimming & diving meet
+         * @description One meet: its details, the final team scores where it scored, and the
+         *     events it holds results for in the requested gender and divisions, each
+         *     with a `result_count`. A championship holds thousands of results, so they
+         *     are not inlined: read them, by event, from
+         *     GET /v1/swim/meets/{meet_id}/results.
+         */
+        get: operations["get_swim_meet"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/swim/meets/{meet_id}/results": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List a swimming & diving meet's results
+         * @description The results of one meet in the requested gender and divisions,
+         *     grouped by event in catalog order. Within an event: prelims, then finals
+         *     by heat, each by place. Every result carries `time_ms` (lower is better)
+         *     or, for a dive, `points`; its `status` (a DQ or scratch is listed, not
+         *     dropped); and its splits, or for a relay the legs. Times are the
+         *     published results to the millisecond. Pages hold `limit` results, so an
+         *     event can continue on the next page. Pass `event` to read one event.
+         */
+        get: operations["list_swim_meet_results"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/teams": {
         parameters: {
             query?: never;
@@ -686,10 +1230,12 @@ export interface paths {
         /**
          * List teams
          * @description Teams in the requested sport/division scope, alphabetical. Filter by
-         *     name, conference, or the school behind the team (id, IPEDS UNITID, state,
-         *     city, control). Each team carries its `school` (id, slug, athletics
+         *     name, conference, region, or the school behind the team (id, IPEDS UNITID,
+         *     state, city, control). Each team carries its `school` (id, slug, athletics
          *     domain, IPEDS UNITID) and its program `status`; pass `status=active` to
-         *     list only programs that currently compete. Paginates with an opaque
+         *     list only programs that currently compete. `roster_changed_since` and
+         *     `coaches_changed_since` list only the programs whose roster or staff
+         *     changed since a time, for incremental sync. Paginates with an opaque
          *     `cursor`.
          */
         get: operations["list_teams"];
@@ -712,7 +1258,10 @@ export interface paths {
          * Get a team
          * @description One team plus its per-season document/stat records, its `school`
          *     (with IPEDS UNITID), its program `status`, and per data kind `freshness`.
-         *     The team must be visible in the requested sport/division scope.
+         *     Each season record carries a `schedule` object: how many games the team's
+         *     own schedule lists beside how many we hold, so a short season says so.
+         *     `division` may be omitted: the team is read in its own current division.
+         *     A team outside a division that is given is a 404 naming the one it is in.
          */
         get: operations["get_team"];
         put?: never;
@@ -756,6 +1305,84 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/teams/{team_id}/postseason": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a team's postseason results
+         * @description What a team won and how far it went, season by season, in four
+         *     kinds of entry:
+         *
+         *     - `national_tournament`: every national championship tournament the
+         *       team played in, with how far it went (`result`, `round`,
+         *       `teams_remaining`), its seed, and its wins and losses there. NCAA
+         *       tournaments are read from the NCAA's published brackets, NAIA
+         *       championships from the NAIA's championship record books, and the
+         *       College Football Playoff (organizer `CFP`) from the NCAA's scoreboard.
+         *     - `bowl_game`: an FBS bowl the team played in. `organizer` and `event`
+         *       are the bowl, and `result` is `won` or `lost`. A playoff quarterfinal
+         *       or semifinal played as a bowl is both a `CFP` entry and a `bowl_game`
+         *       entry.
+         *     - `conference_regular_season`: a conference regular-season title.
+         *     - `conference_tournament`: a conference tournament (or championship
+         *       game) the team won, or lost the final of where the conference names
+         *       the runner-up.
+         *
+         *     Conference titles are read only from each conference's own list of its
+         *     champions, never worked out from standings. `shared` marks a title the
+         *     conference gave to more than one team, and `conference_division` a
+         *     title of a division inside the conference.
+         *
+         *     `coverage` lists the competitions and seasons held for the team: the
+         *     national tournaments of its sport and division, and the titles of the
+         *     conference it was in each season. Inside them, a season with no entry is
+         *     one the team did not play in the tournament, or did not win the title;
+         *     outside them, nothing is held either way. `division` may be omitted:
+         *     the team is read in its own current division. A team outside a division
+         *     that is given is a 404 naming the one it is in.
+         */
+        get: operations["get_team_postseason"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/teams/{team_id}/rankings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a team's national rankings
+         * @description Where a team stands, or finished, in each national ranking, season by
+         *     season: the NCAA's RPI, NET and NPI sheets, the coaches polls, the ITA team
+         *     rankings (tennis), Clippd (golf) and the USCHO poll (ice hockey), as far
+         *     back as each is held for the sport and division. One entry per season and
+         *     ranking system the team appeared in, read from that season's latest
+         *     release. `is_final` tells a finished season's final rank from a current
+         *     one. A season or system with no entry is one the team was never ranked
+         *     in, or one not held for this sport and division. `division` may be omitted:
+         *     the team is read in its own current division. A team outside a division
+         *     that is given is a 404 naming the one it is in.
+         */
+        get: operations["get_team_rankings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/teams/{team_id}/roster": {
         parameters: {
             query?: never;
@@ -774,6 +1401,30 @@ export interface paths {
          *     so a past season is filtered by what the player was then.
          */
         get: operations["get_team_roster"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/tennis/matches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List individual tennis matches
+         * @description Individual singles and doubles matches from tournaments (ITA events,
+         *     regionals, invitationals), newest first, with each set's games and
+         *     tiebreaks. A team dual and its lines are not here: they are games
+         *     (GET /v1/games, GET /v1/games/{game_id}). `player_id` and `team_id` are
+         *     where a player's tournament record and a team's are read.
+         */
+        get: operations["list_tennis_matches"];
         put?: never;
         post?: never;
         delete?: never;
@@ -932,7 +1583,7 @@ export interface components {
             enabled: boolean;
             /**
              * Filters
-             * @description Filter DSL; see GET /v1/filters/catalog.
+             * @description Filter DSL; see GET /v1/filters/catalog. A portal matched_team_name condition (eq, neq, in, not_in) comes back with `school_ids`: each name it lists, mapped to the ids (as in GET /v1/schools) of the schools it named when the alert was saved. The alert matches those schools' players under every name their teams carry, renamed ones included. The server writes `school_ids`; a value sent is ignored.
              */
             filters?: {
                 [key: string]: unknown;
@@ -1486,6 +2137,480 @@ export interface components {
             [key: string]: unknown;
         };
         /**
+         * ClassStanding
+         * @description The class the program published, read: the same reading the filters
+         *     use. `class_year_published` beside it is the string itself.
+         */
+        ClassStanding: {
+            /**
+             * Checks
+             * @description The checks the string failed.
+             */
+            checks?: string[];
+            /**
+             * Graduation Year
+             * @description When the program published a graduation year ("'27"); `level` is then read against the row's own season.
+             */
+            graduation_year?: number | null;
+            /**
+             * Label
+             * @description 'Freshman', 'Sophomore', 'Junior', 'Senior', 'Graduate', 'Fifth year', 'Sixth year', 'Seventh year' or 'Eighth year'. What `class_year` carries from its deprecation sunset on.
+             */
+            label?: string | null;
+            /**
+             * Level
+             * @description 'FR', 'SO', 'JR', 'SR' or 'GR' (beyond the fourth year, published as graduate, '5th', '6th Year' and the like). A class word wins: 'Sr.-5' is SR. Null when the published string names no class.
+             */
+            level?: string | null;
+            /**
+             * Markers
+             * @description Other published qualifiers: graduate, medical, covid, transfer, greyshirt, super, injured, asterisk, plus.
+             */
+            markers?: string[];
+            /**
+             * Parse
+             * @description 'ok', 'ambiguous' (read, with a doubt `checks` names), 'unreadable', 'not_a_class' (a height or position in the class field) or 'absent'.
+             * @default absent
+             */
+            parse: string;
+            /**
+             * Redshirt
+             * @description True when the published class carries a redshirt marker ('R-So.', 'RS Fr', 'Fr.-R'); null when no class could be read.
+             */
+            redshirt?: boolean | null;
+            /**
+             * Year Number
+             * @description The year in the program when the string states one ('5th', 'Sr. (4th)').
+             */
+            year_number?: number | null;
+        };
+        /**
+         * CommitmentAthlete
+         * @description The athlete, as the best-ranked source that lists them gives it. Most
+         *     are high-school students: contact details, dates of birth and social
+         *     accounts are never collected, so they are never here.
+         */
+        CommitmentAthlete: {
+            /**
+             * Club
+             * @description Club team, where the source names one.
+             */
+            club?: string | null;
+            /**
+             * Grad Year
+             * @description High-school graduation class. Null where the sources give only the college entry year (see `entry_year`).
+             * @example 2027
+             */
+            grad_year?: number | null;
+            /** High School */
+            high_school?: string | null;
+            /**
+             * Home State
+             * @description Two-letter US state.
+             * @example OR
+             */
+            home_state?: string | null;
+            /** Hometown City */
+            hometown_city?: string | null;
+            /**
+             * Name
+             * @description Full name in natural order.
+             * @example Avery Johnson
+             */
+            name: string;
+            /**
+             * Person Id
+             * @description The athlete's id, from the moment they commit: the same id on every commitment they make (a decommitment and a recommitment elsewhere share it), and the `person_id` their player record carries once they enroll, across transfers. All of an athlete's commitments: GET /v1/commitments?person_id=. In the rare case two ids turn out to be one athlete, the ids are merged: the commitment then carries the surviving id (a `commitment.updated`), and the other keeps resolving to it. Null only in the last form of a commitment retracted because its athlete record was removed.
+             * @example 318204
+             */
+            person_id?: number | null;
+            /**
+             * Player Id
+             * @description Set once the class has enrolled and the athlete is on the committed team's roster: GET /v1/players/{player_id}. A player id is one roster stint; `person_id` is the athlete.
+             */
+            player_id?: number | null;
+            /**
+             * Position
+             * @description As the source prints it.
+             * @example MF
+             */
+            position?: string | null;
+        };
+        /**
+         * CommitmentChange
+         * @description The current state of one commitment that is, or was, in the feed, and
+         *     when that state last changed. Apply it by `commitment.id`: store
+         *     `commitment` when `state` is 'published', remove what you hold when it is
+         *     'retracted'.
+         */
+        CommitmentChange: {
+            /**
+             * Changed At
+             * Format: date-time
+             * @description When this revision was recorded. For revision 0 it is `first_reported_at`.
+             */
+            changed_at: string;
+            commitment: components["schemas"]["CommitmentEntry"];
+            /**
+             * Reason
+             * @description Retracted only. 'withdrawn': every source stopped listing it. 'not_public': only sources that do not feed the API list it now. 'unresolved': the program it was reported at is now matched to another team, or to none (a correction). 'deleted': the athlete's record was removed. 'sport_not_public': the sport left the API.
+             */
+            reason?: string | null;
+            /**
+             * Revision
+             * @description 0 for a commitment that has not changed since the log began; one more for each change, retraction or re-publication. Compare it with the revision you hold.
+             */
+            revision: number;
+            /**
+             * State
+             * @description 'published': the commitment is in the feed and `commitment` is its current form. 'retracted': it has left the feed and `commitment` is the last form it had.
+             */
+            state: string;
+        };
+        /**
+         * CommitmentChangePage
+         * @description One page of the commitment change log, oldest change first.
+         */
+        CommitmentChangePage: {
+            /** Data */
+            data: components["schemas"]["CommitmentChange"][];
+            /**
+             * Has More
+             * @description True when another page is available.
+             * @default false
+             */
+            has_more: boolean;
+            /**
+             * Next Cursor
+             * @description Opaque cursor for the next page; null when there are no more results.
+             * @example eyJvZmZzZXQiOiAyNX0=
+             */
+            next_cursor?: string | null;
+        };
+        /**
+         * CommitmentEntry
+         * @description One athlete's commitment to one college program, reconciled across
+         *     every public source that lists it. Sources that disagree about the
+         *     program are separate commitments, each with its own `sources`.
+         */
+        CommitmentEntry: {
+            athlete: components["schemas"]["CommitmentAthlete"];
+            /**
+             * Committed On
+             * @description When the commitment was made, by the best date any source gives (`committed_on_kind` says which kind). Null when no source dates it.
+             */
+            committed_on?: string | null;
+            /**
+             * Committed On Kind
+             * @description 'announced', 'recorded', 'added' or 'published'.
+             */
+            committed_on_kind?: string | null;
+            /**
+             * Committed On Source
+             * @description The source the date comes from.
+             */
+            committed_on_source?: string | null;
+            /**
+             * Conference
+             * @description The program's current conference.
+             */
+            conference?: string | null;
+            /**
+             * Decommitted At
+             * @description Status 'decommitted' only.
+             */
+            decommitted_at?: string | null;
+            /**
+             * Division
+             * @description The committed program's division.
+             * @example D1
+             */
+            division?: string | null;
+            /**
+             * Entry Year
+             * @description The year the athlete enters college, for a commitment whose sources give that instead of a high-school class (ice hockey, where players go through juniors first); `athlete.grad_year` is then null.
+             */
+            entry_year?: number | null;
+            /**
+             * First Reported After
+             * @description For a commitment we found on a later pass over a source: that source's previous complete pass, so the commitment appeared between this time and `first_reported_at`. Null for one already listed when we began reading the source.
+             */
+            first_reported_after?: string | null;
+            /**
+             * First Reported At
+             * Format: date-time
+             * @description When we first read the commitment from any source.
+             */
+            first_reported_at: string;
+            /**
+             * Gender
+             * @example women
+             */
+            gender: string;
+            /**
+             * Id
+             * @description Stable commitment id.
+             */
+            id: number;
+            /**
+             * Published At
+             * Format: date-time
+             * @description When the commitment entered this feed.
+             */
+            published_at: string;
+            /**
+             * Region
+             * @description The program's current region, for NJCAA and NCCAA programs: 'NJCAA Region IV'. Read live like `conference`; null for every other program, and in change-log entries and webhooks, which carry the commitment as published.
+             */
+            region?: string | null;
+            school: components["schemas"]["CommitmentSchool"];
+            /** School Id */
+            school_id?: number | null;
+            /** Sources */
+            sources: components["schemas"]["CommitmentSourceRef"][];
+            /**
+             * Sport
+             * @example soccer
+             */
+            sport: string;
+            /**
+             * Sport Path
+             * @example womens-soccer
+             */
+            sport_path: string;
+            /**
+             * Status
+             * @description 'committed', 'signed' (a source reports a signing), or 'decommitted' (a source reported the decommitment or now lists the athlete at another program).
+             */
+            status: string;
+            /**
+             * Team Id
+             * @description The committed program: GET /v1/teams/{team_id}.
+             */
+            team_id: number;
+        };
+        /**
+         * CommitmentPage
+         * @description One page of commitments.
+         */
+        CommitmentPage: {
+            /** Data */
+            data: components["schemas"]["CommitmentEntry"][];
+            /**
+             * Has More
+             * @description True when another page is available.
+             * @default false
+             */
+            has_more: boolean;
+            /**
+             * Next Cursor
+             * @description Opaque cursor for the next page; null when there are no more results.
+             * @example eyJvZmZzZXQiOiAyNX0=
+             */
+            next_cursor?: string | null;
+        };
+        /** CommitmentSchool */
+        CommitmentSchool: {
+            /** Ipeds Unitid */
+            ipeds_unitid?: number | null;
+            /** Logo Url */
+            logo_url?: string | null;
+            /** Name */
+            name?: string | null;
+            /**
+             * School Id
+             * @description GET /v1/schools/{school_id}.
+             */
+            school_id?: number | null;
+            /** State */
+            state?: string | null;
+        };
+        /**
+         * CommitmentSourceInfo
+         * @description One source of the commitment feed.
+         */
+        CommitmentSourceInfo: {
+            /**
+             * Commitments
+             * @description Published commitments it currently supports.
+             */
+            commitments: number;
+            /**
+             * Date Kind
+             * @description What the source's own date means ('announced', 'recorded', 'added', 'published'), or 'none' when it gives no date.
+             */
+            date_kind: string;
+            /** Homepage */
+            homepage?: string | null;
+            /**
+             * Last Complete Read At
+             * @description Its most recent pass that read the source's whole listing (the passes that can withdraw a commitment).
+             */
+            last_complete_read_at?: string | null;
+            /**
+             * Last Read At
+             * @description Its most recent finished pass.
+             */
+            last_read_at?: string | null;
+            /**
+             * Name
+             * @example FieldLevel
+             */
+            name: string;
+            /** Self Reported */
+            self_reported: boolean;
+            /**
+             * Source
+             * @example fieldlevel
+             */
+            source: string;
+            /**
+             * Sport Paths
+             * @description Sports it lists published commitments in.
+             */
+            sport_paths: string[];
+        };
+        /** CommitmentSourceList */
+        CommitmentSourceList: {
+            /** Data */
+            data: components["schemas"]["CommitmentSourceInfo"][];
+        };
+        /**
+         * CommitmentSourceRef
+         * @description What one source says about this commitment.
+         */
+        CommitmentSourceRef: {
+            /**
+             * Commit Type
+             * @description 'verbal' or 'signed', when the source says.
+             */
+            commit_type?: string | null;
+            /**
+             * Date
+             * @description The source's own date for the commitment.
+             */
+            date?: string | null;
+            /**
+             * Date Kind
+             * @description What `date` means: 'announced' (the commit date the source publishes), 'recorded' (when the athlete logged it on the platform), 'added' (when an editor added it), 'published' (the date of the article that reported it).
+             */
+            date_kind?: string | null;
+            /**
+             * First Seen At
+             * Format: date-time
+             * @description When we first read it from this source.
+             */
+            first_seen_at: string;
+            /**
+             * Name
+             * @example FieldLevel
+             */
+            name: string;
+            /**
+             * Self Reported
+             * @description The source's rows are entered by athletes or families.
+             */
+            self_reported: boolean;
+            /**
+             * Source
+             * @description Source key; GET /v1/commitments/sources.
+             * @example fieldlevel
+             */
+            source: string;
+            /**
+             * Status
+             * @description 'listed': the source lists it now. 'class_enrolled': the source stopped listing the class once it enrolled. 'switched': the source now lists the athlete at another program. 'decommitted': the source reported a decommitment. 'withdrawn': the source no longer lists it.
+             */
+            status: string;
+        };
+        /**
+         * Eligibility
+         * @description Seasons of eligibility the athlete has left after `as_of_season`, read
+         *     from their whole career under their governing body's rules. A reading,
+         *     not a ruling: a range with a confidence. GET /v1/eligibility/rules lists
+         *     the rules and their sources.
+         */
+        Eligibility: {
+            /**
+             * Alternatives
+             * @description Other readings worth knowing: the other NCAA model, a pending rule (NAIA's five-season vote), or a two-year athlete's reading if they move to NCAA Division I.
+             */
+            alternatives?: {
+                [key: string]: unknown;
+            }[];
+            /**
+             * As Of Season
+             * @description The latest season the reading counts.
+             */
+            as_of_season: string;
+            /**
+             * Clock Start Basis
+             * @description What dates the start of their eligibility: 'hs_grad_year', 'published_class' or 'first_roster_season'.
+             */
+            clock_start_basis: string;
+            /**
+             * Confidence
+             * @description 'high' (a single number, nothing conflicts), 'medium' (two numbers) or 'low' (wider, or the evidence disagrees).
+             */
+            confidence: string;
+            /** @description The last season they can play, as a range. */
+            final_season: components["schemas"]["FinalSeason"];
+            /**
+             * Governing Body
+             * @description 'ncaa_d1', 'ncaa_d2', 'ncaa_d3', 'naia', 'nccaa', 'njcaa', 'cccaa', 'nwac', 'uscaa', 'usports' or 'independent'.
+             */
+            governing_body: string;
+            /**
+             * Regime
+             * @description The rule the reading uses, e.g. 'ncaa_d1_age_based' (the five-year period) or 'ncaa_d1_previous' (four seasons in five years), whichever is more favorable for an athlete the NCAA transition lets choose.
+             */
+            regime: string;
+            /** Rules Version */
+            rules_version: number;
+            /** @description Seasons left after `as_of_season`, as a range. */
+            seasons_remaining: components["schemas"]["SeasonsRemaining"];
+        };
+        /**
+         * EligibilityRule
+         * @description One way a governing body counts eligibility, with its sources.
+         */
+        EligibilityRule: {
+            /** Governing Body */
+            governing_body: string;
+            /** Label */
+            label: string;
+            /**
+             * Model
+             * @description 'clock': every year of a period may be played; 'seasons': at most `seasons` seasons of competition.
+             */
+            model: string;
+            /** Notes */
+            notes?: string[];
+            /** Regime */
+            regime: string;
+            /** Seasons */
+            seasons?: number | null;
+            /** Sources */
+            sources?: string[];
+            /**
+             * Window Years
+             * @description Academic years the seasons must fit in, when the body has a window.
+             */
+            window_years?: number | null;
+            /**
+             * Years
+             * @description Length of the period, for a clock.
+             */
+            years?: number | null;
+        };
+        /** EligibilityRulesResponse */
+        EligibilityRulesResponse: {
+            /** Data */
+            data: components["schemas"]["EligibilityRule"][];
+            /** Rules Version */
+            rules_version: number;
+        };
+        /**
          * ExportCreateRequest
          * @description Body for POST /v1/exports (usage-billed by result size).
          *
@@ -1530,6 +2655,11 @@ export interface components {
              * @description 'men' or 'women'. Defaults to 'men' for a sport with both; ignored for single-gender sports.
              */
             gender?: string | null;
+            /**
+             * Region
+             * @description Region filter (players/teams/coaches), e.g. 'NJCAA Region IV': the team's region in its newest season. GET /v1/regions lists them.
+             */
+            region?: string | null;
             /**
              * Season
              * @description Season filter (championship year, e.g. '2025').
@@ -1661,6 +2791,188 @@ export interface components {
              * @example eyJvZmZzZXQiOiAyNX0=
              */
             next_cursor?: string | null;
+        };
+        /**
+         * FieldHockeyStats
+         * @description Season stats for field-hockey: the stat fields GET /v1/filters/catalog lists for the sport. Every field is present on every row; null means the source did not publish it.
+         */
+        FieldHockeyStats: {
+            /**
+             * A
+             * @description Assists
+             * @default null
+             */
+            a: number | null;
+            /**
+             * Ds
+             * @description Defensive Saves
+             * @default null
+             */
+            ds: number | null;
+            /**
+             * G
+             * @description Goals
+             * @default null
+             */
+            g: number | null;
+            /**
+             * G Gp
+             * @description GP (Goalkeeper)
+             * @default null
+             */
+            g_gp: number | null;
+            /**
+             * G Gs
+             * @description GS (Goalkeeper)
+             * @default null
+             */
+            g_gs: number | null;
+            /**
+             * G Seconds
+             * @description Goalkeeper Time (seconds)
+             * @default null
+             */
+            g_seconds: number | null;
+            /**
+             * Ga
+             * @description Goals Against
+             * @default null
+             */
+            ga: number | null;
+            /**
+             * Gaa
+             * @description GAA (per 60 min)
+             * @default null
+             */
+            gaa: number | null;
+            /**
+             * Gc
+             * @description Green Cards
+             * @default null
+             */
+            gc: number | null;
+            /**
+             * Gp
+             * @description GP
+             * @default null
+             */
+            gp: number | null;
+            /**
+             * Gs
+             * @description GS
+             * @default null
+             */
+            gs: number | null;
+            /**
+             * Gwg
+             * @description Game-Winning Goals
+             * @default null
+             */
+            gwg: number | null;
+            /**
+             * L
+             * @description Losses (Goalkeeper)
+             * @default null
+             */
+            l: number | null;
+            /**
+             * Minutes
+             * @description Minutes
+             * @default null
+             */
+            minutes: number | null;
+            /**
+             * Ps Att
+             * @description Penalty-Stroke Attempts
+             * @default null
+             */
+            ps_att: number | null;
+            /**
+             * Ps Goals
+             * @description Penalty-Stroke Goals
+             * @default null
+             */
+            ps_goals: number | null;
+            /**
+             * Pts
+             * @description Points
+             * @default null
+             */
+            pts: number | null;
+            /**
+             * Pts Per Game
+             * @description Points/Game
+             * @default null
+             */
+            pts_per_game: number | null;
+            /**
+             * Rc
+             * @description Red Cards
+             * @default null
+             */
+            rc: number | null;
+            /**
+             * Sh
+             * @description Shots
+             * @default null
+             */
+            sh: number | null;
+            /**
+             * Sh Pct
+             * @description Shot %
+             * @default null
+             */
+            sh_pct: number | null;
+            /**
+             * Sho
+             * @description Shutouts
+             * @default null
+             */
+            sho: number | null;
+            /**
+             * Sog
+             * @description Shots on Goal
+             * @default null
+             */
+            sog: number | null;
+            /**
+             * Sog Pct
+             * @description SOG %
+             * @default null
+             */
+            sog_pct: number | null;
+            /**
+             * Sv
+             * @description Saves
+             * @default null
+             */
+            sv: number | null;
+            /**
+             * Sv Pct
+             * @description Save %
+             * @default null
+             */
+            sv_pct: number | null;
+            /**
+             * T
+             * @description Ties (Goalkeeper)
+             * @default null
+             */
+            t: number | null;
+            /**
+             * W
+             * @description Wins (Goalkeeper)
+             * @default null
+             */
+            w: number | null;
+            /**
+             * Yc
+             * @description Yellow Cards
+             * @default null
+             */
+            yc: number | null;
+        } & {
+            [key: string]: unknown;
         };
         /**
          * FilterCatalogField
@@ -2028,6 +3340,13 @@ export interface components {
              * @example 2027
              */
             value: string;
+        };
+        /** FinalSeason */
+        FinalSeason: {
+            /** Earliest */
+            earliest: string;
+            /** Latest */
+            latest: string;
         };
         /**
          * FootballStats
@@ -2417,12 +3736,15 @@ export interface components {
         };
         /**
          * FreshnessInfo
-         * @description When the source page behind a record was last read. `observed_at` is
-         *     the last fetch that was ingested; `changed_at` the last time the page's
-         *     content actually changed; `next_check_at` when the next fetch is due
-         *     under the seasonal cadence policy (see the Data sources and freshness
-         *     section). Null when the program has never been read through the target
-         *     registry.
+         * @description When the source behind a record was last read and when it changed.
+         *     `observed_at` is the last fetch that was ingested; `changed_at` the last
+         *     time the content changed (for rosters and coaching staffs, what this API
+         *     returns for the latest season, whichever source changed it; never earlier
+         *     than the change); `next_check_at` when the next fetch is due under the
+         *     seasonal cadence policy (see the Data sources and freshness section).
+         *     `next_check_at` is null for a program read only by an association's
+         *     central feed, which reads every program on the lane's own schedule. Null
+         *     when nothing is held.
          */
         FreshnessInfo: {
             /**
@@ -2583,7 +3905,7 @@ export interface components {
         GameSummary: {
             /**
              * Detail
-             * @description Complete game payload: `game` (the fixture), `team_stats`, `player_stats`, `play_by_play`, and per-sport extras (drives, recaps). Shape varies by sport.
+             * @description Complete game payload: `game` (the fixture), `team_stats`, `player_stats`, `play_by_play`, and per-sport extras (drives, recaps). Shape varies by sport: ice hockey adds `penalties`; a tennis dual has no box score or play-by-play and carries `dual` (how the dual is scored) and `lines` (each doubles and singles line with its set scores) instead. Golf and swimming and diving are tournaments and meets, not head-to-head games, so they have no game ids.
              */
             detail?: {
                 [key: string]: unknown;
@@ -2593,6 +3915,857 @@ export interface components {
              * @description Game id as requested.
              */
             id?: unknown | null;
+        };
+        /**
+         * GolfPlayerResult
+         * @description One player's result in one tournament.
+         */
+        GolfPlayerResult: {
+            /** Made Cut */
+            made_cut?: boolean | null;
+            /** Name */
+            name?: string | null;
+            /**
+             * Place
+             * @description Finishing place; `tied` says whether it is shared.
+             */
+            place?: number | null;
+            /**
+             * Player Id
+             * @description Player id; null for a player we have not linked to a roster yet (`name` is then as the results page printed it).
+             */
+            player_id?: number | null;
+            /**
+             * Round Scores
+             * @description Strokes by round, index 0 being round 1. Null for a round the player did not play.
+             */
+            round_scores?: (number | null)[];
+            /**
+             * Rounds
+             * @description Rounds played.
+             */
+            rounds?: number | null;
+            /**
+             * Status
+             * @description 'finished', 'missed_cut', 'withdrawn', 'disqualified' or 'in_progress'.
+             */
+            status?: string | null;
+            /**
+             * Team Id
+             * @description The player's school (team id); null for an unattached individual.
+             */
+            team_id?: number | null;
+            /** Tied */
+            tied?: boolean | null;
+            /**
+             * To Par
+             * @description Total to par: negative is under par.
+             */
+            to_par?: number | null;
+            /**
+             * Total
+             * @description Total strokes over the rounds played.
+             */
+            total?: number | null;
+        };
+        /**
+         * GolfRatingEntry
+         * @description One player or team on magisterial's golf rating: our own head-to-head
+         *     model over every round we hold, not an official ranking. The Clippd
+         *     rankings are in GET /v1/teams/{team_id}/rankings (`ranking_system`
+         *     'Clippd').
+         * @example {
+         *       "as_of": "2026-11-02",
+         *       "division": "D3",
+         *       "entity_type": "player",
+         *       "events": 9,
+         *       "h2h_losses": 46,
+         *       "h2h_ties": 11,
+         *       "h2h_wins": 682,
+         *       "model_version": "golf-rating-v1",
+         *       "player_id": 1525705,
+         *       "player_name": "Example Player",
+         *       "rank": 1,
+         *       "rating": 3.25,
+         *       "rounds": 24,
+         *       "sport_path": "womens-golf",
+         *       "std_error": 0.64,
+         *       "team_id": 23496,
+         *       "team_name": "Example College"
+         *     }
+         */
+        GolfRatingEntry: {
+            /**
+             * As Of
+             * Format: date
+             * @description The day of the rating run.
+             */
+            as_of: string;
+            /** Division */
+            division: string;
+            /**
+             * Entity Type
+             * @description 'player' or 'team'.
+             */
+            entity_type: string;
+            /**
+             * Events
+             * @description Tournaments behind the rating.
+             */
+            events?: number | null;
+            /** H2H Losses */
+            h2h_losses?: number | null;
+            /** H2H Ties */
+            h2h_ties?: number | null;
+            /**
+             * H2H Wins
+             * @description Head-to-head round wins over the rated field.
+             */
+            h2h_wins?: number | null;
+            /** Model Version */
+            model_version?: string | null;
+            /**
+             * Player Id
+             * @description Set for a player rating.
+             */
+            player_id?: number | null;
+            /** Player Name */
+            player_name?: string | null;
+            /**
+             * Rank
+             * @description Rank within the division and entity type, 1 being best.
+             */
+            rank?: number | null;
+            /**
+             * Rating
+             * @description Strokes per round better than the division's average round; higher is better.
+             */
+            rating?: number | null;
+            /**
+             * Rounds
+             * @description Rounds behind the rating.
+             */
+            rounds?: number | null;
+            /** Sport Path */
+            sport_path: string;
+            /**
+             * Std Error
+             * @description Standard error of `rating`; the fewer rounds, the larger.
+             */
+            std_error?: number | null;
+            /**
+             * Team Id
+             * @description The team (a team rating) or the player's school.
+             */
+            team_id?: number | null;
+            /** Team Name */
+            team_name?: string | null;
+        };
+        /**
+         * GolfRatingPage
+         * @description One page of golf ratings, by division then rank.
+         */
+        GolfRatingPage: {
+            /** Data */
+            data: components["schemas"]["GolfRatingEntry"][];
+            /**
+             * Has More
+             * @description True when another page is available.
+             * @default false
+             */
+            has_more: boolean;
+            /**
+             * Next Cursor
+             * @description Opaque cursor for the next page; null when there are no more results.
+             * @example eyJvZmZzZXQiOiAyNX0=
+             */
+            next_cursor?: string | null;
+        };
+        /** GolfRound */
+        GolfRound: {
+            /**
+             * Cut Line
+             * @description Cut after this round, as a total to par, when the event had one.
+             */
+            cut_line?: number | null;
+            /** Round Number */
+            round_number: number;
+            /**
+             * Status
+             * @description 'final', 'cancelled' (a round weather cancelled) or in progress.
+             */
+            status?: string | null;
+        };
+        /**
+         * GolfStats
+         * @description Season stats for golf: the stat fields GET /v1/filters/catalog lists for the sport. Every field is present on every row; null means the source did not publish it.
+         */
+        GolfStats: {
+            /**
+             * Adj Scoring Avg
+             * @description Field-adjusted avg
+             * @default null
+             */
+            adj_scoring_avg: number | null;
+            /**
+             * Best Round To Par
+             * @description Best round (to par)
+             * @default null
+             */
+            best_round_to_par: number | null;
+            /**
+             * Birdies Per Round
+             * @description Birdies per round
+             * @default null
+             */
+            birdies_per_round: number | null;
+            /**
+             * Bogey Plus Per Round
+             * @description Bogeys or worse per round
+             * @default null
+             */
+            bogey_plus_per_round: number | null;
+            /**
+             * Counting Pct
+             * @description Counted for team %
+             * @default null
+             */
+            counting_pct: number | null;
+            /**
+             * Counting Rounds
+             * @description Rounds counted for team
+             * @default null
+             */
+            counting_rounds: number | null;
+            /**
+             * Double Plus Per Round
+             * @description Doubles or worse per round
+             * @default null
+             */
+            double_plus_per_round: number | null;
+            /**
+             * Events
+             * @description Events
+             * @default null
+             */
+            events: number | null;
+            /**
+             * Hole Rounds
+             * @description Rounds with hole scores
+             * @default null
+             */
+            hole_rounds: number | null;
+            /**
+             * Par3 Avg
+             * @description Par 3 avg
+             * @default null
+             */
+            par3_avg: number | null;
+            /**
+             * Par4 Avg
+             * @description Par 4 avg
+             * @default null
+             */
+            par4_avg: number | null;
+            /**
+             * Par5 Avg
+             * @description Par 5 avg
+             * @default null
+             */
+            par5_avg: number | null;
+            /**
+             * Round Sd
+             * @description Round-to-round spread
+             * @default null
+             */
+            round_sd: number | null;
+            /**
+             * Rounds
+             * @description Rounds
+             * @default null
+             */
+            rounds: number | null;
+            /**
+             * Scoring Avg
+             * @description Scoring avg
+             * @default null
+             */
+            scoring_avg: number | null;
+            /**
+             * To Par Avg
+             * @description Avg to par
+             * @default null
+             */
+            to_par_avg: number | null;
+            /**
+             * Top10S
+             * @description Top 10s
+             * @default null
+             */
+            top10s: number | null;
+            /**
+             * Top20S
+             * @description Top 20s
+             * @default null
+             */
+            top20s: number | null;
+            /**
+             * Top5S
+             * @description Top 5s
+             * @default null
+             */
+            top5s: number | null;
+            /**
+             * Wins
+             * @description Wins
+             * @default null
+             */
+            wins: number | null;
+            /**
+             * Worst Round To Par
+             * @description Worst round (to par)
+             * @default null
+             */
+            worst_round_to_par: number | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * GolfTeamResult
+         * @description One team's result in one tournament, with its players.
+         */
+        GolfTeamResult: {
+            /** Made Cut */
+            made_cut?: boolean | null;
+            /** Place */
+            place?: number | null;
+            /**
+             * Players
+             * @description The team's lineup, best finish first.
+             */
+            players?: components["schemas"]["GolfPlayerResult"][];
+            /**
+             * Round Scores
+             * @description The team's score by round (the sum of that round's counting scores), index 0 being round 1.
+             */
+            round_scores?: (number | null)[];
+            /**
+             * Team Id
+             * @description Team id; use with GET /v1/teams/{team_id}. Null for a team we cannot match to a program.
+             */
+            team_id?: number | null;
+            /**
+             * Team Label
+             * @description 'A', 'B', ... when a school enters more than one team.
+             */
+            team_label?: string | null;
+            /** Team Name */
+            team_name?: string | null;
+            /** Tied */
+            tied?: boolean | null;
+            /** To Par */
+            to_par?: number | null;
+            /**
+             * Total
+             * @description Team total strokes: the sum of the counting scores over the rounds.
+             */
+            total?: number | null;
+        };
+        /**
+         * GolfTournamentDetail
+         * @description A tournament with its team standings and individual results.
+         * @example {
+         *       "city": "Loxley",
+         *       "division": "D1",
+         *       "end_date": "2026-11-01",
+         *       "event_type": "stroke",
+         *       "host_name": "University of South Alabama",
+         *       "host_school_id": 1343,
+         *       "id": 166,
+         *       "individuals": [],
+         *       "invite_type": "team",
+         *       "name": "Steelwood Collegiate",
+         *       "rounds": [
+         *         {
+         *           "cut_line": null,
+         *           "round_number": 1,
+         *           "status": "final"
+         *         },
+         *         {
+         *           "cut_line": null,
+         *           "round_number": 2,
+         *           "status": "final"
+         *         },
+         *         {
+         *           "cut_line": null,
+         *           "round_number": 3,
+         *           "status": "final"
+         *         }
+         *       ],
+         *       "rounds_planned": 3,
+         *       "rounds_played": 3,
+         *       "season": "2027",
+         *       "sport_path": "mens-golf",
+         *       "start_date": "2026-10-31",
+         *       "state": "Alabama",
+         *       "status": "final",
+         *       "team_count": 14,
+         *       "team_scoring": 4,
+         *       "teams": [
+         *         {
+         *           "made_cut": null,
+         *           "place": 1,
+         *           "players": [
+         *             {
+         *               "made_cut": true,
+         *               "name": "Example Player",
+         *               "place": 1,
+         *               "player_id": 1606205,
+         *               "round_scores": [
+         *                 67,
+         *                 63,
+         *                 66
+         *               ],
+         *               "rounds": 3,
+         *               "status": "finished",
+         *               "team_id": 24341,
+         *               "tied": false,
+         *               "to_par": -20,
+         *               "total": 196
+         *             }
+         *           ],
+         *           "round_scores": [
+         *             269,
+         *             272,
+         *             281
+         *           ],
+         *           "team_id": 24341,
+         *           "team_label": "A",
+         *           "team_name": "Auburn",
+         *           "tied": false,
+         *           "to_par": -42,
+         *           "total": 822
+         *         }
+         *       ],
+         *       "venue": "Steelwood GC - Loxley - Alabama"
+         *     }
+         */
+        GolfTournamentDetail: {
+            /** City */
+            city?: string | null;
+            /**
+             * Division
+             * @description The division the tournament is counted in.
+             */
+            division: string;
+            /** End Date */
+            end_date?: string | null;
+            /**
+             * Event Type
+             * @description 'stroke' (stroke play) or 'match' (match play).
+             */
+            event_type?: string | null;
+            /**
+             * Host Name
+             * @description Who hosts the event, usually a school.
+             */
+            host_name?: string | null;
+            /**
+             * Host School Id
+             * @description Host school id when the host is a school; use with GET /v1/schools/{school_id}.
+             */
+            host_school_id?: number | null;
+            /**
+             * Id
+             * @description Tournament id; use with GET /v1/golf/tournaments/{tournament_id}.
+             */
+            id: number;
+            /**
+             * Individuals
+             * @description Players who competed as individuals (no team score), best finish first.
+             */
+            individuals?: components["schemas"]["GolfPlayerResult"][];
+            /**
+             * Invite Type
+             * @description Who is invited, as published, e.g. 'team'.
+             */
+            invite_type?: string | null;
+            /** Name */
+            name: string;
+            /** Rounds */
+            rounds?: components["schemas"]["GolfRound"][];
+            /** Rounds Planned */
+            rounds_planned?: number | null;
+            /**
+             * Rounds Played
+             * @description Rounds played; fewer than planned when weather shortened the event.
+             */
+            rounds_played?: number | null;
+            /**
+             * Season
+             * @description Season, labelled by the academic year's end year as every season in the API is: '2027' is 2026-27, so a fall 2026 event is season '2027'.
+             */
+            season?: string | null;
+            /**
+             * Sport Path
+             * @description 'mens-golf' or 'womens-golf'.
+             */
+            sport_path: string;
+            /** Start Date */
+            start_date?: string | null;
+            /** State */
+            state?: string | null;
+            /**
+             * Status
+             * @description 'scheduled', 'in_progress', 'final', 'cancelled' or 'no_results'.
+             */
+            status: string;
+            /**
+             * Team Count
+             * @description Teams entered that we hold a result for.
+             * @default 0
+             */
+            team_count: number;
+            /**
+             * Team Scoring
+             * @description Scores that count toward a team's total each round (usually 4).
+             */
+            team_scoring?: number | null;
+            /**
+             * Teams
+             * @description Team standings, first place first.
+             */
+            teams?: components["schemas"]["GolfTeamResult"][];
+            /**
+             * Venue
+             * @description Course or club, as the host published it.
+             */
+            venue?: string | null;
+        };
+        /**
+         * GolfTournamentPage
+         * @description One page of golf tournaments, newest first.
+         */
+        GolfTournamentPage: {
+            /** Data */
+            data: components["schemas"]["GolfTournamentSummary"][];
+            /**
+             * Has More
+             * @description True when another page is available.
+             * @default false
+             */
+            has_more: boolean;
+            /**
+             * Next Cursor
+             * @description Opaque cursor for the next page; null when there are no more results.
+             * @example eyJvZmZzZXQiOiAyNX0=
+             */
+            next_cursor?: string | null;
+        };
+        /**
+         * GolfTournamentSummary
+         * @description A college golf tournament as listed by GET /v1/golf/tournaments.
+         * @example {
+         *       "city": "Loxley",
+         *       "division": "D1",
+         *       "end_date": "2026-11-01",
+         *       "event_type": "stroke",
+         *       "host_name": "University of South Alabama",
+         *       "host_school_id": 1343,
+         *       "id": 166,
+         *       "invite_type": "team",
+         *       "name": "Steelwood Collegiate",
+         *       "rounds_planned": 3,
+         *       "rounds_played": 3,
+         *       "season": "2027",
+         *       "sport_path": "mens-golf",
+         *       "start_date": "2026-10-31",
+         *       "state": "Alabama",
+         *       "status": "final",
+         *       "team_count": 14,
+         *       "team_scoring": 4,
+         *       "venue": "Steelwood GC - Loxley - Alabama"
+         *     }
+         */
+        GolfTournamentSummary: {
+            /** City */
+            city?: string | null;
+            /**
+             * Division
+             * @description The division the tournament is counted in.
+             */
+            division: string;
+            /** End Date */
+            end_date?: string | null;
+            /**
+             * Event Type
+             * @description 'stroke' (stroke play) or 'match' (match play).
+             */
+            event_type?: string | null;
+            /**
+             * Host Name
+             * @description Who hosts the event, usually a school.
+             */
+            host_name?: string | null;
+            /**
+             * Host School Id
+             * @description Host school id when the host is a school; use with GET /v1/schools/{school_id}.
+             */
+            host_school_id?: number | null;
+            /**
+             * Id
+             * @description Tournament id; use with GET /v1/golf/tournaments/{tournament_id}.
+             */
+            id: number;
+            /**
+             * Invite Type
+             * @description Who is invited, as published, e.g. 'team'.
+             */
+            invite_type?: string | null;
+            /** Name */
+            name: string;
+            /** Rounds Planned */
+            rounds_planned?: number | null;
+            /**
+             * Rounds Played
+             * @description Rounds played; fewer than planned when weather shortened the event.
+             */
+            rounds_played?: number | null;
+            /**
+             * Season
+             * @description Season, labelled by the academic year's end year as every season in the API is: '2027' is 2026-27, so a fall 2026 event is season '2027'.
+             */
+            season?: string | null;
+            /**
+             * Sport Path
+             * @description 'mens-golf' or 'womens-golf'.
+             */
+            sport_path: string;
+            /** Start Date */
+            start_date?: string | null;
+            /** State */
+            state?: string | null;
+            /**
+             * Status
+             * @description 'scheduled', 'in_progress', 'final', 'cancelled' or 'no_results'.
+             */
+            status: string;
+            /**
+             * Team Count
+             * @description Teams entered that we hold a result for.
+             * @default 0
+             */
+            team_count: number;
+            /**
+             * Team Scoring
+             * @description Scores that count toward a team's total each round (usually 4).
+             */
+            team_scoring?: number | null;
+            /**
+             * Venue
+             * @description Course or club, as the host published it.
+             */
+            venue?: string | null;
+        };
+        /**
+         * IceHockeyStats
+         * @description Season stats for ice-hockey: the stat fields GET /v1/filters/catalog lists for the sport. Every field is present on every row; null means the source did not publish it.
+         */
+        IceHockeyStats: {
+            /**
+             * A
+             * @description Assists
+             * @default null
+             */
+            a: number | null;
+            /**
+             * Blk
+             * @description Blocked Shots
+             * @default null
+             */
+            blk: number | null;
+            /**
+             * Eng
+             * @description Empty-Net Goals
+             * @default null
+             */
+            eng: number | null;
+            /**
+             * Fo Lost
+             * @description Faceoffs Lost
+             * @default null
+             */
+            fo_lost: number | null;
+            /**
+             * Fo Pct
+             * @description Faceoff %
+             * @default null
+             */
+            fo_pct: number | null;
+            /**
+             * Fo Won
+             * @description Faceoffs Won
+             * @default null
+             */
+            fo_won: number | null;
+            /**
+             * G
+             * @description Goals
+             * @default null
+             */
+            g: number | null;
+            /**
+             * G Gp
+             * @description GP (Goalie)
+             * @default null
+             */
+            g_gp: number | null;
+            /**
+             * G Gs
+             * @description GS (Goalie)
+             * @default null
+             */
+            g_gs: number | null;
+            /**
+             * G Seconds
+             * @description Goalie Time (sec)
+             * @default null
+             */
+            g_seconds: number | null;
+            /**
+             * Ga
+             * @description Goals Against
+             * @default null
+             */
+            ga: number | null;
+            /**
+             * Gaa
+             * @description GAA
+             * @default null
+             */
+            gaa: number | null;
+            /**
+             * Gp
+             * @description GP
+             * @default null
+             */
+            gp: number | null;
+            /**
+             * Gs
+             * @description GS
+             * @default null
+             */
+            gs: number | null;
+            /**
+             * Gwg
+             * @description Game-Winning Goals
+             * @default null
+             */
+            gwg: number | null;
+            /**
+             * L
+             * @description Goalie Losses
+             * @default null
+             */
+            l: number | null;
+            /**
+             * Pen
+             * @description Penalties
+             * @default null
+             */
+            pen: number | null;
+            /**
+             * Pim
+             * @description PIM
+             * @default null
+             */
+            pim: number | null;
+            /**
+             * Plus Minus
+             * @description +/-
+             * @default null
+             */
+            plus_minus: number | null;
+            /**
+             * Ppa
+             * @description Power-Play Assists
+             * @default null
+             */
+            ppa: number | null;
+            /**
+             * Ppg
+             * @description Power-Play Goals
+             * @default null
+             */
+            ppg: number | null;
+            /**
+             * Pts
+             * @description Points
+             * @default null
+             */
+            pts: number | null;
+            /**
+             * Pts Per Game
+             * @description Points/Game
+             * @default null
+             */
+            pts_per_game: number | null;
+            /**
+             * Sh Pct
+             * @description Shooting %
+             * @default null
+             */
+            sh_pct: number | null;
+            /**
+             * Sha
+             * @description Shorthanded Assists
+             * @default null
+             */
+            sha: number | null;
+            /**
+             * Shg
+             * @description Shorthanded Goals
+             * @default null
+             */
+            shg: number | null;
+            /**
+             * Sho
+             * @description Shutouts
+             * @default null
+             */
+            sho: number | null;
+            /**
+             * Sog
+             * @description Shots on Goal
+             * @default null
+             */
+            sog: number | null;
+            /**
+             * Sv
+             * @description Saves
+             * @default null
+             */
+            sv: number | null;
+            /**
+             * Sv Pct
+             * @description Save %
+             * @default null
+             */
+            sv_pct: number | null;
+            /**
+             * T
+             * @description Goalie Ties
+             * @default null
+             */
+            t: number | null;
+            /**
+             * W
+             * @description Goalie Wins
+             * @default null
+             */
+            w: number | null;
+        } & {
+            [key: string]: unknown;
         };
         /**
          * LacrosseStats
@@ -2972,6 +5145,57 @@ export interface components {
             status: string;
         };
         /**
+         * MovementChange
+         * @description The current state of one movement that is, or was, in the published
+         *     feed, and when that state last changed. Apply it by the movement's key
+         *     (`movement.kind`, `movement.id`): store `movement` when `state` is
+         *     'published', remove what you hold when it is 'retracted'.
+         */
+        MovementChange: {
+            /**
+             * Changed At
+             * Format: date-time
+             * @description When this revision was recorded. For revision 0 it is the movement's `published_at`.
+             */
+            changed_at: string;
+            movement: components["schemas"]["MovementEntry"];
+            /**
+             * Reason
+             * @description Retracted movements only. 'unpublished': withdrawn from the feed. 'dismissed': found not to be a real movement. 'deleted': the underlying event no longer exists.
+             */
+            reason?: string | null;
+            /**
+             * Revision
+             * @description Counts the changes to this movement since the change log began: 0 for a movement that has not changed since then, 1 for one first published after it, and one more for each correction, retraction or re-publication. Compare it with the revision you hold to tell whether an entry is news.
+             */
+            revision: number;
+            /**
+             * State
+             * @description 'published': the movement is in the feed, and `movement` is its current form. 'retracted': it has left the feed, and `movement` is the last form it was published in.
+             */
+            state: string;
+        };
+        /**
+         * MovementChangePage
+         * @description One page of the movement change log, oldest change first.
+         */
+        MovementChangePage: {
+            /** Data */
+            data: components["schemas"]["MovementChange"][];
+            /**
+             * Has More
+             * @description True when another page is available.
+             * @default false
+             */
+            has_more: boolean;
+            /**
+             * Next Cursor
+             * @description Opaque cursor for the next page; null when there are no more results.
+             * @example eyJvZmZzZXQiOiAyNX0=
+             */
+            next_cursor?: string | null;
+        };
+        /**
          * MovementCounterpart
          * @description The other school in a resolved move: where the person came from on an
          *     addition, where they went on a removal. Present only when resolution
@@ -3010,7 +5234,10 @@ export interface components {
              * @description player_added | player_removed | coach_added | coach_removed | title_changed. The resolved and observed tiers can also carry roster_rollover and attrs_changed.
              */
             event_type: string;
-            /** Id */
+            /**
+             * Id
+             * @description Unique within `kind` only: player and coach movements are numbered separately, so a player movement and a coach movement can share an id. A movement's key is (`kind`, `id`).
+             */
             id: number;
             /**
              * Ipeds Unitid
@@ -3105,11 +5332,18 @@ export interface components {
          *     event payload at observation time. Contact fields are never included.
          */
         MovementSubject: {
+            /** @description Players only. */
+            class_standing?: components["schemas"]["ClassStanding"] | null;
             /**
              * Class Year
-             * @description Players only.
+             * @description Players only. The class as published when the movement was observed; from the deprecation sunset, `class_standing.label`.
              */
             class_year?: string | null;
+            /**
+             * Class Year Published
+             * @description Players only, as published.
+             */
+            class_year_published?: string | null;
             /**
              * First Name
              * @description Players only, when the roster source published the name in split form.
@@ -3223,6 +5457,8 @@ export interface components {
          *       "name": "Jordan Rivera",
          *       "person_id": 90211,
          *       "position": "Midfielder",
+         *       "previous_school": null,
+         *       "region": null,
          *       "sport": "soccer",
          *       "sport_path": "mens-soccer",
          *       "stats_by_season": [
@@ -3339,11 +5575,17 @@ export interface components {
              * @description When the player is linked to a person: one entry per school, in order, each with its own `stats_by_season` and `stats_totals`.
              */
             career?: unknown;
+            class_standing?: components["schemas"]["ClassStanding"] | null;
             /**
              * Class Year
-             * @description e.g. 'Freshman', 'Sophomore', 'Junior', 'Senior'.
+             * @description The class as the program published it ('Jr.', 'R-So.', 'Gr.'). Deprecated in that form: from the sunset the deprecation headers name, it carries `class_standing.label`. Read `class_year_published` for the string.
              */
             class_year?: string | null;
+            /**
+             * Class Year Published
+             * @description The class exactly as the program published it.
+             */
+            class_year_published?: string | null;
             /** Conference */
             conference?: string | null;
             /**
@@ -3351,6 +5593,8 @@ export interface components {
              * @description e.g. 'D1', 'D2', 'D3', 'NAIA', 'NJCAA-D1'.
              */
             division?: string | null;
+            /** @description Seasons left; null where we hold no reading yet. */
+            eligibility?: components["schemas"]["Eligibility"] | null;
             /**
              * First Name
              * @description Given name, when the roster source published the name in split form; null when it published one undivided name (use `name`).
@@ -3419,6 +5663,16 @@ export interface components {
             person_id?: number | null;
             /** Position */
             position?: string | null;
+            /**
+             * Previous School
+             * @description The school or schools the athlete came from, as their newest roster or profile page at this team lists them; several are joined with ' / ', e.g. 'Papillion La Vista H.S. / Iowa Western CC'.
+             */
+            previous_school?: string | null;
+            /**
+             * Region
+             * @description The association's region, for NJCAA and NCCAA teams: the team's region, e.g. 'NJCAA Region IV'. Null for every other team. A region is not a conference: an NJCAA team can have both.
+             */
+            region?: string | null;
             /**
              * Season Stats
              * @deprecated
@@ -3529,6 +5783,21 @@ export interface components {
              * @description Baseball and softball: 'L', 'R' or 'S'. One value, an array of values, or a comma-separated string (any of).
              */
             bats?: string | string[] | null;
+            /**
+             * Class Level
+             * @description The season's class reading: 'FR', 'SO', 'JR', 'SR' or 'GR' (class_standing.level). One value, an array of values, or a comma-separated string (any of).
+             */
+            class_level?: string | string[] | null;
+            /**
+             * Class Level Not
+             * @description Exclude these values. Players with no value for the field are left out too.
+             */
+            class_level_not?: string | string[] | null;
+            /**
+             * Class Redshirt
+             * @description true: the class carries a published redshirt marker (class_standing.redshirt); false: a readable class without one.
+             */
+            class_redshirt?: boolean | null;
             /**
              * Class Year
              * @description 'Freshman', 'Sophomore', 'Junior' or 'Senior / Graduate'. One value, an array of values, or a comma-separated string (any of).
@@ -3648,8 +5917,18 @@ export interface components {
              */
             position_not?: string | string[] | null;
             /**
+             * Region
+             * @description The team's region, e.g. 'NJCAA Region IV' ('Region 4' names the same one); GET /v1/regions lists them. Only NJCAA and NCCAA teams have a region. One value, an array of values, or a comma-separated string (any of).
+             */
+            region?: string | string[] | null;
+            /**
+             * Region Not
+             * @description Exclude these values. Players with no value for the field are left out too.
+             */
+            region_not?: string | string[] | null;
+            /**
              * Season
-             * @description Season of the stat rows, e.g. '2025'; defaults to the current season. One value, an array of values, or a comma-separated string (any of).
+             * @description Season of the stat rows as its championship year, the label every response carries, e.g. '2025' (basketball's 2025-26 is '2026'); defaults to the current season. One value, an array of values, or a comma-separated string (any of).
              */
             season?: string | string[] | null;
             /**
@@ -3673,6 +5952,33 @@ export interface components {
              * @description Season-stat ranges, keyed by the sport's stat field from GET /v1/filters/catalog (`stats_by_sport`), e.g. {"g": {"min": 10}, "gaa": {"max": 1.2}}. Bounds are inclusive.
              */
             stats?: {
+                [key: string]: components["schemas"]["NumberRange"];
+            };
+            /**
+             * Swim Board
+             * @description Swimming & diving: diving board(s) the athlete has a result on: 1m, 3m, platform. One value, an array of values, or a comma-separated string (any of).
+             */
+            swim_board?: string | string[] | null;
+            /**
+             * Swim Discipline
+             * @description Swimming & diving: 'swimmer' or 'diver'; an athlete who does both matches either. One value, an array of values, or a comma-separated string (any of).
+             */
+            swim_discipline?: string | string[] | null;
+            /**
+             * Swim Event
+             * @description Swimming & diving: event code(s), e.g. 'SCY-100-FR'. Results rank by best time (best score for a dive) in the event, and `swim_marks` bounds it.
+             */
+            swim_event?: string | string[] | null;
+            /**
+             * Swim Event Group
+             * @description Swimming & diving: sprint_free, mid_free, distance_free, back, breast, fly, im or diving; 'freestyle' covers every free group. One value, an array of values, or a comma-separated string (any of).
+             */
+            swim_event_group?: string | string[] | null;
+            /**
+             * Swim Marks
+             * @description Swimming & diving: best-mark ranges per event code, in seconds for a swim and points for a dive, e.g. {"SCY-100-FR": {"max": 47.5}}. Needs the event in `swim_event`.
+             */
+            swim_marks?: {
                 [key: string]: components["schemas"]["NumberRange"];
             };
             /**
@@ -3725,7 +6031,7 @@ export interface components {
             season?: string | null;
             /**
              * Stats
-             * @description The season's stats under the field names GET /v1/filters/catalog lists for the sport (`stats_by_sport`), so a stat is filtered, sorted and read under one name. The fields are those of the stat schema for the row's `sport` (SoccerStats, BasketballStats, BaseballSoftballStats, VolleyballStats, FootballStats, LacrosseStats; `x-schema-by-sport` maps them). Every stat field of the sport is present; null means the source did not publish it. Empty for track and field, which reports marks in `track`.
+             * @description The season's stats under the field names GET /v1/filters/catalog lists for the sport (`stats_by_sport`), so a stat is filtered, sorted and read under one name. The fields are those of the stat schema for the row's `sport` (SoccerStats, BasketballStats, BaseballSoftballStats, VolleyballStats, FootballStats, LacrosseStats, IceHockeyStats, FieldHockeyStats, TennisStats, GolfStats; `x-schema-by-sport` maps them). Every stat field of the sport is present; null means the source did not publish it. Empty for track and field, which reports marks in `track`, and for swimming and diving, which has no season-stat table.
              */
             stats?: {
                 [key: string]: unknown;
@@ -3805,6 +6111,7 @@ export interface components {
          *       "name": "Jordan Rivera",
          *       "person_id": 90211,
          *       "position": "Midfielder",
+         *       "region": null,
          *       "season": "2026",
          *       "sport": "soccer",
          *       "sport_path": "mens-soccer",
@@ -3849,11 +6156,17 @@ export interface components {
              * @description Baseball and softball: 'L', 'R' or 'S'.
              */
             bats?: string | null;
+            class_standing?: components["schemas"]["ClassStanding"] | null;
             /**
              * Class Year
-             * @description e.g. 'Freshman', 'Sophomore', 'Junior', 'Senior'.
+             * @description The class as the program published it ('Jr.', 'R-So.', 'Gr.'). Deprecated in that form: from the sunset the deprecation headers name, it carries `class_standing.label`. Read `class_year_published` for the string.
              */
             class_year?: string | null;
+            /**
+             * Class Year Published
+             * @description The class exactly as the program published it.
+             */
+            class_year_published?: string | null;
             /** Conference */
             conference?: string | null;
             /**
@@ -3861,6 +6174,8 @@ export interface components {
              * @description e.g. 'D1', 'D2', 'D3', 'NAIA', 'NJCAA-D1'.
              */
             division?: string | null;
+            /** @description Seasons left; null where we hold no reading yet. */
+            eligibility?: components["schemas"]["Eligibility"] | null;
             /**
              * First Name
              * @description Given name, when the roster source published the name in split form; null when it published one undivided name (use `name`).
@@ -3930,6 +6245,11 @@ export interface components {
             /** Position */
             position?: string | null;
             /**
+             * Region
+             * @description The association's region, for NJCAA and NCCAA teams: the team's region, e.g. 'NJCAA Region IV'. Null for every other team. A region is not a conference: an NJCAA team can have both.
+             */
+            region?: string | null;
+            /**
              * Season
              * @description Season the stats belong to, e.g. '2026'.
              */
@@ -3946,11 +6266,13 @@ export interface components {
             sport_path?: string | null;
             /**
              * Stats
-             * @description The season's stats under the field names GET /v1/filters/catalog lists for the sport (`stats_by_sport`), so a stat is filtered, sorted and read under one name. The fields are those of the stat schema for the row's `sport` (SoccerStats, BasketballStats, BaseballSoftballStats, VolleyballStats, FootballStats, LacrosseStats; `x-schema-by-sport` maps them). Every stat field of the sport is present; null means the source did not publish it. Empty for track and field, which reports marks in `track`. Deprecated, removed on 2027-01-12: until then this object also carries the keys it held before 2026-10-09 (copies of the profile fields above, the soccer spellings 'sh%', 'sog%', 'sv%', 'yc-rc', 'pg-pa', team-ranking keys and track keys). Read the typed fields instead.
+             * @description The season's stats under the field names GET /v1/filters/catalog lists for the sport (`stats_by_sport`), so a stat is filtered, sorted and read under one name. The fields are those of the stat schema for the row's `sport` (SoccerStats, BasketballStats, BaseballSoftballStats, VolleyballStats, FootballStats, LacrosseStats, IceHockeyStats, FieldHockeyStats, TennisStats, GolfStats; `x-schema-by-sport` maps them). Every stat field of the sport is present; null means the source did not publish it. Empty for track and field, which reports marks in `track`, and for swimming and diving, which has no season-stat table. Deprecated, removed on 2027-01-12: until then this object also carries the keys it held before 2026-10-09 (copies of the profile fields above, the soccer spellings 'sh%', 'sog%', 'sv%', 'yc-rc', 'pg-pa', team-ranking keys and track keys). Read the typed fields instead.
              */
             stats?: {
                 [key: string]: unknown;
             };
+            /** @description Swimming and diving athletes only. */
+            swim?: components["schemas"]["SwimSummary"] | null;
             /**
              * Team
              * @description Team/school name.
@@ -3963,6 +6285,10 @@ export interface components {
             team_id?: number | null;
             /** Team Logo Url */
             team_logo_url?: string | null;
+            /**
+             * @deprecated
+             * @description Deprecated, removed on 2027-01-12: always null. Read a team's national rankings from GET /v1/teams/{team_id}/rankings.
+             */
             team_ranking?: components["schemas"]["TeamRanking"] | null;
             /**
              * Throws
@@ -4092,6 +6418,168 @@ export interface components {
             next_cursor?: string | null;
         };
         /**
+         * PortalSupplyChange
+         * @description The current counts of one team and lane, and when they last changed.
+         *     Apply it by `supply.id`, replacing what you hold. A row whose entries
+         *     are all gone comes back with every count at zero.
+         */
+        PortalSupplyChange: {
+            /**
+             * Changed At
+             * Format: date-time
+             */
+            changed_at: string;
+            /** Revision */
+            revision: number;
+            supply: components["schemas"]["PortalSupplyEntry"];
+        };
+        /**
+         * PortalSupplyChangePage
+         * @description One page of the portal supply change log, oldest change first.
+         */
+        PortalSupplyChangePage: {
+            /** Data */
+            data: components["schemas"]["PortalSupplyChange"][];
+            /**
+             * Has More
+             * @description True when another page is available.
+             * @default false
+             */
+            has_more: boolean;
+            /**
+             * Next Cursor
+             * @description Opaque cursor for the next page; null when there are no more results.
+             * @example eyJvZmZzZXQiOiAyNX0=
+             */
+            next_cursor?: string | null;
+        };
+        /**
+         * PortalSupplyEntry
+         * @description Who is in the transfer portal from one program at one position, as
+         *     counts. No one is named: there is no name, class year, entry date or
+         *     per-person id, so nothing here joins to GET /v1/portal or
+         *     /v1/movements.
+         */
+        PortalSupplyEntry: {
+            /**
+             * Changed At
+             * Format: date-time
+             * @description Midnight UTC of `snapshot_date`. Counts are taken once a day and a change is dated by the day, never by the moment it happened.
+             */
+            changed_at: string;
+            /**
+             * Conference
+             * @description The program's current conference.
+             */
+            conference?: string | null;
+            /**
+             * Cycle
+             * @description The portal cycle the counts are for.
+             * @example 2026-27
+             */
+            cycle?: string | null;
+            /**
+             * Division
+             * @description The program's division.
+             * @example D1
+             */
+            division?: string | null;
+            /**
+             * Gender
+             * @example women
+             */
+            gender: string;
+            /**
+             * Id
+             * @description Stable id of this team and lane.
+             */
+            id: number;
+            /**
+             * In Portal
+             * @description Entries from this program and lane on the market now.
+             */
+            in_portal: number;
+            /**
+             * In Portal Returning
+             * @description The part of `in_portal` known not to be in their last season: players who would otherwise return, so the openings the portal adds beyond graduation. Entries whose class is unknown are not counted here.
+             */
+            in_portal_returning: number;
+            /**
+             * Lane
+             * @description Position group. Team sports and football: the roster position's group (soccer GK, DEF, MID, FWD; basketball GUARD, WING, FORWARD, C; football QB, RB, WR, TE, OL, DL, LB, DB, ST; ...). Track and field: the event group of the athlete's headline result (sprint, hurdles, middle, distance, jumps, throws, multi, relay). Swimming and diving: the event group from results (SPRINT, DISTANCE, BACK, BREAST, FLY, IM, DIVE). Tennis: the dual-match lineup tier last season (TOP, MIDDLE, BOTTOM, DOUBLES, RESERVE). Null for golf, which has no positions, and for an entry not linked to a player on the program's roster or whose position and results resolve to no group.
+             * @example MID
+             */
+            lane?: string | null;
+            /**
+             * Lane Label
+             * @example Midfielders
+             */
+            lane_label?: string | null;
+            /**
+             * Revision
+             * @description One more each time a count or the cycle changes.
+             */
+            revision: number;
+            /**
+             * School
+             * @description The school's name.
+             */
+            school?: string | null;
+            /** School Id */
+            school_id?: number | null;
+            /**
+             * Signed Out
+             * @description Entries from this program and lane that signed or enrolled elsewhere this cycle.
+             */
+            signed_out: number;
+            /**
+             * Snapshot Date
+             * Format: date
+             * @description The daily snapshot that last changed this row.
+             */
+            snapshot_date: string;
+            /**
+             * Sport
+             * @example soccer
+             */
+            sport: string;
+            /**
+             * Sport Path
+             * @example womens-soccer
+             */
+            sport_path: string;
+            /**
+             * Team
+             * @description The program's name.
+             */
+            team?: string | null;
+            /**
+             * Team Id
+             * @description The program: GET /v1/teams/{team_id}.
+             */
+            team_id: number;
+        };
+        /**
+         * PortalSupplyPage
+         * @description One page of portal supply rows.
+         */
+        PortalSupplyPage: {
+            /** Data */
+            data: components["schemas"]["PortalSupplyEntry"][];
+            /**
+             * Has More
+             * @description True when another page is available.
+             * @default false
+             */
+            has_more: boolean;
+            /**
+             * Next Cursor
+             * @description Opaque cursor for the next page; null when there are no more results.
+             * @example eyJvZmZzZXQiOiAyNX0=
+             */
+            next_cursor?: string | null;
+        };
+        /**
          * PublicQueryRequest
          * @description Body for POST /v1/query (natural-language query — usage-billed).
          *
@@ -4196,6 +6684,18 @@ export interface components {
             } | null;
         };
         /**
+         * RecordCounts
+         * @description A win-loss-tie record.
+         */
+        RecordCounts: {
+            /** Losses */
+            losses: number;
+            /** Ties */
+            ties: number;
+            /** Wins */
+            wins: number;
+        };
+        /**
          * RosterEntry
          * @description A roster member — identity only, no contact fields.
          * @example {
@@ -4220,8 +6720,19 @@ export interface components {
          *     }
          */
         RosterEntry: {
-            /** Class Year */
+            class_standing?: components["schemas"]["ClassStanding"] | null;
+            /**
+             * Class Year
+             * @description The class as the program published it that season. Deprecated in that form: from the sunset the deprecation headers name, it carries `class_standing.label`.
+             */
             class_year?: string | null;
+            /**
+             * Class Year Published
+             * @description The class exactly as the program published it that season.
+             */
+            class_year_published?: string | null;
+            /** @description Seasons left, read from the athlete's whole career; null where we hold no reading yet. */
+            eligibility?: components["schemas"]["Eligibility"] | null;
             /**
              * First Name
              * @description Given name, when the roster source published the name in split form; null when it published one undivided name (use `name`).
@@ -4274,6 +6785,11 @@ export interface components {
             person_id?: number | null;
             /** Position */
             position?: string | null;
+            /**
+             * Previous School
+             * @description The school or schools that season's roster lists the athlete as coming from.
+             */
+            previous_school?: string | null;
         };
         /**
          * RosterPage
@@ -4307,6 +6823,83 @@ export interface components {
              */
             season?: string | null;
         };
+        /** SandboxEventAlert */
+        SandboxEventAlert: {
+            /** Alert Id */
+            alert_id: string;
+            /** Matched */
+            matched: boolean;
+            /** Name */
+            name: string;
+        };
+        /**
+         * SandboxEventRequest
+         * @example {
+         *       "division": "D1",
+         *       "gender": "men",
+         *       "sport": "soccer",
+         *       "type": "portal_entry"
+         *     }
+         */
+        SandboxEventRequest: {
+            /**
+             * Division
+             * @description Division scope, e.g. 'D1'.
+             */
+            division: string;
+            /**
+             * Gender
+             * @description 'men' or 'women'. Defaults to 'men'.
+             */
+            gender?: string | null;
+            /**
+             * Name
+             * @description The athlete's or coach's name. Invented if omitted.
+             */
+            name?: string | null;
+            /**
+             * Sport
+             * @description Sport scope, e.g. 'soccer'.
+             */
+            sport: string;
+            /**
+             * Team Id
+             * @description The program it happens at. Defaults to the first program in scope.
+             */
+            team_id?: number | null;
+            /**
+             * Type
+             * @description What happens: a portal entry, a player joining a roster, or a coach joining a staff.
+             * @enum {string}
+             */
+            type: "portal_entry" | "player_movement" | "coach_movement";
+        };
+        /** SandboxEventResponse */
+        SandboxEventResponse: {
+            /**
+             * Alerts
+             * @description portal_entry: each sandbox alert evaluated, and whether it matched.
+             */
+            alerts?: components["schemas"]["SandboxEventAlert"][];
+            /**
+             * Created
+             * @description The record the event made, with its id.
+             */
+            created: {
+                [key: string]: unknown;
+            };
+            /**
+             * Deliveries
+             * @description Webhook deliveries queued to the account's endpoints (test: true).
+             */
+            deliveries: number;
+            /** Delivery Event Types */
+            delivery_event_types?: string[];
+            /** Event Id */
+            event_id: string;
+            /** Type */
+            type: string;
+        };
         /**
          * SchoolDetail
          * @description A school plus every program it fields.
@@ -4336,6 +6929,8 @@ export interface components {
             ipeds_unitid?: number | null;
             /** Name */
             name?: string | null;
+            /** @description Admissions, test-score ranges, enrollment, cost, outcomes and setting from the College Scorecard. Null when no federal profile is held for the school: it is outside the federal universe (some NAIA, junior-college, Canadian and independent institutions) or its profile has not been read yet. GPA ranges and the full cost of attendance are not provided. */
+            profile?: components["schemas"]["SchoolProfile"] | null;
             /**
              * Slug
              * @description Stable school slug.
@@ -4350,12 +6945,29 @@ export interface components {
             teams?: components["schemas"]["SchoolTeamRef"][];
         };
         /**
+         * SchoolMajor
+         * @description One broad field of study (a two-digit CIP family) and its share of the
+         *     degrees the institution awards.
+         */
+        SchoolMajor: {
+            /**
+             * Field
+             * @description Field of study, e.g. 'Engineering' or 'Business, Management & Marketing'.
+             */
+            field: string;
+            /**
+             * Share
+             * @description Share of degrees awarded in this field, 0-1 (0.1476 = 14.76%).
+             */
+            share?: number | null;
+        };
+        /**
          * SchoolPage
          * @description A page of schools.
          */
         SchoolPage: {
             /** Data */
-            data: components["schemas"]["SchoolRef"][];
+            data: components["schemas"]["SchoolSummary"][];
             /**
              * Has More
              * @description True when another page is available.
@@ -4368,6 +6980,139 @@ export interface components {
              * @example eyJvZmZzZXQiOiAyNX0=
              */
             next_cursor?: string | null;
+        };
+        /**
+         * SchoolProfile
+         * @description Institutional profile from the U.S. Department of Education's College
+         *     Scorecard, which publishes the institution's IPEDS reporting. Federal public
+         *     data, refreshed when a new Scorecard release is read; `data_year` is the
+         *     release. A null field means the institution did not report that measure or
+         *     it does not apply to it; the description of each field says which.
+         * @example {
+         *       "act_composite_25": 33,
+         *       "act_composite_75": 35,
+         *       "admission_rate": 0.0876,
+         *       "avg_net_price": 28690,
+         *       "data_year": 2024,
+         *       "graduation_rate_6yr": 0.9538,
+         *       "locale": "City: Small",
+         *       "religious_affiliation": null,
+         *       "retention_rate": 0.9838,
+         *       "sat_math_25": 770,
+         *       "sat_math_75": 800,
+         *       "sat_reading_25": 730,
+         *       "sat_reading_75": 770,
+         *       "source": "college_scorecard",
+         *       "top_majors": [
+         *         {
+         *           "field": "Computer & Information Sciences",
+         *           "share": 0.1884
+         *         },
+         *         {
+         *           "field": "Engineering",
+         *           "share": 0.1476
+         *         },
+         *         {
+         *           "field": "Business, Management & Marketing",
+         *           "share": 0.1139
+         *         }
+         *       ],
+         *       "tuition_in_state": 69314,
+         *       "tuition_out_of_state": 69314,
+         *       "undergrad_enrollment": 15995
+         *     }
+         */
+        SchoolProfile: {
+            /**
+             * Act Composite 25
+             * @description ACT Composite, 25th percentile of enrolled first-year students who submitted scores. Null when the institution did not report ACT scores.
+             */
+            act_composite_25?: number | null;
+            /**
+             * Act Composite 75
+             * @description ACT Composite, 75th percentile.
+             */
+            act_composite_75?: number | null;
+            /**
+             * Admission Rate
+             * @description Share of applicants admitted, 0-1 (0.0876 = 8.76%). Null for open-admission institutions, which do not report one (most community colleges), and for those that did not report admissions.
+             */
+            admission_rate?: number | null;
+            /**
+             * Avg Net Price
+             * @description Average annual net price in USD: the cost of attendance minus grant and scholarship aid, for first-time, full-time undergraduates who received federal aid (in-state students at public institutions). This is NOT the cost of attendance and not tuition. It can be negative at a few low-tuition colleges where grant aid exceeds the cost.
+             */
+            avg_net_price?: number | null;
+            /**
+             * Data Year
+             * @description The College Scorecard release these measures were read from. Measures within one release refer to the latest year each was reported (graduation rates follow an earlier entering class than admissions and cost).
+             */
+            data_year: number;
+            /**
+             * Graduation Rate 6Yr
+             * @description Share of first-time, full-time students who completed within 150% of normal time (six years for a bachelor's degree), 0-1. Reported for four-year institutions only: null at two-year colleges.
+             */
+            graduation_rate_6yr?: number | null;
+            /**
+             * Locale
+             * @description Campus setting, the NCES urban-centric locale: 'City: Large', 'City: Midsize', 'City: Small', 'Suburb: Large', 'Suburb: Midsize', 'Suburb: Small', 'Town: Fringe', 'Town: Distant', 'Town: Remote', 'Rural: Fringe', 'Rural: Distant' or 'Rural: Remote'.
+             */
+            locale?: string | null;
+            /**
+             * Religious Affiliation
+             * @description Religious affiliation the institution reports, e.g. 'Roman Catholic', 'United Methodist', 'Presbyterian Church (USA)'. Labels are specific denominations. Null when none is recorded: the institution reports no religious affiliation (every public school) or did not report one.
+             */
+            religious_affiliation?: string | null;
+            /**
+             * Retention Rate
+             * @description Share of first-time, full-time students who returned for a second year, 0-1. Reported for four-year institutions only: null at two-year colleges.
+             */
+            retention_rate?: number | null;
+            /**
+             * Sat Math 25
+             * @description SAT Math, 25th percentile.
+             */
+            sat_math_25?: number | null;
+            /**
+             * Sat Math 75
+             * @description SAT Math, 75th percentile.
+             */
+            sat_math_75?: number | null;
+            /**
+             * Sat Reading 25
+             * @description SAT Evidence-Based Reading and Writing, 25th percentile of enrolled first-year students who submitted scores. Null when the institution did not report SAT scores (common at test-optional and open-admission schools).
+             */
+            sat_reading_25?: number | null;
+            /**
+             * Sat Reading 75
+             * @description SAT Evidence-Based Reading and Writing, 75th percentile.
+             */
+            sat_reading_75?: number | null;
+            /**
+             * Source
+             * @description 'college_scorecard': the U.S. Department of Education's College Scorecard and the IPEDS data it publishes. 'sandbox' in the test-key sandbox, whose schools are invented.
+             */
+            source: string;
+            /**
+             * Top Majors
+             * @description Up to eight broad fields of study by share of degrees awarded, largest first. Null when the institution reported no degree completions.
+             */
+            top_majors?: components["schemas"]["SchoolMajor"][] | null;
+            /**
+             * Tuition In State
+             * @description Published tuition and required fees for one academic year of full-time undergraduate study, in-state, USD. Excludes housing, meals, books and other costs. Private institutions publish one rate, so both tuition fields carry it.
+             */
+            tuition_in_state?: number | null;
+            /**
+             * Tuition Out Of State
+             * @description Published tuition and required fees, out-of-state, USD.
+             */
+            tuition_out_of_state?: number | null;
+            /**
+             * Undergrad Enrollment
+             * @description Degree-seeking undergraduates enrolled in the fall.
+             */
+            undergrad_enrollment?: number | null;
         };
         /**
          * SchoolRef
@@ -4413,6 +7158,49 @@ export interface components {
             state?: string | null;
         };
         /**
+         * SchoolSummary
+         * @description A school as GET /v1/schools returns it: the reference every team
+         *     carries, plus the institution's federal profile.
+         */
+        SchoolSummary: {
+            /**
+             * Athletics Domain
+             * @description The school's official athletics website domain (the source of its program data).
+             */
+            athletics_domain?: string | null;
+            /** City */
+            city?: string | null;
+            /**
+             * Control
+             * @description Institutional control, e.g. 'Public' or 'Private nonprofit'.
+             */
+            control?: string | null;
+            /**
+             * Id
+             * @description School id; use with GET /v1/schools/{school_id}.
+             */
+            id: number;
+            /**
+             * Ipeds Unitid
+             * @description Federal IPEDS UNITID (NCES), when matched.
+             */
+            ipeds_unitid?: number | null;
+            /** Name */
+            name?: string | null;
+            /** @description Admissions, test-score ranges, enrollment, cost, outcomes and setting from the College Scorecard. Null when no federal profile is held for the school: it is outside the federal universe (some NAIA, junior-college, Canadian and independent institutions) or its profile has not been read yet. GPA ranges and the full cost of attendance are not provided. */
+            profile?: components["schemas"]["SchoolProfile"] | null;
+            /**
+             * Slug
+             * @description Stable school slug.
+             */
+            slug?: string | null;
+            /**
+             * State
+             * @description Two-letter US state code, when known.
+             */
+            state?: string | null;
+        };
+        /**
          * SchoolTeamRef
          * @description One program a school fields, across every sport and division we hold.
          */
@@ -4435,6 +7223,11 @@ export interface components {
             logo_url?: string | null;
             /** Name */
             name?: string | null;
+            /**
+             * Region
+             * @description The association's region, for NJCAA and NCCAA teams: 'NJCAA Region IV'. Null for every other team. A region is not a conference: an NJCAA team can have both.
+             */
+            region?: string | null;
             /** Sport Path */
             sport_path?: string | null;
             /**
@@ -4442,6 +7235,93 @@ export interface components {
              * @description 'active', or 'discontinued' when the program stopped competing (the school closed or dropped the sport). A discontinued program keeps its id and its historical rosters, staffs and games.
              */
             status?: string | null;
+        };
+        /**
+         * SeasonSchedule
+         * @description What the team's own published schedule says about a season, beside the
+         *     games Magisterial holds for it.
+         *
+         *     A season record's numbers (record, `stats_json`) are counted from the
+         *     games Magisterial holds. `games_played` is how many games the team's own
+         *     published schedule counts toward its record for the season, and
+         *     `official_record` the record the school gives over them, both from one
+         *     read of that schedule. `status` says whether the games held are those
+         *     games: a season is short when `games_held` is below `games_played`, and
+         *     wrong when the counts or the records disagree the other way.
+         * @example {
+         *       "games_held": 5,
+         *       "games_played": 12,
+         *       "games_with_box_scores": 4,
+         *       "missing_games": 7,
+         *       "official_record": {
+         *         "losses": 9,
+         *         "ties": 0,
+         *         "wins": 3
+         *       },
+         *       "official_record_source": "school_schedule",
+         *       "record_from_held_games": {
+         *         "losses": 3,
+         *         "ties": 0,
+         *         "wins": 2
+         *       },
+         *       "schedule_observed_at": "2026-10-12T09:14:00Z",
+         *       "schedule_source": "sidearm",
+         *       "status": "partial"
+         *     }
+         */
+        SeasonSchedule: {
+            /**
+             * Games Held
+             * @description Final games held for this team and season, home or away, that are not exhibitions for this team. A game one school counts and the other calls an exhibition is held for the first and not the second. The record and stats on the season record are counted from these.
+             */
+            games_held: number;
+            /**
+             * Games Played
+             * @description Completed games on the team's own published schedule for this season that the school counts toward its record, as last read (`schedule_observed_at`). Exhibitions, scrimmages and games the school marks as not counting are left out, whether the page labels them or only its schedule data does. Null when that schedule has not been read for the season.
+             */
+            games_played?: number | null;
+            /**
+             * Games With Box Scores
+             * @description Of `games_held`, how many have a team box score for this team. Null for a sport with no game box scores (track and field).
+             */
+            games_with_box_scores?: number | null;
+            /**
+             * Missing Games
+             * @description Games on the team's schedule that are not held: `games_played` minus `games_held`, never below 0. Null when `games_played` is null.
+             */
+            missing_games?: number | null;
+            /** @description The season's record as the school's own schedule gives it: wins, losses and ties over the `games_played` games it counts, read with them (`official_record_source` 'school_schedule'). It is given for a partial or inconsistent season too, since it does not depend on the games we hold. For a schedule read before the school's record was captured, it is `record_from_held_games` when the season is 'complete' (`official_record_source` 'held_games') and null otherwise. Null when the schedule has not been read. */
+            official_record?: components["schemas"]["RecordCounts"] | null;
+            /**
+             * Official Record Source
+             * @description Where `official_record` comes from: 'school_schedule' (the school's own schedule, read with `games_played`) or 'held_games' (the games we hold, given only for a complete season whose schedule read did not carry the school's record). Null when `official_record` is.
+             */
+            official_record_source?: ("school_schedule" | "held_games") | null;
+            /** @description Wins, losses and ties over `games_held` only. It is the team's record only when `status` is 'complete'. In soccer a game level after regulation and overtime is a tie even when a shootout picked a winner. */
+            record_from_held_games: components["schemas"]["RecordCounts"];
+            /**
+             * Schedule Observed At
+             * @description When the team's published schedule was last read for this season.
+             */
+            schedule_observed_at?: string | null;
+            /**
+             * Schedule Source
+             * @description Which kind of site the schedule was read from: 'sidearm', 'presto' or 'wmt'.
+             */
+            schedule_source?: string | null;
+            /**
+             * Status
+             * @description 'complete': `games_held` equals `games_played` and, where the school's record was read, `record_from_held_games` equals `official_record`. 'partial': `games_held` is below `games_played`, so the season is short (`missing_games` says by how many). 'inconsistent': `games_held` is above `games_played`, or equal to it with a different record: a held game is not one the school counts, or a held result differs from the school's, so `record_from_held_games` is not the season's record. 'unverified': the team's schedule has not been read for the season, so there is nothing to compare `games_held` against; the season may or may not be complete.
+             * @enum {string}
+             */
+            status: "complete" | "partial" | "inconsistent" | "unverified";
+        };
+        /** SeasonsRemaining */
+        SeasonsRemaining: {
+            /** Max */
+            max: number;
+            /** Min */
+            min: number;
         };
         /**
          * SoccerStats
@@ -4671,6 +7551,559 @@ export interface components {
             data: string[];
         };
         /**
+         * SwimEvent
+         * @description An event in the swim catalog. Course is part of an event's identity:
+         *     a 100 free SCY and a 100 free LCM are different events and never compare.
+         */
+        SwimEvent: {
+            /**
+             * Board
+             * @description '1m', '3m' or 'platform' for a dive.
+             */
+            board?: string | null;
+            /**
+             * Code
+             * @description e.g. 'SCY-100-FR', 'SCY-400-MR' (relay), 'DIVE-3M-11'.
+             */
+            code: string;
+            /**
+             * Course
+             * @description SCY, SCM or LCM; null for diving.
+             */
+            course?: string | null;
+            /**
+             * Distance
+             * @description Null for diving.
+             */
+            distance?: number | null;
+            /**
+             * Is Diving
+             * @default false
+             */
+            is_diving: boolean;
+            /**
+             * Is Relay
+             * @default false
+             */
+            is_relay: boolean;
+            /**
+             * Measurement Type
+             * @description 'time' (lower is better) or 'points' (higher is better).
+             */
+            measurement_type?: string | null;
+            /**
+             * Name
+             * @description e.g. '100 Yard Freestyle', '3 Meter Diving (11 dives)'.
+             */
+            name: string;
+            /**
+             * Stroke
+             * @description free, back, breast, fly, im, free-relay, medley-relay or diving.
+             */
+            stroke?: string | null;
+        };
+        /**
+         * SwimEventResults
+         * @description The results of one event, in order: prelims, then finals by heat.
+         */
+        SwimEventResults: {
+            event: components["schemas"]["SwimEvent"];
+            /** Gender */
+            gender: string;
+            /** Results */
+            results: components["schemas"]["SwimResult"][];
+        };
+        /**
+         * SwimMeetDetail
+         * @description A meet with its team scores and the events it holds results for. The
+         *     results themselves are GET /v1/swim/meets/{meet_id}/results.
+         * @example {
+         *       "course": "SCY",
+         *       "end_date": null,
+         *       "host_team_id": null,
+         *       "id": 2507,
+         *       "meet_type": "dual",
+         *       "name": "Princeton University vs Rutgers",
+         *       "season": "2027",
+         *       "start_date": "2026-10-31",
+         *       "venue": null
+         *     }
+         */
+        SwimMeetDetail: {
+            /**
+             * Course
+             * @description SCY, SCM, LCM or 'mixed'.
+             */
+            course?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /** Events */
+            events?: components["schemas"]["SwimMeetEvent"][];
+            /**
+             * Gender
+             * @description The side the response covers: a meet holds both, and the request's `gender` picks one.
+             */
+            gender: string;
+            /** Host Team Id */
+            host_team_id?: number | null;
+            /**
+             * Id
+             * @description Meet id; use with GET /v1/swim/meets/{meet_id}.
+             */
+            id: number;
+            /**
+             * Meet Type
+             * @description dual, tri, invitational, conference_championship, ncaa, naia, njcaa, time_trial or unknown.
+             */
+            meet_type?: string | null;
+            /** Name */
+            name: string;
+            /**
+             * Season
+             * @description Season by championship year: '2027' is 2026-27.
+             */
+            season?: string | null;
+            /** Start Date */
+            start_date?: string | null;
+            /**
+             * Team Scores
+             * @description Final team scores, first place first, where the meet scored.
+             */
+            team_scores?: components["schemas"]["SwimTeamScore"][];
+            /** Venue */
+            venue?: string | null;
+        };
+        /**
+         * SwimMeetEvent
+         * @description An event a meet holds results for, in the scoped gender.
+         */
+        SwimMeetEvent: {
+            event: components["schemas"]["SwimEvent"];
+            /**
+             * Gender
+             * @description 'men' or 'women'.
+             */
+            gender: string;
+            /**
+             * Result Count
+             * @description Results held for the event: prelims, finals, relays and DQs each count.
+             */
+            result_count: number;
+        };
+        /**
+         * SwimMeetPage
+         * @description One page of swimming & diving meets, newest first.
+         */
+        SwimMeetPage: {
+            /** Data */
+            data: components["schemas"]["SwimMeetSummary"][];
+            /**
+             * Has More
+             * @description True when another page is available.
+             * @default false
+             */
+            has_more: boolean;
+            /**
+             * Next Cursor
+             * @description Opaque cursor for the next page; null when there are no more results.
+             * @example eyJvZmZzZXQiOiAyNX0=
+             */
+            next_cursor?: string | null;
+        };
+        /**
+         * SwimMeetResultsPage
+         * @description One page of a meet's results, grouped by event. Pages are cut by
+         *     result (`limit` counts results, not events), so an event can continue on
+         *     the next page; it then appears again there with the results that page
+         *     holds.
+         * @example {
+         *       "data": [
+         *         {
+         *           "event": {
+         *             "board": null,
+         *             "code": "SCY-50-FR",
+         *             "course": "SCY",
+         *             "distance": 50,
+         *             "is_diving": false,
+         *             "is_relay": false,
+         *             "measurement_type": "time",
+         *             "name": "50 Yard Freestyle",
+         *             "stroke": "free"
+         *           },
+         *           "gender": "women",
+         *           "results": [
+         *             {
+         *               "dq_reason": null,
+         *               "exhibition": false,
+         *               "flags": "q",
+         *               "heat": "A",
+         *               "kind": "individual",
+         *               "place": 1,
+         *               "player_id": 1546852,
+         *               "player_name": "Example Swimmer",
+         *               "points": null,
+         *               "relay_legs": [],
+         *               "relay_letter": null,
+         *               "round": "final",
+         *               "seed_ms": 22110,
+         *               "splits": [
+         *                 {
+         *                   "distance": 25,
+         *                   "time_ms": 10330
+         *                 }
+         *               ],
+         *               "status": "OK",
+         *               "team_id": 24341,
+         *               "team_points": 20,
+         *               "time_ms": 21980
+         *             }
+         *           ]
+         *         }
+         *       ],
+         *       "has_more": true,
+         *       "meet_id": 833,
+         *       "next_cursor": "eyJvZmZzZXQiOiAxMDB9"
+         *     }
+         */
+        SwimMeetResultsPage: {
+            /** Data */
+            data: components["schemas"]["SwimEventResults"][];
+            /**
+             * Has More
+             * @description True when another page is available.
+             * @default false
+             */
+            has_more: boolean;
+            /** Meet Id */
+            meet_id: number;
+            /**
+             * Next Cursor
+             * @description Opaque cursor for the next page; null when there are no more results.
+             * @example eyJvZmZzZXQiOiAyNX0=
+             */
+            next_cursor?: string | null;
+        };
+        /**
+         * SwimMeetSummary
+         * @description A swimming & diving meet as listed by GET /v1/swim/meets.
+         * @example {
+         *       "course": "SCY",
+         *       "end_date": null,
+         *       "host_team_id": null,
+         *       "id": 2507,
+         *       "meet_type": "dual",
+         *       "name": "Princeton University vs Rutgers",
+         *       "season": "2027",
+         *       "start_date": "2026-10-31",
+         *       "venue": null
+         *     }
+         */
+        SwimMeetSummary: {
+            /**
+             * Course
+             * @description SCY, SCM, LCM or 'mixed'.
+             */
+            course?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /** Host Team Id */
+            host_team_id?: number | null;
+            /**
+             * Id
+             * @description Meet id; use with GET /v1/swim/meets/{meet_id}.
+             */
+            id: number;
+            /**
+             * Meet Type
+             * @description dual, tri, invitational, conference_championship, ncaa, naia, njcaa, time_trial or unknown.
+             */
+            meet_type?: string | null;
+            /** Name */
+            name: string;
+            /**
+             * Season
+             * @description Season by championship year: '2027' is 2026-27.
+             */
+            season?: string | null;
+            /** Start Date */
+            start_date?: string | null;
+            /** Venue */
+            venue?: string | null;
+        };
+        /** SwimRelayLeg */
+        SwimRelayLeg: {
+            /**
+             * Flying Start
+             * @description True for a leg that started from a relay exchange.
+             */
+            flying_start?: boolean | null;
+            /** Name */
+            name?: string | null;
+            /**
+             * Order
+             * @description Leg number, 1 being the lead-off.
+             */
+            order: number;
+            /**
+             * Player Id
+             * @description Null when the swimmer is not linked to a roster yet.
+             */
+            player_id?: number | null;
+            /**
+             * Time Ms
+             * @description The leg's own time, in milliseconds.
+             */
+            time_ms?: number | null;
+        };
+        /**
+         * SwimResult
+         * @description One swim, dive or relay swim at a meet.
+         */
+        SwimResult: {
+            /** Dq Reason */
+            dq_reason?: string | null;
+            /**
+             * Exhibition
+             * @description Swum as an exhibition: not scored.
+             * @default false
+             */
+            exhibition: boolean;
+            /**
+             * Flags
+             * @description Markers printed after the time: q (qualified), standards (A, B, INV, AUTO, PROV) and records.
+             */
+            flags?: string | null;
+            /**
+             * Heat
+             * @description Final heat: 'A' (championship final), 'B' (consolation) ...
+             */
+            heat?: string | null;
+            /**
+             * Kind
+             * @description 'individual' (a swim or a dive) or 'relay'.
+             */
+            kind: string;
+            /**
+             * Place
+             * @description Place in that heat or final as published. A championship A-final 8th beats a B-final 1st (place 9) whatever the times.
+             */
+            place?: number | null;
+            /**
+             * Player Id
+             * @description The swimmer; null for a relay and for a swimmer not linked to a roster yet.
+             */
+            player_id?: number | null;
+            /** Player Name */
+            player_name?: string | null;
+            /**
+             * Points
+             * @description A dive's score; null for a swim. Higher is better.
+             */
+            points?: number | null;
+            /** Relay Legs */
+            relay_legs?: components["schemas"]["SwimRelayLeg"][];
+            /**
+             * Relay Letter
+             * @description 'A', 'B', ... for a relay.
+             */
+            relay_letter?: string | null;
+            /**
+             * Round
+             * @description prelim, final, timed_final, swim_off or time_trial.
+             */
+            round?: string | null;
+            /**
+             * Seed Ms
+             * @description Entry (seed) time in milliseconds.
+             */
+            seed_ms?: number | null;
+            /** Splits */
+            splits?: components["schemas"]["SwimSplit"][];
+            /**
+             * Status
+             * @description OK, DQ, DFS (did not finish), NS (no show), SCR (scratch) or DNF.
+             */
+            status?: string | null;
+            /**
+             * Team Id
+             * @description The program swum for.
+             */
+            team_id?: number | null;
+            /**
+             * Team Points
+             * @description Points scored for the team where the meet scored.
+             */
+            team_points?: number | null;
+            /**
+             * Time Ms
+             * @description The swim in milliseconds; null for a dive or a non-finish. Lower is better.
+             */
+            time_ms?: number | null;
+        };
+        /** SwimSplit */
+        SwimSplit: {
+            /**
+             * Distance
+             * @description Distance of the split, in the event's unit (yards or meters).
+             */
+            distance: number;
+            /**
+             * Time Ms
+             * @description Cumulative time at that distance, in milliseconds.
+             */
+            time_ms?: number | null;
+        };
+        /**
+         * SwimSummary
+         * @description A swimming & diving athlete on a search row: what the results say they
+         *     swim or dive (the roster label only for an athlete with no results). The
+         *     fields POST /v1/players/search filters by `swim_discipline`,
+         *     `swim_event_group` and `swim_board`; the times behind them are
+         *     GET /v1/players/{player_id}/times.
+         */
+        SwimSummary: {
+            /**
+             * Boards
+             * @description '1m', '3m' or 'platform': boards with a legal dive.
+             */
+            boards?: string[];
+            /**
+             * Discipline
+             * @description 'swimmer', 'diver' or 'both'.
+             */
+            discipline?: string | null;
+            /**
+             * Dive Bests
+             * @description Career best per diving event: event_code, board, dives, points. 6-dive and 11-dive scores never compare.
+             */
+            dive_bests?: {
+                [key: string]: unknown;
+            }[];
+            /**
+             * Event Groups
+             * @description sprint_free, mid_free, distance_free, back, breast, fly, im or diving; most results first.
+             */
+            event_groups?: string[];
+            /**
+             * Group Source
+             * @description 'results', or 'roster_label' when no legal result is on record.
+             */
+            group_source?: string | null;
+            /** @description Where the athlete's career best ranks highest in its event. */
+            top_event?: components["schemas"]["SwimTopEvent"] | null;
+        };
+        /** SwimTeamScore */
+        SwimTeamScore: {
+            /** Place */
+            place?: number | null;
+            /** Points */
+            points?: number | null;
+            /** Team Id */
+            team_id?: number | null;
+            /** Team Name */
+            team_name?: string | null;
+        };
+        /**
+         * SwimTime
+         * @description One of an athlete's legal swims or dives.
+         */
+        SwimTime: {
+            /**
+             * Date
+             * @description The meet's last day.
+             */
+            date?: string | null;
+            event: components["schemas"]["SwimEvent"];
+            /**
+             * Exhibition
+             * @default false
+             */
+            exhibition: boolean;
+            /** Flags */
+            flags?: string | null;
+            /** Heat */
+            heat?: string | null;
+            /**
+             * Id
+             * @description Result id.
+             */
+            id: number;
+            /** Meet Id */
+            meet_id: number;
+            /** Meet Name */
+            meet_name?: string | null;
+            /** Place */
+            place?: number | null;
+            /**
+             * Points
+             * @description A dive's score; null for a swim.
+             */
+            points?: number | null;
+            /** Round */
+            round?: string | null;
+            /** Season */
+            season?: string | null;
+            /** Seed Ms */
+            seed_ms?: number | null;
+            /** Splits */
+            splits?: components["schemas"]["SwimSplit"][];
+            /**
+             * Team Id
+             * @description The program swum for.
+             */
+            team_id?: number | null;
+            /**
+             * Time Ms
+             * @description Milliseconds; null for a dive. Lower is better.
+             */
+            time_ms?: number | null;
+        };
+        /**
+         * SwimTimesPage
+         * @description One page of an athlete's swims, newest first.
+         */
+        SwimTimesPage: {
+            /** Data */
+            data: components["schemas"]["SwimTime"][];
+            /**
+             * Has More
+             * @description True when another page is available.
+             * @default false
+             */
+            has_more: boolean;
+            /**
+             * Next Cursor
+             * @description Opaque cursor for the next page; null when there are no more results.
+             * @example eyJvZmZzZXQiOiAyNX0=
+             */
+            next_cursor?: string | null;
+        };
+        /** SwimTopEvent */
+        SwimTopEvent: {
+            /**
+             * Code
+             * @description Event code, e.g. 'SCY-100-BR'.
+             */
+            code?: string | null;
+            /**
+             * Course
+             * @description SCY, SCM or LCM; null for diving.
+             */
+            course?: string | null;
+            /**
+             * Mark
+             * @description The athlete's best in the event: seconds for a swim, points for a dive.
+             */
+            mark?: number | null;
+            /**
+             * Measurement Type
+             * @description 'time' or 'points'.
+             */
+            measurement_type?: string | null;
+            /** Name */
+            name?: string | null;
+        };
+        /**
          * TeamCoachEntry
          * @description One member of a team's coaching staff for a season. `email` and `phone`
          *     are populated when the response says `contacts_included` (see the Coach
@@ -4790,6 +8223,7 @@ export interface components {
          *       "id": 1873,
          *       "logo_url": "https://magisterial.ai/logos/amherst.png",
          *       "name": "Amherst",
+         *       "region": null,
          *       "school": {
          *         "athletics_domain": "athletics.amherst.edu",
          *         "city": "Amherst",
@@ -4816,9 +8250,9 @@ export interface components {
             division?: string | null;
             /**
              * Documents
-             * @description Per-season team records (schedules, stats documents); shape varies by sport.
+             * @description Per-season team records, newest first; the fields besides `schedule` vary by sport. Each carries a `schedule` saying whether the season is complete: a record or stat counted over fewer games than the team played is a short season, which is `schedule.status` 'partial'.
              */
-            documents?: unknown;
+            documents?: components["schemas"]["TeamSeasonDocument"][] | null;
             /** @description When each kind of source page for this program was last read. */
             freshness?: components["schemas"]["TeamFreshness"] | null;
             /**
@@ -4830,6 +8264,11 @@ export interface components {
             logo_url?: string | null;
             /** Name */
             name?: string | null;
+            /**
+             * Region
+             * @description The association's region, for NJCAA and NCCAA teams: 'NJCAA Region IV'. Null for every other team. A region is not a conference: an NJCAA team can have both.
+             */
+            region?: string | null;
             /** @description The institution, with its IPEDS UNITID for joining to external records. */
             school?: components["schemas"]["SchoolRef"] | null;
             /**
@@ -4874,9 +8313,151 @@ export interface components {
             next_cursor?: string | null;
         };
         /**
+         * TeamPostseasonCoverage
+         * @description The seasons of one competition that are held for a team: a national
+         *     tournament of its sport and division, or a title of the conference it
+         *     was in. Inside them, a season with no entry in `data` is one the team
+         *     did not play in the tournament, or did not win the title.
+         */
+        TeamPostseasonCoverage: {
+            /**
+             * Champion Only Seasons
+             * @description Conference tournament seasons, among those, where only the champion is held. No 'runner_up' entry there does not mean the team did not reach the final.
+             */
+            champion_only_seasons?: string[];
+            /**
+             * Division
+             * @description As on an entry.
+             */
+            division: string;
+            /**
+             * Finals Only Seasons
+             * @description Seasons, among those, where only the final stage of the bracket is held. A team that went out before it has no entry for that season, so no entry does not mean the team missed the tournament.
+             */
+            finals_only_seasons: string[];
+            /**
+             * Kind
+             * @description As on an entry.
+             */
+            kind: string;
+            /**
+             * No Champion Seasons
+             * @description Seasons, among those, in which the conference named no champion of this kind: it holds no tournament (or awards no regular-season title) in the sport, the season was cancelled, or the title was vacated. No team has an entry there.
+             */
+            no_champion_seasons?: string[];
+            /**
+             * Organizer
+             * @description As on an entry, except for bowl games: all bowls of a division are one coverage line, with organizer 'FBS bowls'. A season listed there with no 'bowl_game' entry in `data` is one the team played no bowl in.
+             */
+            organizer: string;
+            /**
+             * Seasons
+             * @description The team seasons held, newest first.
+             */
+            seasons: string[];
+        };
+        /**
+         * TeamPostseasonEntry
+         * @description One postseason result of a team: a national tournament it played in
+         *     and how far it went, a bowl game it won or lost, or a conference title
+         *     it won (or, in a conference tournament, lost the final of).
+         */
+        TeamPostseasonEntry: {
+            /**
+             * Conference Division
+             * @description For the title of a division inside a conference, that division in the conference's words, e.g. 'East'. Null for the conference's own title and for national tournaments.
+             */
+            conference_division?: string | null;
+            /**
+             * Division
+             * @description The division of the championship, which is the team's division that season: 'D1', 'D2', 'D3', 'D1-FCS', 'D1-FBS' (the playoff and bowl games), 'NAIA', or 'NC' for the National Collegiate championship Divisions I and II share in men's volleyball.
+             */
+            division: string;
+            /**
+             * Event
+             * @description The competition's title. A national tournament carries the organizer's own, e.g. "2025 DI Women's Soccer Championship" or 'College Football Playoff'; a bowl game is the bowl, e.g. 'Rose Bowl'; a conference title is the conference's name with 'regular season' or 'tournament'.
+             */
+            event: string;
+            /**
+             * Field Size
+             * @description How many teams played in the tournament (2 for a bowl game). Null for conference titles: a conference's list of champions does not state its tournament's field.
+             */
+            field_size?: number | null;
+            /**
+             * Kind
+             * @description What the entry is. 'national_tournament' is a national championship tournament: an NCAA or NAIA championship, or the College Football Playoff. 'bowl_game' is one FBS bowl. 'conference_regular_season' is a conference regular-season title. 'conference_tournament' is a conference tournament, or the championship game of a conference that decides its title in one. `coverage` lists what is held for the team.
+             */
+            kind: string;
+            /**
+             * Losses
+             * @description Games the team lost in the tournament.
+             */
+            losses?: number | null;
+            /**
+             * Organizer
+             * @description Who runs the competition: 'NCAA', 'NAIA' or 'CFP' (the College Football Playoff) for a national tournament; for a bowl game the bowl itself, under one name across seasons, e.g. 'Rose Bowl'; the conference for a conference title, under the same label a team's `conference` carries, e.g. 'Big Sky Conference (Big Sky)'.
+             */
+            organizer: string;
+            /**
+             * Result
+             * @description How far the team went. A conference title is 'champion', or 'runner_up' for the team that lost a conference tournament's final where the conference names it. In a national tournament: 'champion', 'runner_up', 'semifinals', 'quarterfinals', or 'round_of_<n>' for a team that went out with n teams left ('round_of_16', 'round_of_64', and 'round_of_68' for a play-in loss). Baseball and softball, whose rounds are pools and series, use 'regional', 'super_regional' and 'championship_finals' (the eight-team final stage, the College World Series in Division I). NAIA softball uses the same words: 'regional' for its opening round and 'championship_finals' for its ten-team World Series. A bowl game is 'won' or 'lost': a bowl winner is not a 'champion', so 'champion' on a national tournament is always a national title.
+             */
+            result: string;
+            /**
+             * Round
+             * @description The round the team's tournament ended in, in the competition's own words, e.g. 'Sweet 16', 'Second Round', 'Super Regional'. On a bowl game, the playoff round the bowl was ('CFP Semifinals'), null for a bowl outside the playoff.
+             */
+            round?: string | null;
+            /**
+             * Season
+             * @description The team season, labelled as team seasons are everywhere else in the API, e.g. '2025'.
+             */
+            season: string;
+            /**
+             * Seed
+             * @description The team's seed where the bracket seeds it; null otherwise (many brackets seed only the top teams, or none).
+             */
+            seed?: number | null;
+            /**
+             * Shared
+             * @description True where a conference names more than one champion of the title (co-champions). Each of them has an entry.
+             * @default false
+             */
+            shared: boolean;
+            /**
+             * Source Url
+             * @description The page the result was read from: the published bracket, scoreboard or record book, or the conference's list of its champions.
+             */
+            source_url?: string | null;
+            /**
+             * Teams Remaining
+             * @description How many teams were still in the tournament when that round began: 1 for the champion, 2 for the runner-up, 4 for a semifinalist. `teams_remaining <= 16` is 'reached the round of 16' in every sport, whatever byes and play-in games the bracket has. On a bowl game, 1 for the winner and 2 for the loser. Null for a conference regular-season title, which has no rounds.
+             */
+            teams_remaining?: number | null;
+            /**
+             * Wins
+             * @description Games the team won in the tournament.
+             */
+            wins?: number | null;
+        };
+        /**
+         * TeamPostseasonResponse
+         * @description Envelope for GET /v1/teams/{team_id}/postseason: newest season first.
+         */
+        TeamPostseasonResponse: {
+            /** Coverage */
+            coverage: components["schemas"]["TeamPostseasonCoverage"][];
+            /** Data */
+            data: components["schemas"]["TeamPostseasonEntry"][];
+            /** Team Id */
+            team_id: number;
+        };
+        /**
          * TeamRanking
-         * @description The team's national ranking, when the request filters or sorts by a
-         *     ranking field. Field names are the filter names.
+         * @description A team's national ranking as a player search row once carried it.
+         *     POST /v1/players/search takes no ranking filter or sort, so it is always
+         *     null there; GET /v1/teams/{team_id}/rankings is where a team's rankings
+         *     are read.
          */
         TeamRanking: {
             /** National Rank */
@@ -4895,6 +8476,105 @@ export interface components {
             ranking_system?: string | null;
         };
         /**
+         * TeamRankingEntry
+         * @description A team's standing in one ranking system in one season, read from
+         *     that season's latest release.
+         */
+        TeamRankingEntry: {
+            /**
+             * Division
+             * @description The division the ranking covers.
+             */
+            division: string;
+            /**
+             * Is Final
+             * @description True when the release is the season's final one, so `rank` is where the team finished. False while the season is under way, when `rank` is the team's current standing.
+             */
+            is_final: boolean;
+            /**
+             * Rank
+             * @description The team's rank on the release. Null when the team appeared on an earlier release that season and is not on this one, as when a team drops out of a top-25 poll.
+             */
+            rank?: number | null;
+            /**
+             * Ranking Season
+             * @description The academic year the ranking was published under, e.g. '2025-26'.
+             */
+            ranking_season: string;
+            /**
+             * Ranking System
+             * @description Who publishes the ranking, e.g. 'RPI', 'NET', 'NPI' or 'Coaches Poll'.
+             */
+            ranking_system: string;
+            /**
+             * Rating Value
+             * @description The rating behind the rank where the system publishes one (an RPI, NET or NPI value, a poll's points); null otherwise.
+             */
+            rating_value?: number | null;
+            /**
+             * Release Date
+             * Format: date
+             * @description The date of the release `rank` is read from.
+             */
+            release_date: string;
+            /**
+             * Release Label
+             * @description The publisher's name for the release.
+             */
+            release_label?: string | null;
+            /**
+             * Season
+             * @description The team season the ranking belongs to, labelled as team seasons are everywhere else in the API, e.g. '2025'.
+             */
+            season: string;
+        };
+        /**
+         * TeamRankingsResponse
+         * @description Envelope for GET /v1/teams/{team_id}/rankings: newest season first,
+         *     then by ranking system.
+         */
+        TeamRankingsResponse: {
+            /** Data */
+            data: components["schemas"]["TeamRankingEntry"][];
+            /** Team Id */
+            team_id: number;
+        };
+        /**
+         * TeamSeasonDocument
+         * @description One season of a team. The fields besides `season`, `chunk_type`,
+         *     `overall_record`, `overall_record_source` and `schedule` are the sport's
+         *     season document (records, `stats_json`, and for soccer and lacrosse typed
+         *     stat columns) and vary by sport; a field the source did not publish is
+         *     absent. `overall_record` and `overall_record_source` are always present,
+         *     null when the season has no record.
+         */
+        TeamSeasonDocument: {
+            /**
+             * Chunk Type
+             * @description Always 'season'.
+             */
+            chunk_type?: string | null;
+            /**
+             * Overall Record
+             * @description The season's overall record as 'W-L' or 'W-L-T', from the source `overall_record_source` names. The school's posted figure can differ from `schedule.record_from_held_games`; `schedule` says whether the games held are the season's.
+             */
+            overall_record?: string | null;
+            /**
+             * Overall Record Source
+             * @description Where `overall_record` comes from: 'school_page', the record the school posts on its own athletics site, or 'held_games', our tally of the games we hold for the season. Null when the source is not recorded.
+             */
+            overall_record_source?: ("school_page" | "held_games") | null;
+            /** @description What the team's own schedule says about the season beside the games held: its game count, the school's record, and whether the games held are the season's. A season with games or a schedule read but no season document is listed with only `season`, `chunk_type` and `schedule`. */
+            schedule?: components["schemas"]["SeasonSchedule"] | null;
+            /**
+             * Season
+             * @description The calendar year the season ends in, its championship year: a fall sport (soccer, football, women's volleyball, field hockey) is the fall it is played in, so '2025' is fall 2025; a winter or academic-year sport (basketball, ice hockey, swimming and diving, tennis, golf) is labelled by the year the school year ends, so '2024' is the 2023-24 season; a spring sport (baseball, softball, lacrosse, men's volleyball) is that spring, so '2024' is spring 2024.
+             */
+            season?: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
          * TeamSummary
          * @description A team as returned by the teams list.
          * @example {
@@ -4904,6 +8584,7 @@ export interface components {
          *       "id": 1873,
          *       "logo_url": "https://magisterial.ai/logos/amherst.png",
          *       "name": "Amherst",
+         *       "region": null,
          *       "school": {
          *         "athletics_domain": "athletics.amherst.edu",
          *         "city": "Amherst",
@@ -4937,6 +8618,11 @@ export interface components {
             logo_url?: string | null;
             /** Name */
             name?: string | null;
+            /**
+             * Region
+             * @description The association's region, for NJCAA and NCCAA teams: 'NJCAA Region IV'. Null for every other team. A region is not a conference: an NJCAA team can have both.
+             */
+            region?: string | null;
             /** @description The institution, with its IPEDS UNITID for joining to external records. */
             school?: components["schemas"]["SchoolRef"] | null;
             /**
@@ -4949,6 +8635,640 @@ export interface components {
              * @description 'active', or 'discontinued' when the program stopped competing (the school closed or dropped the sport). A discontinued program keeps its id and its historical rosters, staffs and games.
              */
             status?: string | null;
+        };
+        /**
+         * TennisMatch
+         * @description One individual singles or doubles match at a tournament (ITA events,
+         *     invitationals and regionals). A team dual and its lines are GET /v1/games.
+         * @example {
+         *       "date": "2026-10-20",
+         *       "draw": "Main Draw Singles",
+         *       "event": {
+         *         "id": 1252,
+         *         "level": "ita_regional",
+         *         "name": "Example ITA Regional"
+         *       },
+         *       "id": 120149,
+         *       "is_consolation": true,
+         *       "match_type": "singles",
+         *       "round": "SF",
+         *       "score": "6-0 6-2",
+         *       "season": "2027",
+         *       "sets": [
+         *         {
+         *           "match_tiebreak": false,
+         *           "side1": 6,
+         *           "side2": 0,
+         *           "tiebreak_side1": null,
+         *           "tiebreak_side2": null
+         *         },
+         *         {
+         *           "match_tiebreak": false,
+         *           "side1": 6,
+         *           "side2": 2,
+         *           "tiebreak_side1": null,
+         *           "tiebreak_side2": null
+         *         }
+         *       ],
+         *       "side1": {
+         *         "players": [
+         *           {
+         *             "name": "Victor Lilov",
+         *             "player_id": 1501208
+         *           }
+         *         ],
+         *         "team_id": 26679,
+         *         "team_name": "Example College"
+         *       },
+         *       "side2": {
+         *         "players": [
+         *           {
+         *             "name": "Adam Jilly",
+         *             "player_id": 1510798
+         *           }
+         *         ],
+         *         "team_id": 27755,
+         *         "team_name": "Example University"
+         *       },
+         *       "sport_path": "mens-tennis",
+         *       "status": "completed",
+         *       "winner_side": "side1"
+         *     }
+         */
+        TennisMatch: {
+            /** Date */
+            date?: string | null;
+            /**
+             * Draw
+             * @description e.g. 'Main Draw Singles', 'Flight A Doubles'.
+             */
+            draw?: string | null;
+            event?: components["schemas"]["TennisMatchEvent"] | null;
+            /** Id */
+            id: number;
+            /**
+             * Is Consolation
+             * @default false
+             */
+            is_consolation: boolean;
+            /**
+             * Match Type
+             * @description 'singles' or 'doubles'.
+             */
+            match_type: string;
+            /**
+             * Round
+             * @description e.g. 'R16', 'QF', 'SF', 'F'.
+             */
+            round?: string | null;
+            /**
+             * Score
+             * @description The score as published, e.g. '6-4 3-6 7-5'.
+             */
+            score?: string | null;
+            /**
+             * Season
+             * @description Season by championship year: '2027' is 2026-27.
+             */
+            season?: string | null;
+            /** Sets */
+            sets?: components["schemas"]["TennisMatchSet"][];
+            side1: components["schemas"]["TennisMatchSide"];
+            side2: components["schemas"]["TennisMatchSide"];
+            /** Sport Path */
+            sport_path: string;
+            /**
+             * Status
+             * @description completed, retired, walkover, default, unfinished or cancelled.
+             */
+            status: string;
+            /**
+             * Winner Side
+             * @description 'side1', 'side2', or null for an unfinished or cancelled match.
+             */
+            winner_side?: string | null;
+        };
+        /** TennisMatchEvent */
+        TennisMatchEvent: {
+            /** Id */
+            id: number;
+            /**
+             * Level
+             * @description The kind of tournament, e.g. 'ita_regional'.
+             */
+            level?: string | null;
+            /** Name */
+            name?: string | null;
+        };
+        /**
+         * TennisMatchPage
+         * @description One page of individual tennis matches, newest first.
+         */
+        TennisMatchPage: {
+            /** Data */
+            data: components["schemas"]["TennisMatch"][];
+            /**
+             * Has More
+             * @description True when another page is available.
+             * @default false
+             */
+            has_more: boolean;
+            /**
+             * Next Cursor
+             * @description Opaque cursor for the next page; null when there are no more results.
+             * @example eyJvZmZzZXQiOiAyNX0=
+             */
+            next_cursor?: string | null;
+        };
+        /** TennisMatchPlayer */
+        TennisMatchPlayer: {
+            /** Name */
+            name?: string | null;
+            /**
+             * Player Id
+             * @description Null for a player not linked to a roster yet.
+             */
+            player_id?: number | null;
+        };
+        /** TennisMatchSet */
+        TennisMatchSet: {
+            /**
+             * Match Tiebreak
+             * @description True for a deciding 10-point tiebreak played in place of a third set.
+             * @default false
+             */
+            match_tiebreak: boolean;
+            /**
+             * Side1
+             * @description Games won by side 1.
+             */
+            side1?: number | null;
+            /** Side2 */
+            side2?: number | null;
+            /**
+             * Tiebreak Side1
+             * @description Tiebreak points, when the set or match tiebreak went to one.
+             */
+            tiebreak_side1?: number | null;
+            /** Tiebreak Side2 */
+            tiebreak_side2?: number | null;
+        };
+        /** TennisMatchSide */
+        TennisMatchSide: {
+            /**
+             * Players
+             * @description One player in singles, two in doubles.
+             */
+            players: components["schemas"]["TennisMatchPlayer"][];
+            /** Team Id */
+            team_id?: number | null;
+            /** Team Name */
+            team_name?: string | null;
+        };
+        /**
+         * TennisRankingEntry
+         * @description One ranked player (singles) or pair (doubles) on an ITA individual
+         *     ranking release.
+         * @example {
+         *       "division": "D1",
+         *       "is_final": false,
+         *       "losses": 0,
+         *       "players": [
+         *         {
+         *           "name": "Example Player",
+         *           "player_id": 1579057
+         *         }
+         *       ],
+         *       "points": 0,
+         *       "rank": 1,
+         *       "ranking_season": "2026-27",
+         *       "release_date": "2026-08-25",
+         *       "release_label": "Aug 25",
+         *       "season": "2027",
+         *       "team_id": 27581,
+         *       "team_name": "Example University",
+         *       "type": "singles",
+         *       "wins": 0
+         *     }
+         */
+        TennisRankingEntry: {
+            /** Division */
+            division: string;
+            /**
+             * Is Final
+             * @description True when the release is the season's final one.
+             */
+            is_final: boolean;
+            /** Losses */
+            losses?: number | null;
+            /**
+             * Players
+             * @description One player in singles, two in doubles.
+             */
+            players: components["schemas"]["TennisMatchPlayer"][];
+            /**
+             * Points
+             * @description ITA ranking points where published (0 early in a season).
+             */
+            points?: number | null;
+            /** Rank */
+            rank: number;
+            /**
+             * Ranking Season
+             * @description The academic year the ranking was published under, e.g. '2026-27'.
+             */
+            ranking_season: string;
+            /**
+             * Release Date
+             * Format: date
+             */
+            release_date: string;
+            /** Release Label */
+            release_label?: string | null;
+            /**
+             * Season
+             * @description The team season of the release: '2027' is 2026-27.
+             */
+            season: string;
+            /**
+             * Team Id
+             * @description The player's (or pair's) school.
+             */
+            team_id?: number | null;
+            /** Team Name */
+            team_name?: string | null;
+            /**
+             * Type
+             * @description 'singles' or 'doubles'.
+             */
+            type: string;
+            /** Wins */
+            wins?: number | null;
+        };
+        /**
+         * TennisRankingPage
+         * @description One page of an ITA individual ranking: the latest release of each
+         *     division in scope, by division then rank.
+         */
+        TennisRankingPage: {
+            /** Data */
+            data: components["schemas"]["TennisRankingEntry"][];
+            /**
+             * Has More
+             * @description True when another page is available.
+             * @default false
+             */
+            has_more: boolean;
+            /**
+             * Next Cursor
+             * @description Opaque cursor for the next page; null when there are no more results.
+             * @example eyJvZmZzZXQiOiAyNX0=
+             */
+            next_cursor?: string | null;
+        };
+        /**
+         * TennisStats
+         * @description Season stats for tennis: the stat fields GET /v1/filters/catalog lists for the sport. Every field is present on every row; null means the source did not publish it.
+         */
+        TennisStats: {
+            /**
+             * Clinch L
+             * @description Team-Clinching Losses
+             * @default null
+             */
+            clinch_l: number | null;
+            /**
+             * Clinch W
+             * @description Team-Clinching Wins
+             * @default null
+             */
+            clinch_w: number | null;
+            /**
+             * D1 L
+             * @description Losses at #1 Doubles
+             * @default null
+             */
+            d1_l: number | null;
+            /**
+             * D1 W
+             * @description Wins at #1 Doubles
+             * @default null
+             */
+            d1_w: number | null;
+            /**
+             * D2 L
+             * @description Losses at #2 Doubles
+             * @default null
+             */
+            d2_l: number | null;
+            /**
+             * D2 W
+             * @description Wins at #2 Doubles
+             * @default null
+             */
+            d2_w: number | null;
+            /**
+             * D3 L
+             * @description Losses at #3 Doubles
+             * @default null
+             */
+            d3_l: number | null;
+            /**
+             * D3 W
+             * @description Wins at #3 Doubles
+             * @default null
+             */
+            d3_w: number | null;
+            /**
+             * Doubles L
+             * @description Doubles Losses
+             * @default null
+             */
+            doubles_l: number | null;
+            /**
+             * Doubles Unfinished
+             * @description Unfinished Doubles Matches
+             * @default null
+             */
+            doubles_unfinished: number | null;
+            /**
+             * Doubles Vs Ranked L
+             * @description Doubles Losses vs Ranked Opponents
+             * @default null
+             */
+            doubles_vs_ranked_l: number | null;
+            /**
+             * Doubles Vs Ranked W
+             * @description Doubles Wins vs Ranked Opponents
+             * @default null
+             */
+            doubles_vs_ranked_w: number | null;
+            /**
+             * Doubles W
+             * @description Doubles Wins
+             * @default null
+             */
+            doubles_w: number | null;
+            /**
+             * Doubles Win Pct
+             * @description Doubles Win % (all matches)
+             * @default null
+             */
+            doubles_win_pct: number | null;
+            /**
+             * Dual Doubles L
+             * @description Dual-Match Doubles Losses
+             * @default null
+             */
+            dual_doubles_l: number | null;
+            /**
+             * Dual Doubles Starts
+             * @description Doubles Starts (dual matches)
+             * @default null
+             */
+            dual_doubles_starts: number | null;
+            /**
+             * Dual Doubles W
+             * @description Dual-Match Doubles Wins
+             * @default null
+             */
+            dual_doubles_w: number | null;
+            /**
+             * Dual Doubles Win Pct
+             * @description Dual-Match Doubles Win %
+             * @default null
+             */
+            dual_doubles_win_pct: number | null;
+            /**
+             * Dual Singles L
+             * @description Dual-Match Singles Losses
+             * @default null
+             */
+            dual_singles_l: number | null;
+            /**
+             * Dual Singles Starts
+             * @description Singles Starts (dual matches)
+             * @default null
+             */
+            dual_singles_starts: number | null;
+            /**
+             * Dual Singles W
+             * @description Dual-Match Singles Wins
+             * @default null
+             */
+            dual_singles_w: number | null;
+            /**
+             * Dual Singles Win Pct
+             * @description Dual-Match Singles Win %
+             * @default null
+             */
+            dual_singles_win_pct: number | null;
+            /**
+             * Fall Doubles L
+             * @description Fall Doubles Losses
+             * @default null
+             */
+            fall_doubles_l: number | null;
+            /**
+             * Fall Doubles W
+             * @description Fall Doubles Wins
+             * @default null
+             */
+            fall_doubles_w: number | null;
+            /**
+             * Fall Singles L
+             * @description Fall Singles Losses
+             * @default null
+             */
+            fall_singles_l: number | null;
+            /**
+             * Fall Singles W
+             * @description Fall Singles Wins
+             * @default null
+             */
+            fall_singles_w: number | null;
+            /**
+             * Highest Doubles Pos
+             * @description Highest Doubles Spot Played (1 = top of lineup)
+             * @default null
+             */
+            highest_doubles_pos: number | null;
+            /**
+             * Highest Singles Pos
+             * @description Highest Singles Spot Played (1 = top of lineup)
+             * @default null
+             */
+            highest_singles_pos: number | null;
+            /**
+             * Ita Doubles Rank
+             * @description ITA Doubles Rank (1 = best)
+             * @default null
+             */
+            ita_doubles_rank: number | null;
+            /**
+             * Ita Singles Rank
+             * @description ITA Singles Rank (1 = best)
+             * @default null
+             */
+            ita_singles_rank: number | null;
+            /**
+             * Most Common Doubles Pos
+             * @description Usual Doubles Spot (1 = top of lineup)
+             * @default null
+             */
+            most_common_doubles_pos: number | null;
+            /**
+             * Most Common Singles Pos
+             * @description Usual Singles Spot (1 = top of lineup)
+             * @default null
+             */
+            most_common_singles_pos: number | null;
+            /**
+             * S1 L
+             * @description Losses at #1 Singles
+             * @default null
+             */
+            s1_l: number | null;
+            /**
+             * S1 W
+             * @description Wins at #1 Singles
+             * @default null
+             */
+            s1_w: number | null;
+            /**
+             * S2 L
+             * @description Losses at #2 Singles
+             * @default null
+             */
+            s2_l: number | null;
+            /**
+             * S2 W
+             * @description Wins at #2 Singles
+             * @default null
+             */
+            s2_w: number | null;
+            /**
+             * S3 L
+             * @description Losses at #3 Singles
+             * @default null
+             */
+            s3_l: number | null;
+            /**
+             * S3 W
+             * @description Wins at #3 Singles
+             * @default null
+             */
+            s3_w: number | null;
+            /**
+             * S4 L
+             * @description Losses at #4 Singles
+             * @default null
+             */
+            s4_l: number | null;
+            /**
+             * S4 W
+             * @description Wins at #4 Singles
+             * @default null
+             */
+            s4_w: number | null;
+            /**
+             * S5 L
+             * @description Losses at #5 Singles
+             * @default null
+             */
+            s5_l: number | null;
+            /**
+             * S5 W
+             * @description Wins at #5 Singles
+             * @default null
+             */
+            s5_w: number | null;
+            /**
+             * S6 L
+             * @description Losses at #6 Singles
+             * @default null
+             */
+            s6_l: number | null;
+            /**
+             * S6 W
+             * @description Wins at #6 Singles
+             * @default null
+             */
+            s6_w: number | null;
+            /**
+             * Singles L
+             * @description Singles Losses
+             * @default null
+             */
+            singles_l: number | null;
+            /**
+             * Singles Three Set L
+             * @description Three-Set Singles Losses
+             * @default null
+             */
+            singles_three_set_l: number | null;
+            /**
+             * Singles Three Set W
+             * @description Three-Set Singles Wins
+             * @default null
+             */
+            singles_three_set_w: number | null;
+            /**
+             * Singles Unfinished
+             * @description Unfinished Singles Matches
+             * @default null
+             */
+            singles_unfinished: number | null;
+            /**
+             * Singles Vs Ranked L
+             * @description Singles Losses vs Ranked Opponents
+             * @default null
+             */
+            singles_vs_ranked_l: number | null;
+            /**
+             * Singles Vs Ranked W
+             * @description Singles Wins vs Ranked Opponents
+             * @default null
+             */
+            singles_vs_ranked_w: number | null;
+            /**
+             * Singles W
+             * @description Singles Wins
+             * @default null
+             */
+            singles_w: number | null;
+            /**
+             * Singles Win Pct
+             * @description Singles Win % (all matches)
+             * @default null
+             */
+            singles_win_pct: number | null;
+            /**
+             * Spring Doubles L
+             * @description Spring Doubles Losses
+             * @default null
+             */
+            spring_doubles_l: number | null;
+            /**
+             * Spring Doubles W
+             * @description Spring Doubles Wins
+             * @default null
+             */
+            spring_doubles_w: number | null;
+            /**
+             * Spring Singles L
+             * @description Spring Singles Losses
+             * @default null
+             */
+            spring_singles_l: number | null;
+            /**
+             * Spring Singles W
+             * @description Spring Singles Wins
+             * @default null
+             */
+            spring_singles_w: number | null;
+        } & {
+            [key: string]: unknown;
         };
         /**
          * TrackBest
@@ -5051,6 +9371,11 @@ export interface components {
          */
         TransferRecord: {
             /**
+             * Confidence
+             * @description 0 to 1. The lower of the two confidences with which this edge's origin and destination roster rows were linked to the person: a move is as certain as its weaker end. Null when either end's link predates the recorded confidence.
+             */
+            confidence?: number | null;
+            /**
              * First Season To
              * @description First season at the destination school.
              */
@@ -5071,6 +9396,11 @@ export interface components {
              * @description Last season at the origin school.
              */
             last_season_from?: string | null;
+            /**
+             * Link Method
+             * @description The evidence that joined these roster stints into one person. `roster_continuity`: name, hometown, season continuity, class progression, height and position agree across the rosters; `transfer_portal`: a transfer-portal entry names the move; `athletics_bio`: an official athletics bio names the other school; `previous_school`: the destination roster's previous-school field; `published_sources`: reviewed against published sources such as news releases and signing announcements; `staff_record`: the person also holds a coaching or staff role, and that record ties the stints together; `commitment`: a recruiting commitment record; `manual_review`: linked by hand; `other`: any other method. Null when the person's method was not recorded.
+             */
+            link_method?: ("roster_continuity" | "transfer_portal" | "athletics_bio" | "previous_school" | "published_sources" | "staff_record" | "commitment" | "manual_review" | "other") | null;
             /** Person Id */
             person_id?: number | null;
             /** Sport Path */
@@ -5339,7 +9669,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -5417,7 +9747,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
-            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -5493,7 +9823,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
-            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -5571,7 +9901,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
-            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -5632,7 +9962,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
-            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -5692,7 +10022,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
-            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -5750,7 +10080,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
-            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -5808,7 +10138,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
-            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -5869,7 +10199,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
-            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -5927,7 +10257,319 @@ export interface operations {
                     "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
-            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    list_commitments: {
+        parameters: {
+            query?: {
+                /** @description Full sport path, e.g. 'womens-volleyball'. One value, or several separated by commas (any of). */
+                sport_path?: string | null;
+                /** @description Sport, e.g. 'soccer': both genders unless `gender` is given. One value, or several separated by commas (any of). */
+                sport?: string | null;
+                /** @description 'men' or 'women': that side of `sport`, or of every sport. */
+                gender?: string | null;
+                /** @description Division of the committed program, e.g. 'D2' or 'D3,NAIA'. 'D1' includes football's FBS and FCS. */
+                division?: string | null;
+                /** @description High-school graduation class, e.g. '2027'. One value, or several separated by commas (any of). */
+                grad_year?: string | null;
+                /** @description College entry year, for the commitments whose sources give that instead of a high-school class (ice hockey). One value, or several separated by commas (any of). */
+                entry_year?: string | null;
+                /** @description 'committed', 'signed' or 'decommitted'. One value, or several separated by commas (any of). */
+                status?: string | null;
+                /** @description Committed program's team ids. One value, or several separated by commas (any of). */
+                team_id?: string | null;
+                /** @description School ids: every program of the school, across sports. One value, or several separated by commas (any of). */
+                school_id?: string | null;
+                /** @description Federal IPEDS UNITID of the school. */
+                ipeds_unitid?: number | null;
+                /** @description Conference of the program. Conference, by its full name or its abbreviation: 'University Athletic Association (UAA)', 'University Athletic Association' and 'UAA' are the same conference. GET /v1/conferences lists them. One value, or several separated by commas (any of). */
+                conference?: string | null;
+                /** @description Exclude these values (comma-separated). Rows with no value for the field are left out too. */
+                conference_not?: string | null;
+                /** @description Region of the program. An association's region, e.g. 'NJCAA Region IV'; 'Region IV', 'Region 4' and 'NJCAA Region 4' name the same one. Only NJCAA and NCCAA teams have a region. GET /v1/regions lists them. One value, or several separated by commas (any of). */
+                region?: string | null;
+                /** @description Exclude these values (comma-separated). Rows with no value for the field are left out too. */
+                region_not?: string | null;
+                /** @description State of the school. Two-letter US state code of the school. One value, or several separated by commas (any of). */
+                state?: string | null;
+                /** @description Exclude these values (comma-separated). Rows with no value for the field are left out too. */
+                state_not?: string | null;
+                /** @description The athlete's home state, two-letter codes. One value, or several separated by commas (any of). */
+                home_state?: string | null;
+                /** @description Only commitments this source lists (GET /v1/commitments/sources). One value, or several separated by commas (any of). */
+                source?: string | null;
+                /** @description The athletes' person ids (`athlete.person_id`): every commitment each athlete has made, standing or decommitted. An id that was merged into another person finds that person's commitments. One value, or several separated by commas (any of). */
+                person_id?: string | null;
+                /** @description Case-insensitive athlete name contains. */
+                q?: string | null;
+                /** @description ISO datetime; only commitments first reported at/after it (`first_reported_at`). */
+                since?: string | null;
+                /** @description ISO datetime; only commitments first reported at/before it. */
+                until?: string | null;
+                /** @description ISO date; only commitments whose `committed_on` is on/after it. Commitments no source dates are left out. */
+                committed_since?: string | null;
+                /** @description ISO date; `committed_on` on/before it. */
+                committed_until?: string | null;
+                /** @description 'first_reported_at' (default) or 'committed_on'; newest first. */
+                sort?: string;
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommitmentPage"];
+                };
+            };
+            /** @description Missing, malformed, or revoked API key. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The key's plan does not include commitments (Developer Pro and up). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The request failed validation; `error.fields` names each field. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
+                };
+            };
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The feed is not built yet. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    list_commitment_changes: {
+        parameters: {
+            query?: {
+                /** @description ISO datetime; only changes recorded at/after it (`changed_at`). Omit it to read the whole log. */
+                since?: string | null;
+                /** @description Full sport path, e.g. 'womens-volleyball'. One value, or several separated by commas (any of). */
+                sport_path?: string | null;
+                /** @description Sport, e.g. 'soccer': both genders unless `gender` is given. One value, or several separated by commas (any of). */
+                sport?: string | null;
+                /** @description 'men' or 'women': that side of `sport`, or of every sport. */
+                gender?: string | null;
+                /** @description Division of the committed program, e.g. 'D2' or 'D3,NAIA'. */
+                division?: string | null;
+                /** @description High-school graduation class, e.g. '2027'. One value, or several separated by commas (any of). */
+                grad_year?: string | null;
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommitmentChangePage"];
+                };
+            };
+            /** @description Missing, malformed, or revoked API key. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The key's plan does not include commitments (Developer Pro and up). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The request failed validation; `error.fields` names each field. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
+                };
+            };
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The change log is not built yet. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    list_commitment_sources: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommitmentSourceList"];
+                };
+            };
+            /** @description Missing, malformed, or revoked API key. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The key's plan does not include commitments (Developer Pro and up). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    get_commitment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                commitment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommitmentEntry"];
+                };
+            };
+            /** @description Missing, malformed, or revoked API key. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The key's plan does not include commitments (Developer Pro and up). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description No resource with that id in the requested scope. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The request failed validation; `error.fields` names each field. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
+                };
+            };
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -5945,7 +10587,7 @@ export interface operations {
                 sport: string;
                 /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
                 division: string;
-                /** @description 'men' or 'women'. Defaults to 'men' for a sport with both (soccer, basketball, volleyball, lacrosse, track-and-field), so pass 'women' for the women's side; ignored for single-gender sports. */
+                /** @description 'men' or 'women'. Defaults to 'men' for a sport with both (soccer, basketball, volleyball, lacrosse, track-and-field, ice-hockey, tennis, swimming-and-diving, golf), so pass 'women' for the women's side; ignored for single-gender sports. */
                 gender?: string | null;
                 /** @description Case-insensitive name contains. */
                 q?: string | null;
@@ -5992,7 +10634,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
-            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -6081,7 +10723,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
-            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -6133,7 +10775,45 @@ export interface operations {
                     "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
-            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    get_eligibility_rules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EligibilityRulesResponse"];
+                };
+            };
+            /** @description Missing, malformed, or revoked API key. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -6201,7 +10881,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
-            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -6279,7 +10959,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
-            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -6355,7 +11035,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
-            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -6371,7 +11051,7 @@ export interface operations {
             query?: {
                 /** @description Sport to scope the catalog to. */
                 sport?: string | null;
-                /** @description 'men' or 'women'. Defaults to 'men' for a sport with both (soccer, basketball, volleyball, lacrosse, track-and-field), so pass 'women' for the women's side; ignored for single-gender sports. */
+                /** @description 'men' or 'women'. Defaults to 'men' for a sport with both (soccer, basketball, volleyball, lacrosse, track-and-field, ice-hockey, tennis, swimming-and-diving, golf), so pass 'women' for the women's side; ignored for single-gender sports. */
                 gender?: string | null;
             };
             header?: never;
@@ -6401,6 +11081,7 @@ export interface operations {
                      *             "NJCAA-D1",
                      *             "NJCAA-D2",
                      *             "NJCAA-D3",
+                     *             "NJCAA",
                      *             "3C2A",
                      *             "NWAC",
                      *             "IND"
@@ -6416,6 +11097,7 @@ export interface operations {
                      *             "NJCAA-D1",
                      *             "NJCAA-D2",
                      *             "NJCAA-D3",
+                     *             "NJCAA",
                      *             "3C2A",
                      *             "NWAC",
                      *             "IND"
@@ -6616,7 +11298,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
-            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -6634,7 +11316,7 @@ export interface operations {
                 sport: string;
                 /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
                 division: string;
-                /** @description 'men' or 'women'. Defaults to 'men' for a sport with both (soccer, basketball, volleyball, lacrosse, track-and-field), so pass 'women' for the women's side; ignored for single-gender sports. */
+                /** @description 'men' or 'women'. Defaults to 'men' for a sport with both (soccer, basketball, volleyball, lacrosse, track-and-field, ice-hockey, tennis, swimming-and-diving, golf), so pass 'women' for the women's side; ignored for single-gender sports. */
                 gender?: string | null;
                 /** @description Only games these teams played, home or away. One value, or several separated by commas (any of). */
                 team_id?: string | null;
@@ -6664,6 +11346,8 @@ export interface operations {
                 conference?: string | null;
                 /** @description true: both teams share a conference; false: they do not. */
                 conference_game?: boolean | null;
+                /** @description Only games involving a team from this region (that season's, as for `conference`). An association's region, e.g. 'NJCAA Region IV'; 'Region IV', 'Region 4' and 'NJCAA Region 4' name the same one. Only NJCAA and NCCAA teams have a region. GET /v1/regions lists them. One value, or several separated by commas (any of). */
+                region?: string | null;
                 /** @description true: neutral-site games only; false: the rest. */
                 neutral_site?: boolean | null;
                 /** @description Case-insensitive venue contains. */
@@ -6733,7 +11417,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
-            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -6751,7 +11435,7 @@ export interface operations {
                 sport: string;
                 /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
                 division: string;
-                /** @description 'men' or 'women'. Defaults to 'men' for a sport with both (soccer, basketball, volleyball, lacrosse, track-and-field), so pass 'women' for the women's side; ignored for single-gender sports. */
+                /** @description 'men' or 'women'. Defaults to 'men' for a sport with both (soccer, basketball, volleyball, lacrosse, track-and-field, ice-hockey, tennis, swimming-and-diving, golf), so pass 'women' for the women's side; ignored for single-gender sports. */
                 gender?: string | null;
             };
             header?: never;
@@ -6807,7 +11491,227 @@ export interface operations {
                     "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
-            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    list_golf_ratings: {
+        parameters: {
+            query: {
+                /** @description Sport scope: 'golf'. */
+                sport: string;
+                /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
+                division: string;
+                /** @description 'men' or 'women'. Defaults to 'men', so pass 'women' for the women's side. */
+                gender?: string | null;
+                /** @description 'player' or 'team'. */
+                entity?: string;
+                /** @description Only these teams, or only the players of these teams. One value, or several separated by commas (any of). */
+                team_id?: string | null;
+                /** @description ISO date of a rating run. Omit it for the latest run in scope. */
+                as_of?: string | null;
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GolfRatingPage"];
+                };
+            };
+            /** @description Invalid request — unknown sport/gender/division scope, bad cursor, or bad parameter. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Missing, malformed, or revoked API key. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The request failed validation; `error.fields` names each field. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
+                };
+            };
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    list_golf_tournaments: {
+        parameters: {
+            query: {
+                /** @description Sport scope: 'golf'. */
+                sport: string;
+                /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
+                division: string;
+                /** @description 'men' or 'women'. Defaults to 'men', so pass 'women' for the women's side. */
+                gender?: string | null;
+                /** @description Season by championship year: '2027' is 2026-27. One value, or several separated by commas (any of). */
+                season?: string | null;
+                /** @description Only tournaments these teams entered. One value, or several separated by commas (any of). */
+                team_id?: string | null;
+                /** @description scheduled | in_progress | final | cancelled | no_results. One value, or several separated by commas (any of). */
+                status?: string | null;
+                /** @description ISO date; only tournaments starting on/after it. */
+                start_date_min?: string | null;
+                /** @description ISO date; only tournaments starting on/before it. */
+                start_date_max?: string | null;
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GolfTournamentPage"];
+                };
+            };
+            /** @description Invalid request — unknown sport/gender/division scope, bad cursor, or bad parameter. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Missing, malformed, or revoked API key. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The request failed validation; `error.fields` names each field. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
+                };
+            };
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    get_golf_tournament: {
+        parameters: {
+            query: {
+                /** @description Sport scope: 'golf'. */
+                sport: string;
+                /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
+                division: string;
+                /** @description 'men' or 'women'. Defaults to 'men', so pass 'women' for the women's side. */
+                gender?: string | null;
+            };
+            header?: never;
+            path: {
+                tournament_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GolfTournamentDetail"];
+                };
+            };
+            /** @description Invalid request — unknown sport/gender/division scope, bad cursor, or bad parameter. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Missing, malformed, or revoked API key. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description No resource with that id in the requested scope. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The request failed validation; `error.fields` names each field. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
+                };
+            };
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -6845,6 +11749,10 @@ export interface operations {
                 conference?: string | null;
                 /** @description Exclude these values (comma-separated). Rows with no value for the field are left out too. */
                 conference_not?: string | null;
+                /** @description Region of the team. An association's region, e.g. 'NJCAA Region IV'; 'Region IV', 'Region 4' and 'NJCAA Region 4' name the same one. Only NJCAA and NCCAA teams have a region. GET /v1/regions lists them. One value, or several separated by commas (any of). */
+                region?: string | null;
+                /** @description Exclude these values (comma-separated). Rows with no value for the field are left out too. */
+                region_not?: string | null;
                 /** @description Two-letter US state code of the school. One value, or several separated by commas (any of). */
                 state?: string | null;
                 /** @description Exclude these values (comma-separated). Rows with no value for the field are left out too. */
@@ -6893,8 +11801,79 @@ export interface operations {
                     "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
-            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    list_movement_changes: {
+        parameters: {
+            query?: {
+                /** @description ISO datetime; only changes recorded at/after this time (`changed_at`). Omit it to read the whole log. */
+                since?: string | null;
+                /** @description 'player' or 'coach'. */
+                kind?: string | null;
+                /** @description Full sport path, e.g. 'womens-volleyball'. One value, or several separated by commas (any of). */
+                sport_path?: string | null;
+                /** @description Sport, e.g. 'soccer': both genders unless `gender` is given. One value, or several separated by commas (any of). */
+                sport?: string | null;
+                /** @description 'men' or 'women': that side of `sport`, or of every sport. */
+                gender?: string | null;
+                /** @description Division of the team, e.g. 'D3' or 'D1,D2'. 'D1' includes football's FBS and FCS. */
+                division?: string | null;
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MovementChangePage"];
+                };
+            };
+            /** @description Missing, malformed, or revoked API key. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The request failed validation; `error.fields` names each field. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
+                };
+            };
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The change log is not built yet. */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6909,7 +11888,7 @@ export interface operations {
             query: {
                 /** @description Sport scope, e.g. 'soccer'. */
                 sport: string;
-                /** @description 'men' or 'women'. Defaults to 'men' for a sport with both (soccer, basketball, volleyball, lacrosse, track-and-field), so pass 'women' for the women's side; ignored for single-gender sports. */
+                /** @description 'men' or 'women'. Defaults to 'men' for a sport with both (soccer, basketball, volleyball, lacrosse, track-and-field, ice-hockey, tennis, swimming-and-diving, golf), so pass 'women' for the women's side; ignored for single-gender sports. */
                 gender?: string | null;
             };
             header?: never;
@@ -6965,7 +11944,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
-            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -7014,7 +11993,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
-            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -7074,7 +12053,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
-            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -7092,7 +12071,7 @@ export interface operations {
                 sport: string;
                 /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
                 division: string;
-                /** @description 'men' or 'women'. Defaults to 'men' for a sport with both (soccer, basketball, volleyball, lacrosse, track-and-field), so pass 'women' for the women's side; ignored for single-gender sports. */
+                /** @description 'men' or 'women'. Defaults to 'men' for a sport with both (soccer, basketball, volleyball, lacrosse, track-and-field, ice-hockey, tennis, swimming-and-diving, golf), so pass 'women' for the women's side; ignored for single-gender sports. */
                 gender?: string | null;
             };
             header?: never;
@@ -7148,7 +12127,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
-            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -7166,7 +12145,7 @@ export interface operations {
                 sport: string;
                 /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
                 division: string;
-                /** @description 'men' or 'women'. Defaults to 'men' for a sport with both (soccer, basketball, volleyball, lacrosse, track-and-field), so pass 'women' for the women's side; ignored for single-gender sports. */
+                /** @description 'men' or 'women'. Defaults to 'men' for a sport with both (soccer, basketball, volleyball, lacrosse, track-and-field, ice-hockey, tennis, swimming-and-diving, golf), so pass 'women' for the women's side; ignored for single-gender sports. */
                 gender?: string | null;
             };
             header?: never;
@@ -7222,7 +12201,91 @@ export interface operations {
                     "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
-            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    get_player_times: {
+        parameters: {
+            query: {
+                /** @description Sport scope: 'swimming-and-diving'. */
+                sport: string;
+                /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
+                division: string;
+                /** @description 'men' or 'women'. Defaults to 'men', so pass 'women' for the women's side. */
+                gender?: string | null;
+                /** @description Event code(s), e.g. 'SCY-100-FR'. One value, or several separated by commas (any of). */
+                event?: string | null;
+                /** @description SCY | SCM | LCM. One value, or several separated by commas (any of). */
+                course?: string | null;
+                /** @description Season by championship year: '2027' is 2026-27. One value, or several separated by commas (any of). */
+                season?: string | null;
+                /** @description true: only the athlete's best swim (or highest dive score) in each event. */
+                best_only?: boolean;
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: never;
+            path: {
+                player_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SwimTimesPage"];
+                };
+            };
+            /** @description Invalid request — unknown sport/gender/division scope, bad cursor, or bad parameter. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Missing, malformed, or revoked API key. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description No resource with that id in the requested scope. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The request failed validation; `error.fields` names each field. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
+                };
+            };
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -7240,7 +12303,7 @@ export interface operations {
                 sport: string;
                 /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
                 division: string;
-                /** @description 'men' or 'women'. Defaults to 'men' for a sport with both (soccer, basketball, volleyball, lacrosse, track-and-field), so pass 'women' for the women's side; ignored for single-gender sports. */
+                /** @description 'men' or 'women'. Defaults to 'men' for a sport with both (soccer, basketball, volleyball, lacrosse, track-and-field, ice-hockey, tennis, swimming-and-diving, golf), so pass 'women' for the women's side; ignored for single-gender sports. */
                 gender?: string | null;
                 /** @description NCAA record status: INC (active), REACT, WTH (withdrawn), SIG (signed), MAT (matriculated). One value, or several separated by commas (any of). */
                 status?: string | null;
@@ -7341,8 +12404,176 @@ export interface operations {
                     "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
-            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    list_portal_supply: {
+        parameters: {
+            query?: {
+                /** @description Full sport path, e.g. 'womens-soccer'. One value, or several separated by commas (any of). */
+                sport_path?: string | null;
+                /** @description Sport, e.g. 'soccer': both genders unless `gender` is given. One value, or several separated by commas (any of). */
+                sport?: string | null;
+                /** @description 'men' or 'women': that side of `sport`, or of every sport. */
+                gender?: string | null;
+                /** @description Division of the program, e.g. 'D2' or 'D1,D2'. 'D1' includes football's FBS and FCS. */
+                division?: string | null;
+                /** @description Conference of the program. Conference, by its full name or its abbreviation: 'University Athletic Association (UAA)', 'University Athletic Association' and 'UAA' are the same conference. GET /v1/conferences lists them. One value, or several separated by commas (any of). */
+                conference?: string | null;
+                /** @description Exclude these values (comma-separated). Rows with no value for the field are left out too. */
+                conference_not?: string | null;
+                /** @description Program team ids. One value, or several separated by commas (any of). */
+                team_id?: string | null;
+                /** @description Position group, e.g. 'GK', 'QB' or 'sprint' (any case); 'none' for the rows with no position group. One value, or several separated by commas (any of). */
+                lane?: string | null;
+                /** @description Also return rows whose counts are all zero: programs the portal listed someone from earlier and no longer does. */
+                include_zero?: boolean;
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PortalSupplyPage"];
+                };
+            };
+            /** @description Missing, malformed, or revoked API key. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The key's plan does not include portal supply (Developer Ultra and up). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The request failed validation; `error.fields` names each field. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
+                };
+            };
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The first snapshot has not been taken yet. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    list_portal_supply_changes: {
+        parameters: {
+            query?: {
+                /** @description ISO datetime; only changes dated at/after it (`changed_at`). Omit it to read the whole log. */
+                since?: string | null;
+                /** @description Full sport path, e.g. 'womens-soccer'. One value, or several separated by commas (any of). */
+                sport_path?: string | null;
+                /** @description Sport, e.g. 'soccer': both genders unless `gender` is given. One value, or several separated by commas (any of). */
+                sport?: string | null;
+                /** @description 'men' or 'women': that side of `sport`, or of every sport. */
+                gender?: string | null;
+                /** @description Division of the program, e.g. 'D2' or 'D1,D2'. */
+                division?: string | null;
+                /** @description Program team ids. One value, or several separated by commas (any of). */
+                team_id?: string | null;
+                /** @description Position group; 'none' for the rows with no position group. One value, or several separated by commas (any of). */
+                lane?: string | null;
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PortalSupplyChangePage"];
+                };
+            };
+            /** @description Missing, malformed, or revoked API key. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The key's plan does not include portal supply (Developer Ultra and up). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The request failed validation; `error.fields` names each field. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
+                };
+            };
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The first snapshot has not been taken yet. */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -7419,7 +12650,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
-            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -7495,7 +12726,205 @@ export interface operations {
                     "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
-            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    list_ita_rankings: {
+        parameters: {
+            query: {
+                /** @description Sport scope: 'tennis'. */
+                sport: string;
+                /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
+                division: string;
+                /** @description 'men' or 'women'. Defaults to 'men', so pass 'women' for the women's side. */
+                gender?: string | null;
+                /** @description 'singles' (players) or 'doubles' (pairs). */
+                type?: string;
+                /** @description Season by championship year: '2027' is 2026-27. Omit it for the latest. */
+                season?: string | null;
+                /** @description ISO date of a release in the season. Omit it for the latest release. */
+                release_date?: string | null;
+                /** @description Only entries of these teams. One value, or several separated by commas (any of). */
+                team_id?: string | null;
+                /** @description Only entries including these players. One value, or several separated by commas (any of). */
+                player_id?: string | null;
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TennisRankingPage"];
+                };
+            };
+            /** @description Invalid request — unknown sport/gender/division scope, bad cursor, or bad parameter. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Missing, malformed, or revoked API key. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The request failed validation; `error.fields` names each field. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
+                };
+            };
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    list_regions: {
+        parameters: {
+            query: {
+                /** @description Sport scope, e.g. 'soccer'. */
+                sport: string;
+                /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
+                division: string;
+                /** @description 'men' or 'women'. Defaults to 'men' for a sport with both (soccer, basketball, volleyball, lacrosse, track-and-field, ice-hockey, tennis, swimming-and-diving, golf), so pass 'women' for the women's side; ignored for single-gender sports. */
+                gender?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StringListResponse"];
+                };
+            };
+            /** @description Invalid request — unknown sport/gender/division scope, bad cursor, or bad parameter. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Missing, malformed, or revoked API key. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The request failed validation; `error.fields` names each field. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
+                };
+            };
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    create_sandbox_event: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SandboxEventRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SandboxEventResponse"];
+                };
+            };
+            /** @description Invalid request — unknown sport/gender/division scope, bad cursor, or bad parameter. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Missing, malformed, or revoked API key. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The request failed validation; `error.fields` names each field. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
+                };
+            };
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -7527,6 +12956,16 @@ export interface operations {
                 city?: string | null;
                 /** @description 'Public', 'Private nonprofit' or 'Private for-profit'. One value, or several separated by commas (any of). */
                 control?: string | null;
+                /** @description Religious affiliation as `profile.religious_affiliation` spells it, e.g. 'Roman Catholic' (case-insensitive). One value, or several separated by commas (any of). */
+                religious_affiliation?: string | null;
+                /** @description Admission rate at least this, 0-1. Leaves out schools with no admission rate (open admission or not reported). */
+                admission_rate_min?: number | null;
+                /** @description Admission rate at most this, 0-1 (0.2 = admits at most 20% of applicants). Leaves out schools with no admission rate. */
+                admission_rate_max?: number | null;
+                /** @description Undergraduate enrollment at least this. Leaves out schools with no enrollment held. */
+                undergrad_enrollment_min?: number | null;
+                /** @description Undergraduate enrollment at most this. Leaves out schools with no enrollment held. */
+                undergrad_enrollment_max?: number | null;
                 /** @description Only schools that field this sport, e.g. 'soccer'. One value, or several separated by commas (any of). */
                 sport?: string | null;
                 /** @description 'men' or 'women': the side of `sport` (or of any sport) the school must field. */
@@ -7535,6 +12974,8 @@ export interface operations {
                 division?: string | null;
                 /** @description Only schools with a program in this conference. Conference, by its full name or its abbreviation: 'University Athletic Association (UAA)', 'University Athletic Association' and 'UAA' are the same conference. GET /v1/conferences lists them. One value, or several separated by commas (any of). */
                 conference?: string | null;
+                /** @description Only schools with a program in this region. An association's region, e.g. 'NJCAA Region IV'; 'Region IV', 'Region 4' and 'NJCAA Region 4' name the same one. Only NJCAA and NCCAA teams have a region. GET /v1/regions lists them. One value, or several separated by commas (any of). */
+                region?: string | null;
                 limit?: number;
                 cursor?: string | null;
             };
@@ -7571,7 +13012,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
-            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -7629,7 +13070,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
-            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -7667,7 +13108,239 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    list_swim_meets: {
+        parameters: {
+            query: {
+                /** @description Sport scope: 'swimming-and-diving'. */
+                sport: string;
+                /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
+                division: string;
+                /** @description 'men' or 'women'. Defaults to 'men', so pass 'women' for the women's side. */
+                gender?: string | null;
+                /** @description Season by championship year: '2027' is 2026-27. One value, or several separated by commas (any of). */
+                season?: string | null;
+                /** @description dual | tri | invitational | conference_championship | ncaa | naia | njcaa | time_trial | unknown. One value, or several separated by commas (any of). */
+                meet_type?: string | null;
+                /** @description SCY | SCM | LCM | mixed. One value, or several separated by commas (any of). */
+                course?: string | null;
+                /** @description Only meets these teams swam, relayed or scored in. One value, or several separated by commas (any of). */
+                team_id?: string | null;
+                /** @description ISO date; only meets starting on/after it. */
+                start_date_min?: string | null;
+                /** @description ISO date; only meets starting on/before it. */
+                start_date_max?: string | null;
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SwimMeetPage"];
+                };
+            };
+            /** @description Invalid request — unknown sport/gender/division scope, bad cursor, or bad parameter. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Missing, malformed, or revoked API key. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The request failed validation; `error.fields` names each field. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
+                };
+            };
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    get_swim_meet: {
+        parameters: {
+            query: {
+                /** @description Sport scope: 'swimming-and-diving'. */
+                sport: string;
+                /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
+                division: string;
+                /** @description 'men' or 'women'. Defaults to 'men', so pass 'women' for the women's side. */
+                gender?: string | null;
+            };
+            header?: never;
+            path: {
+                meet_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SwimMeetDetail"];
+                };
+            };
+            /** @description Invalid request — unknown sport/gender/division scope, bad cursor, or bad parameter. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Missing, malformed, or revoked API key. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description No resource with that id in the requested scope. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The request failed validation; `error.fields` names each field. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
+                };
+            };
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    list_swim_meet_results: {
+        parameters: {
+            query: {
+                /** @description Sport scope: 'swimming-and-diving'. */
+                sport: string;
+                /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
+                division: string;
+                /** @description 'men' or 'women'. Defaults to 'men', so pass 'women' for the women's side. */
+                gender?: string | null;
+                /** @description Event code(s), e.g. 'SCY-100-FR' or 'DIVE-3M-11'; the meet's events are in GET /v1/swim/meets/{meet_id}. One value, or several separated by commas (any of). */
+                event?: string | null;
+                /** @description prelim | final | timed_final | swim_off | time_trial. One value, or several separated by commas (any of). */
+                round?: string | null;
+                /** @description Results per page (not events). */
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: never;
+            path: {
+                meet_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SwimMeetResultsPage"];
+                };
+            };
+            /** @description Invalid request — unknown sport/gender/division scope, bad cursor, or bad parameter. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Missing, malformed, or revoked API key. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description No resource with that id in the requested scope. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The request failed validation; `error.fields` names each field. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
+                };
+            };
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -7685,7 +13358,7 @@ export interface operations {
                 sport: string;
                 /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
                 division: string;
-                /** @description 'men' or 'women'. Defaults to 'men' for a sport with both (soccer, basketball, volleyball, lacrosse, track-and-field), so pass 'women' for the women's side; ignored for single-gender sports. */
+                /** @description 'men' or 'women'. Defaults to 'men' for a sport with both (soccer, basketball, volleyball, lacrosse, track-and-field, ice-hockey, tennis, swimming-and-diving, golf), so pass 'women' for the women's side; ignored for single-gender sports. */
                 gender?: string | null;
                 /** @description Case-insensitive team name contains. */
                 q?: string | null;
@@ -7701,6 +13374,10 @@ export interface operations {
                 conference?: string | null;
                 /** @description Exclude these values (comma-separated). Rows with no value for the field are left out too. */
                 conference_not?: string | null;
+                /** @description An association's region, e.g. 'NJCAA Region IV'; 'Region IV', 'Region 4' and 'NJCAA Region 4' name the same one. Only NJCAA and NCCAA teams have a region. GET /v1/regions lists them. One value, or several separated by commas (any of). */
+                region?: string | null;
+                /** @description Exclude these values (comma-separated). Rows with no value for the field are left out too. */
+                region_not?: string | null;
                 /** @description Two-letter US state code of the school. One value, or several separated by commas (any of). */
                 state?: string | null;
                 /** @description Exclude these values (comma-separated). Rows with no value for the field are left out too. */
@@ -7711,6 +13388,10 @@ export interface operations {
                 control?: string | null;
                 /** @description 'active' for programs that currently compete, 'discontinued' for programs that stopped, 'all' (default) for both. Each team carries its own `status`. */
                 status?: string;
+                /** @description ISO 8601 timestamp; only teams whose roster `freshness.changed_at` is at/after it. Pass the time of your last sync to re-read only the rosters that changed. Teams with no `changed_at` are left out. */
+                roster_changed_since?: string | null;
+                /** @description ISO 8601 timestamp; only teams whose coaching staff `freshness.changed_at` is at/after it. Teams with no `changed_at` are left out. */
+                coaches_changed_since?: string | null;
                 limit?: number;
                 cursor?: string | null;
             };
@@ -7756,7 +13437,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
-            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -7772,9 +13453,9 @@ export interface operations {
             query: {
                 /** @description Sport scope, e.g. 'soccer'. */
                 sport: string;
-                /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
-                division: string;
-                /** @description 'men' or 'women'. Defaults to 'men' for a sport with both (soccer, basketball, volleyball, lacrosse, track-and-field), so pass 'women' for the women's side; ignored for single-gender sports. */
+                /** @description Optional. Omit it to read the team in its own current division. Given, it is a division scope like the list endpoints take, and a team outside it is a 404 whose error names the division the team is in (error.division). */
+                division?: string | null;
+                /** @description 'men' or 'women'. Defaults to 'men' for a sport with both (soccer, basketball, volleyball, lacrosse, track-and-field, ice-hockey, tennis, swimming-and-diving, golf), so pass 'women' for the women's side; ignored for single-gender sports. */
                 gender?: string | null;
             };
             header?: never;
@@ -7830,7 +13511,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
-            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -7846,9 +13527,9 @@ export interface operations {
             query: {
                 /** @description Sport scope, e.g. 'soccer'. */
                 sport: string;
-                /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
-                division: string;
-                /** @description 'men' or 'women'. Defaults to 'men' for a sport with both (soccer, basketball, volleyball, lacrosse, track-and-field), so pass 'women' for the women's side; ignored for single-gender sports. */
+                /** @description Optional. Omit it to read the team in its own current division. Given, it is a division scope like the list endpoints take, and a team outside it is a 404 whose error names the division the team is in (error.division). */
+                division?: string | null;
+                /** @description 'men' or 'women'. Defaults to 'men' for a sport with both (soccer, basketball, volleyball, lacrosse, track-and-field, ice-hockey, tennis, swimming-and-diving, golf), so pass 'women' for the women's side; ignored for single-gender sports. */
                 gender?: string | null;
                 /** @description Season to return (championship year, e.g. '2025'); defaults to the latest held. */
                 season?: string | null;
@@ -7914,7 +13595,163 @@ export interface operations {
                     "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
-            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    get_team_postseason: {
+        parameters: {
+            query: {
+                /** @description Sport scope, e.g. 'soccer'. */
+                sport: string;
+                /** @description Optional. Omit it to read the team in its own current division. Given, it is a division scope like the list endpoints take, and a team outside it is a 404 whose error names the division the team is in (error.division). */
+                division?: string | null;
+                /** @description 'men' or 'women'. Defaults to 'men' for a sport with both (soccer, basketball, volleyball, lacrosse, track-and-field, ice-hockey, tennis, swimming-and-diving, golf), so pass 'women' for the women's side; ignored for single-gender sports. */
+                gender?: string | null;
+                /** @description Team season, e.g. '2025'. One value, or several separated by commas (any of). */
+                season?: string | null;
+                /** @description Kind of entry: 'national_tournament', 'bowl_game', 'conference_regular_season' or 'conference_tournament'. One value, or several separated by commas (any of). */
+                kind?: string | null;
+            };
+            header?: never;
+            path: {
+                team_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamPostseasonResponse"];
+                };
+            };
+            /** @description Invalid request — unknown sport/gender/division scope, bad cursor, or bad parameter. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Missing, malformed, or revoked API key. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description No resource with that id in the requested scope. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The request failed validation; `error.fields` names each field. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
+                };
+            };
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    get_team_rankings: {
+        parameters: {
+            query: {
+                /** @description Sport scope, e.g. 'volleyball'. */
+                sport: string;
+                /** @description Optional. Omit it to read the team in its own current division. Given, it is a division scope like the list endpoints take, and a team outside it is a 404 whose error names the division the team is in (error.division). */
+                division?: string | null;
+                /** @description 'men' or 'women'. Defaults to 'men' for a sport with both (soccer, basketball, volleyball, lacrosse, track-and-field, ice-hockey, tennis, swimming-and-diving, golf), so pass 'women' for the women's side; ignored for single-gender sports. */
+                gender?: string | null;
+                /** @description Team season, e.g. '2025'. One value, or several separated by commas (any of). */
+                season?: string | null;
+                /** @description Ranking system, e.g. 'RPI', 'Coaches Poll', 'ITA', 'Clippd' or 'USCHO Poll'. One value, or several separated by commas (any of). */
+                ranking_system?: string | null;
+            };
+            header?: never;
+            path: {
+                team_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamRankingsResponse"];
+                };
+            };
+            /** @description Invalid request — unknown sport/gender/division scope, bad cursor, or bad parameter. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Missing, malformed, or revoked API key. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description No resource with that id in the requested scope. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The request failed validation; `error.fields` names each field. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
+                };
+            };
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -7930,9 +13767,9 @@ export interface operations {
             query: {
                 /** @description Sport scope, e.g. 'soccer'. */
                 sport: string;
-                /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
-                division: string;
-                /** @description 'men' or 'women'. Defaults to 'men' for a sport with both (soccer, basketball, volleyball, lacrosse, track-and-field), so pass 'women' for the women's side; ignored for single-gender sports. */
+                /** @description Optional. Omit it to read the team in its own current division. Given, it is a division scope like the list endpoints take, and a team outside it is a 404 whose error names the division the team is in (error.division). */
+                division?: string | null;
+                /** @description 'men' or 'women'. Defaults to 'men' for a sport with both (soccer, basketball, volleyball, lacrosse, track-and-field, ice-hockey, tennis, swimming-and-diving, golf), so pass 'women' for the women's side; ignored for single-gender sports. */
                 gender?: string | null;
                 /** @description Roster season (4-digit year, e.g. '2026'); defaults to the latest held. */
                 season?: string | null;
@@ -7946,6 +13783,16 @@ export interface operations {
                 class_year?: string | null;
                 /** @description Exclude these values (comma-separated). Rows with no value for the field are left out too. */
                 class_year_not?: string | null;
+                /** @description The season's class reading: 'FR', 'SO', 'JR', 'SR' or 'GR' (class_standing.level). One value, or several separated by commas (any of). */
+                class_level?: string | null;
+                /** @description Exclude these values (comma-separated). Rows with no value for the field are left out too. */
+                class_level_not?: string | null;
+                /** @description true: the season's class carries a published redshirt marker (class_standing.redshirt); false: a readable class without one. */
+                class_redshirt?: boolean | null;
+                /** @description At least this many seasons of eligibility left after the reading's season, by the lower end of its range (eligibility.seasons_remaining.min). */
+                seasons_remaining_min?: number | null;
+                /** @description 'high', 'medium' or 'low' (eligibility.confidence). One value, or several separated by commas (any of). */
+                eligibility_confidence?: string | null;
                 /** @description Jersey number as published, e.g. '7' or '00'. One value, or several separated by commas (any of). */
                 jersey_number?: string | null;
                 /** @description Home state or province, as a name or a postal code ('Ohio' or 'OH'). One value, or several separated by commas (any of). */
@@ -8012,7 +13859,86 @@ export interface operations {
                     "application/json": components["schemas"]["ApiValidationErrorResponse"];
                 };
             };
-            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers. */
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    list_tennis_matches: {
+        parameters: {
+            query: {
+                /** @description Sport scope: 'tennis'. */
+                sport: string;
+                /** @description Comma-separated sport-valid division scope, e.g. 'D1,NAIA,NJCAA-D1'. */
+                division: string;
+                /** @description 'men' or 'women'. Defaults to 'men', so pass 'women' for the women's side. */
+                gender?: string | null;
+                /** @description Only matches these players played in (either side, singles or doubles). One value, or several separated by commas (any of). */
+                player_id?: string | null;
+                /** @description Only matches these teams' players played in. One value, or several separated by commas (any of). */
+                team_id?: string | null;
+                /** @description Season by championship year: '2027' is 2026-27. One value, or several separated by commas (any of). */
+                season?: string | null;
+                /** @description singles | doubles. One value, or several separated by commas (any of). */
+                match_type?: string | null;
+                /** @description completed | retired | walkover | default | unfinished | cancelled. One value, or several separated by commas (any of). */
+                status?: string | null;
+                /** @description ISO date; only matches on/after it. */
+                date_min?: string | null;
+                /** @description ISO date; only matches on/before it. */
+                date_max?: string | null;
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TennisMatchPage"];
+                };
+            };
+            /** @description Invalid request — unknown sport/gender/division scope, bad cursor, or bad parameter. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Missing, malformed, or revoked API key. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The request failed validation; `error.fields` names each field. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
+                };
+            };
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
             429: {
                 headers: {
                     [name: string]: unknown;

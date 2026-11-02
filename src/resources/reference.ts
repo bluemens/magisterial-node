@@ -2,6 +2,7 @@
 
 import type { Magisterial } from "../client.js";
 import type {
+  EligibilityRulesResponse,
   FilterCatalogResponse,
   SportListResponse,
   StringListResponse,
@@ -27,6 +28,21 @@ export class Reference {
     gender?: string;
   }): Promise<StringListResponse> {
     return this.client.get("/v1/conferences", params);
+  }
+
+  /** Regions present in one sport/division scope (e.g. NJCAA regions). */
+  regions(params: {
+    sport: string;
+    division: string;
+    gender?: string;
+  }): Promise<StringListResponse> {
+    return this.client.get("/v1/regions", params);
+  }
+
+  /** The eligibility rules behind roster `eligibility` readings, by
+   * association. */
+  eligibilityRules(): Promise<EligibilityRulesResponse> {
+    return this.client.get("/v1/eligibility/rules");
   }
 
   /** Data-coverage matrix: per sport/division/season counts. */

@@ -23,15 +23,42 @@ export {
 export { VERSION } from "./version.js";
 export * as types from "./types.js";
 
-export type { PlayerSearchParams, ScopeParams } from "./resources/players.js";
-export type { TeamListParams, RosterParams } from "./resources/teams.js";
+export type { PlayerSearchParams, ScopeParams, SwimTimesParams } from "./resources/players.js";
+export type {
+  TeamListParams,
+  RosterParams,
+  TeamPostseasonParams,
+  TeamRankingsParams,
+  TeamSeasonScopeParams,
+} from "./resources/teams.js";
 export type { PortalListParams } from "./resources/portal.js";
+export type {
+  PortalSupplyListParams,
+  PortalSupplyChangesParams,
+} from "./resources/portal_supply.js";
 export type { QueryCreateParams, PollOptions } from "./resources/query.js";
 export type { AlertCreateParams } from "./resources/alerts.js";
 export type { GameListParams } from "./resources/games.js";
-export type { MovementListParams } from "./resources/movements.js";
+export type { MovementListParams, MovementChangesParams } from "./resources/movements.js";
 export type { ExportCreateParams, ExportPollOptions } from "./resources/exports.js";
 export type { SchoolListParams } from "./resources/schools.js";
+export type {
+  CommitmentListParams,
+  CommitmentChangesParams,
+} from "./resources/commitments.js";
+export type {
+  GolfTournamentListParams,
+  GolfRatingListParams,
+} from "./resources/golf.js";
+export type {
+  SwimMeetListParams,
+  SwimMeetResultsParams,
+} from "./resources/swim.js";
+export type {
+  TennisMatchListParams,
+  ItaRankingListParams,
+} from "./resources/tennis.js";
+export type { SandboxEventParams } from "./resources/sandbox.js";
 export type {
   ManagedAthleteCreateParams,
   ManagedAthleteListParams,

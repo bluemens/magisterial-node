@@ -17,6 +17,16 @@ export type PlayerSeasonStats = Schemas["PlayerSeasonStats"];
 export type TeamRanking = Schemas["TeamRanking"];
 export type TrackBest = Schemas["TrackBest"];
 export type TrackSummary = Schemas["TrackSummary"];
+export type SwimSummary = Schemas["SwimSummary"];
+
+// Class standing and eligibility, carried on roster rows and player profiles.
+export type ClassStanding = Schemas["ClassStanding"];
+export type Eligibility = Schemas["Eligibility"];
+export type SeasonsRemaining = Schemas["SeasonsRemaining"];
+export type FinalSeason = Schemas["FinalSeason"];
+export type NumberRange = Schemas["NumberRange"];
+export type EligibilityRule = Schemas["EligibilityRule"];
+export type EligibilityRulesResponse = Schemas["EligibilityRulesResponse"];
 
 // One stat schema per sport: the stat fields GET /v1/filters/catalog lists
 // for it. Every field is present on every row; null means the source did not
@@ -27,6 +37,10 @@ export type BaseballSoftballStats = Schemas["BaseballSoftballStats"];
 export type VolleyballStats = Schemas["VolleyballStats"];
 export type FootballStats = Schemas["FootballStats"];
 export type LacrosseStats = Schemas["LacrosseStats"];
+export type IceHockeyStats = Schemas["IceHockeyStats"];
+export type FieldHockeyStats = Schemas["FieldHockeyStats"];
+export type TennisStats = Schemas["TennisStats"];
+export type GolfStats = Schemas["GolfStats"];
 
 /** Sport (as passed in a request) -> the shape of its `stats` objects. */
 export interface StatsBySport {
@@ -37,10 +51,15 @@ export interface StatsBySport {
   volleyball: VolleyballStats;
   football: FootballStats;
   lacrosse: LacrosseStats;
+  "ice-hockey": IceHockeyStats;
+  "field-hockey": FieldHockeyStats;
+  tennis: TennisStats;
+  golf: GolfStats;
 }
 
 /** `stats` for a sport named as a literal ("soccer"); an untyped record for
- * a sport only known at run time, and for track and field. */
+ * a sport only known at run time, and for track and field and swimming and
+ * diving (no season-stat table). */
 export type StatsFor<S extends string> = S extends keyof StatsBySport
   ? StatsBySport[S]
   : { [key: string]: unknown };
@@ -73,6 +92,14 @@ export type TeamDetail = Schemas["TeamDetail"];
 export type TeamPage = Schemas["TeamPage"];
 export type RosterEntry = Schemas["RosterEntry"];
 export type RosterPage = Schemas["RosterPage"];
+export type TeamPostseasonResponse = Schemas["TeamPostseasonResponse"];
+export type TeamPostseasonEntry = Schemas["TeamPostseasonEntry"];
+export type TeamPostseasonCoverage = Schemas["TeamPostseasonCoverage"];
+export type TeamRankingsResponse = Schemas["TeamRankingsResponse"];
+export type TeamRankingEntry = Schemas["TeamRankingEntry"];
+export type TeamSeasonDocument = Schemas["TeamSeasonDocument"];
+export type SeasonSchedule = Schemas["SeasonSchedule"];
+export type RecordCounts = Schemas["RecordCounts"];
 
 export type TransferRecord = Schemas["TransferRecord"];
 export type TransferListResponse = Schemas["TransferListResponse"];
@@ -81,6 +108,18 @@ export type MovementSubject = Schemas["MovementSubject"];
 export type MovementCounterpart = Schemas["MovementCounterpart"];
 export type MovementEntry = Schemas["MovementEntry"];
 export type MovementPage = Schemas["MovementPage"];
+export type MovementChange = Schemas["MovementChange"];
+export type MovementChangePage = Schemas["MovementChangePage"];
+
+export type CommitmentEntry = Schemas["CommitmentEntry"];
+export type CommitmentPage = Schemas["CommitmentPage"];
+export type CommitmentAthlete = Schemas["CommitmentAthlete"];
+export type CommitmentSchool = Schemas["CommitmentSchool"];
+export type CommitmentSourceRef = Schemas["CommitmentSourceRef"];
+export type CommitmentChange = Schemas["CommitmentChange"];
+export type CommitmentChangePage = Schemas["CommitmentChangePage"];
+export type CommitmentSourceInfo = Schemas["CommitmentSourceInfo"];
+export type CommitmentSourceList = Schemas["CommitmentSourceList"];
 
 export type GameSummary = Schemas["GameSummary"];
 export type GameFixture = Schemas["GameFixture"];
@@ -90,9 +129,54 @@ export type TeamCoachEntry = Schemas["TeamCoachEntry"];
 export type TeamCoachesResponse = Schemas["TeamCoachesResponse"];
 
 export type SchoolRef = Schemas["SchoolRef"];
+/** A school row in a list: SchoolRef plus its `profile`. */
+export type SchoolSummary = Schemas["SchoolSummary"];
+export type SchoolProfile = Schemas["SchoolProfile"];
+export type SchoolMajor = Schemas["SchoolMajor"];
 export type SchoolTeamRef = Schemas["SchoolTeamRef"];
 export type SchoolDetail = Schemas["SchoolDetail"];
 export type SchoolPage = Schemas["SchoolPage"];
+
+// Golf
+export type GolfTournamentSummary = Schemas["GolfTournamentSummary"];
+export type GolfTournamentPage = Schemas["GolfTournamentPage"];
+export type GolfTournamentDetail = Schemas["GolfTournamentDetail"];
+export type GolfTeamResult = Schemas["GolfTeamResult"];
+export type GolfPlayerResult = Schemas["GolfPlayerResult"];
+export type GolfRound = Schemas["GolfRound"];
+export type GolfRatingEntry = Schemas["GolfRatingEntry"];
+export type GolfRatingPage = Schemas["GolfRatingPage"];
+
+// Swimming & diving
+export type SwimTime = Schemas["SwimTime"];
+export type SwimTimesPage = Schemas["SwimTimesPage"];
+export type SwimMeetSummary = Schemas["SwimMeetSummary"];
+export type SwimMeetPage = Schemas["SwimMeetPage"];
+export type SwimMeetDetail = Schemas["SwimMeetDetail"];
+export type SwimMeetEvent = Schemas["SwimMeetEvent"];
+export type SwimEvent = Schemas["SwimEvent"];
+export type SwimEventResults = Schemas["SwimEventResults"];
+export type SwimMeetResultsPage = Schemas["SwimMeetResultsPage"];
+export type SwimResult = Schemas["SwimResult"];
+export type SwimRelayLeg = Schemas["SwimRelayLeg"];
+export type SwimSplit = Schemas["SwimSplit"];
+export type SwimTeamScore = Schemas["SwimTeamScore"];
+export type SwimTopEvent = Schemas["SwimTopEvent"];
+
+// Tennis
+export type TennisMatch = Schemas["TennisMatch"];
+export type TennisMatchPage = Schemas["TennisMatchPage"];
+export type TennisMatchSide = Schemas["TennisMatchSide"];
+export type TennisMatchPlayer = Schemas["TennisMatchPlayer"];
+export type TennisMatchSet = Schemas["TennisMatchSet"];
+export type TennisMatchEvent = Schemas["TennisMatchEvent"];
+export type TennisRankingEntry = Schemas["TennisRankingEntry"];
+export type TennisRankingPage = Schemas["TennisRankingPage"];
+
+// Sandbox
+export type SandboxEventRequest = Schemas["SandboxEventRequest"];
+export type SandboxEventResponse = Schemas["SandboxEventResponse"];
+export type SandboxEventAlert = Schemas["SandboxEventAlert"];
 
 export type FreshnessInfo = Schemas["FreshnessInfo"];
 export type TeamFreshness = Schemas["TeamFreshness"];
@@ -111,6 +195,10 @@ export type ExportListPage = Schemas["ExportListPage"];
 
 export type PortalEntry = Schemas["PortalEntry"];
 export type PortalPage = Schemas["PortalPage"];
+export type PortalSupplyEntry = Schemas["PortalSupplyEntry"];
+export type PortalSupplyPage = Schemas["PortalSupplyPage"];
+export type PortalSupplyChange = Schemas["PortalSupplyChange"];
+export type PortalSupplyChangePage = Schemas["PortalSupplyChangePage"];
 
 export type QueryCreateResponse = Schemas["QueryCreateResponse"];
 export type QueryRunStatus = Schemas["QueryRunStatus"];

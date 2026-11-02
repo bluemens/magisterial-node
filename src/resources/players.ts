@@ -7,6 +7,8 @@ import type {
   PlayerSearchPage,
   PlayerSeasonsResponseOf,
   PlayerSummaryOf,
+  SwimTime,
+  SwimTimesPage,
 } from "../types.js";
 
 export interface PlayerSearchParams<S extends string = string> {
@@ -30,6 +32,19 @@ export interface ScopeParams<S extends string = string> {
   sport: S;
   division: string;
   gender?: string;
+}
+
+export interface SwimTimesParams extends ScopeParams {
+  /** Event code(s), e.g. 'SCY-100-FR'. Comma-separated for any of. */
+  event?: string;
+  /** SCY | SCM | LCM. Comma-separated for any of. */
+  course?: string;
+  /** Season by championship year: '2027' is 2026-27. */
+  season?: string;
+  /** true: only the athlete's best swim (or highest dive score) per event. */
+  best_only?: boolean;
+  limit?: number;
+  cursor?: string;
 }
 
 export class Players {
@@ -70,5 +85,18 @@ export class Players {
     params: ScopeParams<S>,
   ): Promise<PlayerSeasonsResponseOf<S>> {
     return this.client.get(`/v1/players/${playerId}/seasons`, { ...params });
+  }
+
+  /** A swimmer's or diver's times (`sport: "swimming-and-diving"`). */
+  async times(playerId: number, params: SwimTimesParams): Promise<Page<SwimTime>> {
+    const fetch = async (query: SwimTimesParams): Promise<Page<SwimTime>> => {
+      const raw = await this.client.request<SwimTimesPage>(
+        "GET",
+        `/v1/players/${playerId}/times`,
+        { query: { ...query } },
+      );
+      return pageFromRaw(raw, (cursor) => fetch({ ...query, cursor }));
+    };
+    return fetch(params);
   }
 }

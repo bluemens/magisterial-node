@@ -10,16 +10,22 @@ import {
 } from "./error.js";
 import { Alerts } from "./resources/alerts.js";
 import { Athletes } from "./resources/athletes.js";
+import { Commitments } from "./resources/commitments.js";
 import { Exports } from "./resources/exports.js";
 import { Games } from "./resources/games.js";
+import { Golf } from "./resources/golf.js";
 import { Movements } from "./resources/movements.js";
 import { Persons } from "./resources/persons.js";
 import { Players } from "./resources/players.js";
 import { Portal } from "./resources/portal.js";
+import { PortalSupply } from "./resources/portal_supply.js";
 import { Query } from "./resources/query.js";
 import { Reference } from "./resources/reference.js";
+import { Sandbox } from "./resources/sandbox.js";
 import { Schools } from "./resources/schools.js";
+import { Swim } from "./resources/swim.js";
 import { Teams } from "./resources/teams.js";
+import { Tennis } from "./resources/tennis.js";
 import { VERSION } from "./version.js";
 
 export interface ClientOptions {
@@ -63,11 +69,17 @@ export class Magisterial {
   readonly movements: Movements;
   readonly games: Games;
   readonly portal: Portal;
+  readonly portalSupply: PortalSupply;
   readonly query: Query;
   readonly alerts: Alerts;
   readonly exports: Exports;
   readonly schools: Schools;
   readonly athletes: Athletes;
+  readonly commitments: Commitments;
+  readonly golf: Golf;
+  readonly swim: Swim;
+  readonly tennis: Tennis;
+  readonly sandbox: Sandbox;
 
   #apiKey: string;
   #fetch: typeof globalThis.fetch;
@@ -97,11 +109,17 @@ export class Magisterial {
     this.movements = new Movements(this);
     this.games = new Games(this);
     this.portal = new Portal(this);
+    this.portalSupply = new PortalSupply(this);
     this.query = new Query(this);
     this.alerts = new Alerts(this);
     this.exports = new Exports(this);
     this.schools = new Schools(this);
     this.athletes = new Athletes(this);
+    this.commitments = new Commitments(this);
+    this.golf = new Golf(this);
+    this.swim = new Swim(this);
+    this.tennis = new Tennis(this);
+    this.sandbox = new Sandbox(this);
   }
 
   /** Perform a request and return decoded JSON, retrying 429/5xx and network

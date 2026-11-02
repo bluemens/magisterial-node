@@ -8,6 +8,8 @@ export class Page<T> implements AsyncIterable<T> {
   nextCursor: string | null;
   hasMore: boolean;
   season: string | null;
+  /** Set on swim meet results pages: the meet the results belong to. */
+  meetId: number | null;
   #fetchNext: (cursor: string) => Promise<Page<T>>;
 
   constructor(
@@ -16,11 +18,13 @@ export class Page<T> implements AsyncIterable<T> {
     hasMore: boolean,
     fetchNext: (cursor: string) => Promise<Page<T>>,
     season: string | null = null,
+    meetId: number | null = null,
   ) {
     this.data = data;
     this.nextCursor = nextCursor;
     this.hasMore = hasMore;
     this.season = season;
+    this.meetId = meetId;
     this.#fetchNext = fetchNext;
   }
 
@@ -44,6 +48,7 @@ export interface RawPage<T> {
   next_cursor?: string | null;
   has_more?: boolean;
   season?: string | null;
+  meet_id?: number | null;
 }
 
 export function pageFromRaw<T>(
@@ -56,5 +61,6 @@ export function pageFromRaw<T>(
     raw.has_more ?? false,
     fetchNext,
     raw.season ?? null,
+    raw.meet_id ?? null,
   );
 }

@@ -560,3 +560,548 @@ describe("query polling", () => {
     }
   });
 });
+
+describe("0.7.0 endpoints", () => {
+  const emptyPage = { data: [], next_cursor: null, has_more: false };
+
+  /** A client whose every response is `body`; records the last request. */
+  function recording(body: unknown, status = 200) {
+    const seen: { method: string; url: URL } = { method: "", url: new URL("http://x") };
+    const { client, fetchStub } = makeClient((url, init) => {
+      seen.method = init.method ?? "";
+      seen.url = new URL(url);
+      return json(status, body);
+    });
+    return { client, seen, fetchStub };
+  }
+
+  it("lists commitments with filters and paginates", async () => {
+    const calls: URL[] = [];
+    const { client } = makeClient((url, init) => {
+      expect(init.method).toBe("GET");
+      const u = new URL(url);
+      calls.push(u);
+      return json(200, {
+        data: [{ id: calls.length, status: "committed" }],
+        next_cursor: calls.length === 1 ? "c2" : null,
+        has_more: calls.length === 1,
+      });
+    });
+    const page = await client.commitments.list({
+      sport_path: "womens-volleyball",
+      division: "D2,D3",
+      grad_year: "2027",
+      status: "committed",
+      ipeds_unitid: 164465,
+      conference_not: "SEC",
+      committed_since: "2026-09-01",
+      sort: "committed_on",
+      limit: 1,
+    });
+    expect(calls[0].pathname).toBe("/v1/commitments");
+    const q = Object.fromEntries(calls[0].searchParams);
+    expect(q).toEqual({
+      sport_path: "womens-volleyball",
+      division: "D2,D3",
+      grad_year: "2027",
+      status: "committed",
+      ipeds_unitid: "164465",
+      conference_not: "SEC",
+      committed_since: "2026-09-01",
+      sort: "committed_on",
+      limit: "1",
+    });
+    const ids: number[] = [];
+    for await (const c of page) ids.push(c.id!);
+    expect(ids).toEqual([1, 2]);
+    expect(calls[1].searchParams.get("cursor")).toBe("c2");
+    expect(calls[1].searchParams.get("grad_year")).toBe("2027");
+  });
+
+  it("gets one commitment", async () => {
+    const { client, seen } = recording({ id: 77, status: "signed" });
+    const c = await client.commitments.get(77);
+    expect(seen.method).toBe("GET");
+    expect(seen.url.pathname).toBe("/v1/commitments/77");
+    expect(c.status).toBe("signed");
+  });
+
+  it("lists commitment changes and sources", async () => {
+    const { client, seen } = recording({
+      data: [{ id: 5, change_type: "decommitted" }],
+      next_cursor: null,
+      has_more: false,
+    });
+    const page = await client.commitments.changes({
+      since: "2026-10-01T00:00:00Z",
+      sport: "soccer",
+      gender: "women",
+      grad_year: "2027",
+    });
+    expect(seen.url.pathname).toBe("/v1/commitments/changes");
+    expect(Object.fromEntries(seen.url.searchParams)).toEqual({
+      since: "2026-10-01T00:00:00Z",
+      sport: "soccer",
+      gender: "women",
+      grad_year: "2027",
+    });
+    expect(page.data).toHaveLength(1);
+
+    const src = recording({ data: [{ key: "tds", name: "Top Drawer Soccer" }] });
+    const list = await src.client.commitments.sources();
+    expect(src.seen.method).toBe("GET");
+    expect(src.seen.url.pathname).toBe("/v1/commitments/sources");
+    expect(list.data).toHaveLength(1);
+  });
+
+  it("lists portal supply counts and their change log", async () => {
+    const { client, seen } = recording({
+      data: [{ id: 9, team_id: 3, lane: "GK", in_portal: 2, in_portal_returning: 1, signed_out: 0 }],
+      next_cursor: null,
+      has_more: false,
+    });
+    const page = await client.portalSupply.list({
+      sport: "soccer",
+      gender: "women",
+      division: "D1",
+      lane: "GK,none",
+      include_zero: true,
+    });
+    expect(seen.method).toBe("GET");
+    expect(seen.url.pathname).toBe("/v1/portal/supply");
+    expect(Object.fromEntries(seen.url.searchParams)).toEqual({
+      sport: "soccer",
+      gender: "women",
+      division: "D1",
+      lane: "GK,none",
+      include_zero: "true",
+    });
+    expect(page.data).toHaveLength(1);
+
+    const log = recording({
+      data: [{ changed_at: "2026-11-02T00:00:00Z", revision: 2, supply: { id: 9, in_portal: 0 } }],
+      next_cursor: null,
+      has_more: false,
+    });
+    const changes = await log.client.portalSupply.changes({
+      since: "2026-11-01T00:00:00Z",
+      team_id: "3,4",
+    });
+    expect(log.seen.url.pathname).toBe("/v1/portal/supply/changes");
+    expect(Object.fromEntries(log.seen.url.searchParams)).toEqual({
+      since: "2026-11-01T00:00:00Z",
+      team_id: "3,4",
+    });
+    expect(changes.data[0].revision).toBe(2);
+  });
+
+  it("lists movement changes, mapping sportPath to sport_path", async () => {
+    const { client, seen } = recording({
+      data: [{ changed_at: "2026-10-02T00:00:00Z", movement: { id: 59, kind: "coach" } }],
+      next_cursor: null,
+      has_more: false,
+    });
+    const page = await client.movements.changes({
+      since: "2026-10-01T00:00:00Z",
+      kind: "coach",
+      sportPath: "womens-volleyball",
+      division: "D1,D2",
+      limit: 50,
+    });
+    expect(seen.method).toBe("GET");
+    expect(seen.url.pathname).toBe("/v1/movements/changes");
+    expect(Object.fromEntries(seen.url.searchParams)).toEqual({
+      since: "2026-10-01T00:00:00Z",
+      kind: "coach",
+      sport_path: "womens-volleyball",
+      division: "D1,D2",
+      limit: "50",
+    });
+    expect(page.data[0].movement.id).toBe(59);
+  });
+
+  it("sends movements.list region filters", async () => {
+    const { client, seen } = recording(emptyPage);
+    await client.movements.list({ region: "NJCAA Region IV", regionNot: "Region 3" });
+    expect(seen.url.pathname).toBe("/v1/movements");
+    expect(seen.url.searchParams.get("region")).toBe("NJCAA Region IV");
+    expect(seen.url.searchParams.get("region_not")).toBe("Region 3");
+  });
+
+  it("lists regions and eligibility rules", async () => {
+    const r = recording({ data: ["NJCAA Region IV"] });
+    const regions = await r.client.reference.regions({
+      sport: "soccer",
+      division: "NJCAA-D1",
+      gender: "women",
+    });
+    expect(r.seen.url.pathname).toBe("/v1/regions");
+    expect(Object.fromEntries(r.seen.url.searchParams)).toEqual({
+      sport: "soccer",
+      division: "NJCAA-D1",
+      gender: "women",
+    });
+    expect(regions.data).toEqual(["NJCAA Region IV"]);
+
+    const e = recording({ data: [{ association: "NCAA" }] });
+    const rules = await e.client.reference.eligibilityRules();
+    expect(e.seen.method).toBe("GET");
+    expect(e.seen.url.pathname).toBe("/v1/eligibility/rules");
+    expect(rules.data).toHaveLength(1);
+  });
+
+  it("reads team postseason and rankings with an optional division", async () => {
+    const p = recording({ team_id: 1873, data: [{ kind: "bowl_game" }], coverage: [] });
+    const post = await p.client.teams.postseason(1873, {
+      sport: "soccer",
+      season: "2025,2024",
+      kind: "national_tournament",
+    });
+    expect(p.seen.url.pathname).toBe("/v1/teams/1873/postseason");
+    expect(Object.fromEntries(p.seen.url.searchParams)).toEqual({
+      sport: "soccer",
+      season: "2025,2024",
+      kind: "national_tournament",
+    });
+    expect(post.team_id).toBe(1873);
+
+    const r = recording({ team_id: 1873, data: [{ ranking_system: "RPI" }] });
+    const ranks = await r.client.teams.rankings(1873, {
+      sport: "volleyball",
+      division: "D1",
+      gender: "women",
+      ranking_system: "RPI",
+    });
+    expect(r.seen.url.pathname).toBe("/v1/teams/1873/rankings");
+    expect(Object.fromEntries(r.seen.url.searchParams)).toEqual({
+      sport: "volleyball",
+      division: "D1",
+      gender: "women",
+      ranking_system: "RPI",
+    });
+    expect(ranks.team_id).toBe(1873);
+  });
+
+  it("sends the new teams.list and teams.roster filters, booleans as true/false", async () => {
+    const t = recording(emptyPage);
+    await t.client.teams.list({
+      sport: "soccer",
+      division: "NJCAA-D1",
+      region: "NJCAA Region IV",
+      region_not: "Region 3",
+      roster_changed_since: "2026-10-01T00:00:00Z",
+      coaches_changed_since: "2026-10-02T00:00:00Z",
+    });
+    expect(Object.fromEntries(t.seen.url.searchParams)).toEqual({
+      sport: "soccer",
+      division: "NJCAA-D1",
+      region: "NJCAA Region IV",
+      region_not: "Region 3",
+      roster_changed_since: "2026-10-01T00:00:00Z",
+      coaches_changed_since: "2026-10-02T00:00:00Z",
+    });
+
+    const r = recording({ ...emptyPage, season: "2026" });
+    const page = await r.client.teams.roster(1873, {
+      sport: "soccer",
+      division: "D3",
+      class_level: "SR,GR",
+      class_level_not: "FR",
+      class_redshirt: true,
+      seasons_remaining_min: 2,
+      eligibility_confidence: "high",
+    });
+    expect(r.seen.url.pathname).toBe("/v1/teams/1873/roster");
+    expect(r.seen.url.searchParams.get("class_redshirt")).toBe("true");
+    expect(r.seen.url.searchParams.get("seasons_remaining_min")).toBe("2");
+    expect(r.seen.url.searchParams.get("class_level")).toBe("SR,GR");
+    expect(r.seen.url.searchParams.get("class_level_not")).toBe("FR");
+    expect(r.seen.url.searchParams.get("eligibility_confidence")).toBe("high");
+    expect(page.season).toBe("2026");
+
+    const f = recording(emptyPage);
+    await f.client.teams.roster(1873, { sport: "soccer", division: "D3", class_redshirt: false });
+    expect(f.seen.url.searchParams.get("class_redshirt")).toBe("false");
+  });
+
+  it("sends games.list region", async () => {
+    const { client, seen } = recording(emptyPage);
+    await client.games.list({ sport: "soccer", division: "NJCAA-D1", region: "Region IV" });
+    expect(seen.url.searchParams.get("region")).toBe("Region IV");
+  });
+
+  it("lists schools with profile filters, returning SchoolSummary rows", async () => {
+    const { client, seen } = recording({
+      data: [
+        {
+          id: 812,
+          name: "Amherst College",
+          profile: { control: "Private not-for-profit", admission_rate: 0.07 },
+        },
+      ],
+      next_cursor: null,
+      has_more: false,
+    });
+    const page = await client.schools.list({
+      control: "Private not-for-profit",
+      religiousAffiliation: "Roman Catholic",
+      admissionRateMin: 0.05,
+      admissionRateMax: 0.2,
+      undergradEnrollmentMin: 1000,
+      undergradEnrollmentMax: 3000,
+      region: "NJCAA Region IV",
+    });
+    expect(seen.url.pathname).toBe("/v1/schools");
+    expect(Object.fromEntries(seen.url.searchParams)).toEqual({
+      control: "Private not-for-profit",
+      religious_affiliation: "Roman Catholic",
+      admission_rate_min: "0.05",
+      admission_rate_max: "0.2",
+      undergrad_enrollment_min: "1000",
+      undergrad_enrollment_max: "3000",
+      region: "NJCAA Region IV",
+    });
+    expect(page.data[0].profile?.admission_rate).toBe(0.07);
+  });
+
+  it("gets a swimmer's times with best_only sent as true", async () => {
+    const { client, seen } = recording({
+      data: [{ event: "SCY-100-FR", course: "SCY" }],
+      next_cursor: null,
+      has_more: false,
+    });
+    const page = await client.players.times(184223, {
+      sport: "swimming-and-diving",
+      division: "D1",
+      gender: "women",
+      event: "SCY-100-FR,SCY-200-FR",
+      course: "SCY",
+      season: "2027",
+      best_only: true,
+      limit: 20,
+    });
+    expect(seen.method).toBe("GET");
+    expect(seen.url.pathname).toBe("/v1/players/184223/times");
+    expect(Object.fromEntries(seen.url.searchParams)).toEqual({
+      sport: "swimming-and-diving",
+      division: "D1",
+      gender: "women",
+      event: "SCY-100-FR,SCY-200-FR",
+      course: "SCY",
+      season: "2027",
+      best_only: "true",
+      limit: "20",
+    });
+    expect(page.data[0].event).toBe("SCY-100-FR");
+  });
+
+  it("lists and gets golf tournaments and ratings", async () => {
+    const t = recording({ data: [{ id: 4, name: "Southern Intercollegiate" }], next_cursor: null, has_more: false });
+    const page = await t.client.golf.listTournaments({
+      sport: "golf",
+      division: "D1",
+      gender: "women",
+      season: "2027",
+      team_id: "1,2",
+      status: "final",
+      start_date_min: "2026-09-01",
+      start_date_max: "2026-11-01",
+      limit: 10,
+    });
+    expect(t.seen.url.pathname).toBe("/v1/golf/tournaments");
+    expect(Object.fromEntries(t.seen.url.searchParams)).toEqual({
+      sport: "golf",
+      division: "D1",
+      gender: "women",
+      season: "2027",
+      team_id: "1,2",
+      status: "final",
+      start_date_min: "2026-09-01",
+      start_date_max: "2026-11-01",
+      limit: "10",
+    });
+    expect(page.data[0].name).toBe("Southern Intercollegiate");
+
+    const d = recording({ id: 4, name: "Southern Intercollegiate" });
+    const detail = await d.client.golf.getTournament(4, { sport: "golf", division: "D1", gender: "women" });
+    expect(d.seen.method).toBe("GET");
+    expect(d.seen.url.pathname).toBe("/v1/golf/tournaments/4");
+    expect(Object.fromEntries(d.seen.url.searchParams)).toEqual({
+      sport: "golf",
+      division: "D1",
+      gender: "women",
+    });
+    expect(detail.id).toBe(4);
+
+    const r = recording({ data: [{ entity: "team", rating: 70.1 }], next_cursor: null, has_more: false });
+    const ratings = await r.client.golf.listRatings({
+      sport: "golf",
+      division: "D1",
+      entity: "team",
+      team_id: "9",
+      as_of: "2026-10-15",
+    });
+    expect(r.seen.url.pathname).toBe("/v1/golf/ratings");
+    expect(Object.fromEntries(r.seen.url.searchParams)).toEqual({
+      sport: "golf",
+      division: "D1",
+      entity: "team",
+      team_id: "9",
+      as_of: "2026-10-15",
+    });
+    expect(ratings.data).toHaveLength(1);
+  });
+
+  it("lists and gets swim meets and keeps meet_id on result pages", async () => {
+    const m = recording({ data: [{ id: 12, name: "Zippy Invite" }], next_cursor: null, has_more: false });
+    const meets = await m.client.swim.listMeets({
+      sport: "swimming-and-diving",
+      division: "D1",
+      season: "2027",
+      meet_type: "invitational",
+      course: "SCY",
+      team_id: "5",
+      start_date_min: "2026-10-01",
+      start_date_max: "2026-11-30",
+    });
+    expect(m.seen.url.pathname).toBe("/v1/swim/meets");
+    expect(Object.fromEntries(m.seen.url.searchParams)).toEqual({
+      sport: "swimming-and-diving",
+      division: "D1",
+      season: "2027",
+      meet_type: "invitational",
+      course: "SCY",
+      team_id: "5",
+      start_date_min: "2026-10-01",
+      start_date_max: "2026-11-30",
+    });
+    expect(meets.data[0].id).toBe(12);
+
+    const d = recording({ id: 12, name: "Zippy Invite" });
+    const detail = await d.client.swim.getMeet(12, { sport: "swimming-and-diving", division: "D1" });
+    expect(d.seen.url.pathname).toBe("/v1/swim/meets/12");
+    expect(detail.id).toBe(12);
+
+    const calls: URL[] = [];
+    const { client } = makeClient((url) => {
+      calls.push(new URL(url));
+      const first = calls.length === 1;
+      return json(200, {
+        meet_id: 12,
+        data: [{ event: { code: "SCY-100-FR" }, gender: "women", results: [] }],
+        next_cursor: first ? "r2" : null,
+        has_more: first,
+      });
+    });
+    const page = await client.swim.listMeetResults(12, {
+      sport: "swimming-and-diving",
+      division: "D1",
+      event: "SCY-100-FR",
+      round: "final",
+      limit: 100,
+    });
+    expect(calls[0].pathname).toBe("/v1/swim/meets/12/results");
+    expect(Object.fromEntries(calls[0].searchParams)).toEqual({
+      sport: "swimming-and-diving",
+      division: "D1",
+      event: "SCY-100-FR",
+      round: "final",
+      limit: "100",
+    });
+    expect(page.meetId).toBe(12);
+    let n = 0;
+    for await (const group of page) {
+      expect(group.gender).toBe("women");
+      n++;
+    }
+    expect(n).toBe(2);
+    expect(calls[1].searchParams.get("cursor")).toBe("r2");
+    expect(calls[1].searchParams.get("round")).toBe("final");
+  });
+
+  it("lists tennis matches and ITA rankings", async () => {
+    const m = recording({ data: [{ id: 1, match_type: "singles" }], next_cursor: null, has_more: false });
+    const matches = await m.client.tennis.listMatches({
+      sport: "tennis",
+      division: "D1",
+      gender: "women",
+      player_id: "10,11",
+      team_id: "3",
+      season: "2027",
+      match_type: "singles",
+      status: "completed",
+      date_min: "2026-09-01",
+      date_max: "2026-10-31",
+    });
+    expect(m.seen.method).toBe("GET");
+    expect(m.seen.url.pathname).toBe("/v1/tennis/matches");
+    expect(Object.fromEntries(m.seen.url.searchParams)).toEqual({
+      sport: "tennis",
+      division: "D1",
+      gender: "women",
+      player_id: "10,11",
+      team_id: "3",
+      season: "2027",
+      match_type: "singles",
+      status: "completed",
+      date_min: "2026-09-01",
+      date_max: "2026-10-31",
+    });
+    expect(matches.data[0].match_type).toBe("singles");
+
+    const r = recording({ data: [{ rank: 1 }], next_cursor: null, has_more: false });
+    const rankings = await r.client.tennis.listItaRankings({
+      sport: "tennis",
+      division: "D1",
+      type: "doubles",
+      season: "2027",
+      release_date: "2026-10-20",
+      team_id: "3",
+      player_id: "10",
+    });
+    expect(r.seen.url.pathname).toBe("/v1/rankings/ita");
+    expect(Object.fromEntries(r.seen.url.searchParams)).toEqual({
+      sport: "tennis",
+      division: "D1",
+      type: "doubles",
+      season: "2027",
+      release_date: "2026-10-20",
+      team_id: "3",
+      player_id: "10",
+    });
+    expect(rankings.data[0].rank).toBe(1);
+  });
+
+  it("creates a sandbox event and does not auto-retry it", async () => {
+    const { client, seen } = recording({
+      event_id: "evt_1",
+      type: "portal_entry",
+      created: {},
+      deliveries: 0,
+    });
+    const res = await client.sandbox.createEvent({
+      type: "portal_entry",
+      sport: "soccer",
+      division: "D1",
+      gender: "men",
+      team_id: 5,
+    });
+    expect(seen.method).toBe("POST");
+    expect(seen.url.pathname).toBe("/v1/sandbox/events");
+    expect(res.event_id).toBe("evt_1");
+
+    let calls = 0;
+    const flaky = makeClient(() => {
+      calls++;
+      return json(503, errorBody("server_error", "unavailable", "down"));
+    });
+    await expect(
+      flaky.client.sandbox.createEvent({ type: "coach_movement", sport: "soccer", division: "D1" }),
+    ).rejects.toBeInstanceOf(InternalServerError);
+    expect(calls).toBe(1);
+  });
+
+  it("reports the 0.7.0 version", () => {
+    expect(VERSION).toBe("0.7.0");
+  });
+});
