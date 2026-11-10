@@ -2,7 +2,7 @@
 
 import type { Magisterial } from "../client.js";
 import { Page, pageFromRaw } from "../pagination.js";
-import type { SchoolDetail, SchoolPage, SchoolSummary } from "../types.js";
+import type { SchoolDetail, SchoolPage, SchoolSummary, SchoolDiscoveryRequest, SchoolDiscoveryResponse } from "../types.js";
 
 export interface SchoolListParams {
   /** Case-insensitive name contains. */
@@ -59,6 +59,12 @@ export class Schools {
       return pageFromRaw(raw, (cursor) => fetch({ ...query, cursor }));
     };
     return fetch(params);
+  }
+
+  /** Discover school identities; choose candidates from conversation context,
+   * then retain school/program or high-school/NCES IDs for factual reads. */
+  resolve(lookup: SchoolDiscoveryRequest): Promise<SchoolDiscoveryResponse> {
+    return this.client.request("POST", "/v1/schools/resolve", { body: lookup, retryable: true });
   }
 
   /** One institution, its College Scorecard `profile`, and every program it

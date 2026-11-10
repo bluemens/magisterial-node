@@ -209,8 +209,7 @@ export interface paths {
          *
          *     `athlete.person_id` identifies the athlete from the moment they commit and
          *     stays theirs once they enroll (it is the `person_id` on their player
-         *     record, across transfers); `person_id` filters by it. Developer Pro and
-         *     up.
+         *     record, across transfers); `person_id` filters by it. Premium and up.
          */
         get: operations["list_commitments"];
         put?: never;
@@ -245,7 +244,7 @@ export interface paths {
          *     state, not one event per change. A change to how a school is displayed is
          *     not a revision. Changes are recorded within about a minute of the source
          *     pass that found them; the commitment.* webhooks deliver the same changes.
-         *     Developer Pro and up.
+         *     Premium and up.
          */
         get: operations["list_commitment_changes"];
         put?: never;
@@ -267,8 +266,8 @@ export interface paths {
          * List commitment sources
          * @description Every source the commitment feed reads: what its dates mean, whether
          *     its rows are self-reported, how many published commitments it supports
-         *     now, and when it was last read (and last read in full). Developer Pro
-         *     and up.
+         *     now, and when it was last read (and last read in full). Premium and
+         *     up.
          */
         get: operations["list_commitment_sources"];
         put?: never;
@@ -289,7 +288,7 @@ export interface paths {
         /**
          * Get a commitment
          * @description One published commitment. A retracted one is a 404 here and appears in
-         *     GET /v1/commitments/changes with its reason. Developer Pro and up.
+         *     GET /v1/commitments/changes with its reason. Premium and up.
          */
         get: operations["get_commitment"];
         put?: never;
@@ -432,6 +431,11 @@ export interface paths {
          *     `export_id` immediately — poll GET /v1/exports/{export_id} for the signed
          *     download URL (most exports finish in well under a minute). Billed on
          *     success by result size; failed exports are never billed.
+         *
+         *     A players file ends with `positions` and `position_groups`, the
+         *     standardized reading of `position`: arrays in JSONL; in CSV a cell of
+         *     compact JSON (`["MID","FWD"]`), empty for a sport with no position
+         *     vocabulary and `[]` where the sport has one and the text names no value.
          */
         post: operations["create_export"];
         delete?: never;
@@ -593,6 +597,55 @@ export interface paths {
          *     the golfer is linked to a roster.
          */
         get: operations["get_golf_tournament"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/high-schools": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List high schools
+         * @description Secondary schools from the federal and national registries behind the
+         *     `secondary_school` object on players and commitments, alphabetical: NCES's
+         *     Common Core of Data (public schools) and Private School Survey (private
+         *     schools), and Statistics Canada's database of educational facilities. Closed
+         *     schools stay (`status` 'closed'), so alumni of them still resolve.
+         *
+         *     Map your own records onto ours with `nces_id`, or type-ahead a school with
+         *     `q` (narrow it with `state`). Then pass the id to POST /v1/players/search
+         *     (`high_school_id`) or GET /v1/commitments (`high_school_nces_id`) to find
+         *     the athletes who attended.
+         */
+        get: operations["list_high_schools"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/high-schools/{high_school_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a high school
+         * @description One secondary school, open or closed, by our id (`secondary_school.id`).
+         */
+        get: operations["get_high_school"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1090,6 +1143,31 @@ export interface paths {
         get: operations["list_schools"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/schools/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Discover a college or high school
+         * @description Resolve names/aliases to identities; partial and typo matches list
+         *     candidates with location and IDs for contextual selection. College identity
+         *     is discovered across sports before program availability is evaluated.
+         *     Supply a college sport/division scope. High-school discovery uses the
+         *     existing registry resolver; no player links are written. Follow-up data
+         *     reads use school_id/team_id or high_school_id/nces_id in their own namespace.
+         */
+        post: operations["resolve_school"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2202,8 +2280,16 @@ export interface components {
              * @example 2027
              */
             grad_year?: number | null;
-            /** High School */
+            /**
+             * High School
+             * @description As the source printed it.
+             */
             high_school?: string | null;
+            /**
+             * High School Kind
+             * @description What the `high_school` text names: 'high_school' (a school; see `secondary_school`), 'college' (a college the player attended before this one), 'club' (a club or academy program), 'homeschool', 'not_a_school', or 'unresolved' (we looked and could not tell which school, or which kind of place, it is). Null when there is no `high_school` text or it has not been classified yet. `high_school` itself is always the text the source printed.
+             */
+            high_school_kind?: ("high_school" | "college" | "club" | "homeschool" | "not_a_school" | "unresolved") | null;
             /**
              * Home State
              * @description Two-letter US state.
@@ -2231,10 +2317,28 @@ export interface components {
             player_id?: number | null;
             /**
              * Position
-             * @description As the source prints it.
+             * @description As the recruiting source prints it ('MF', 'CM', 'ATH'); sources differ. Read `positions` and `position_groups` for one value per sport.
              * @example MF
              */
             position?: string | null;
+            /**
+             * Position Groups
+             * @description The broadest category of each of `positions`: baseball 'SS' is in 'INF', 'RHP' in 'P'; basketball 'PG' in 'GUARD'; ice hockey 'LW' in 'F'; football 'OT' in 'OL'. A sport whose vocabulary is flat (soccer, volleyball, lacrosse, field hockey) repeats `positions`. Null or [] exactly where `positions` is. Read the same way as `positions`.
+             * @example [
+             *       "MID"
+             *     ]
+             */
+            position_groups?: string[] | null;
+            /**
+             * Positions
+             * @description The standardized position or positions `position` names, in the sport's canonical vocabulary: the values GET /v1/filters/catalog lists for the player `position` field ('GK', 'DEF', 'MID', 'FWD' in soccer; 'PG', 'SS', 'OH', 'QB', ...). A list because a school can print two: soccer 'M/F' is ['MID', 'FWD']. Each value is one you can filter by, and a `position` filter matches the row by the same reading, so a player returned for `position=FWD` carries 'FWD' here. Null for a sport with no positions (tennis, golf, swimming and diving, track and field); [] where the sport has them and the published text names none (nothing published, a role such as 'Special Teams', a spelling not yet in the vocabulary). Read from the commitment's sport and `position` when the commitment is served or sent, the same on a GET and in a webhook: a vocabulary change reaches every commitment at once, without a revision or a `commitment.updated`.
+             * @example [
+             *       "MID"
+             *     ]
+             */
+            positions?: string[] | null;
+            /** @description The registry school `high_school` names, when `high_school_kind` is 'high_school'; null otherwise. Read when the commitment is built: a school linked or corrected later shows here without a new revision or a `commitment.updated`. Filter by it with `high_school_nces_id`. */
+            secondary_school?: components["schemas"]["HighSchoolRef"] | null;
         };
         /**
          * CommitmentChange
@@ -2523,6 +2627,72 @@ export interface components {
              */
             status: string;
         };
+        /** DiscoveryCandidate */
+        DiscoveryCandidate: {
+            /** All Team Ids */
+            all_team_ids?: number[];
+            /** City */
+            city?: string | null;
+            /**
+             * Country
+             * @description ISO code, or null when not held.
+             */
+            country?: string | null;
+            /** Divisions */
+            divisions?: string[];
+            /**
+             * High School Id
+             * @description Secondary-school ID only.
+             */
+            high_school_id?: number | null;
+            /**
+             * In Scope Team Ids
+             * @description College programs satisfying sport AND division.
+             */
+            in_scope_team_ids?: number[];
+            /** Ipeds Unitid */
+            ipeds_unitid?: number | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "college" | "high_school";
+            /** Name */
+            name: string;
+            /** Names */
+            names?: string[];
+            /** Nces Id */
+            nces_id?: string | null;
+            /** Program Status */
+            program_status?: ("available" | "no_program_in_scope") | null;
+            /** Programs */
+            programs?: components["schemas"]["DiscoveryProgram"][];
+            /**
+             * School Id
+             * @description College institution ID only.
+             */
+            school_id?: number | null;
+            /** State */
+            state?: string | null;
+            /**
+             * Team Ids
+             * @description College programs in the requested sport, all divisions.
+             */
+            team_ids?: number[];
+        } & {
+            [key: string]: unknown;
+        };
+        /** DiscoveryProgram */
+        DiscoveryProgram: {
+            /** Division */
+            division?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Sport Path */
+            sport_path?: string | null;
+            /** Team Id */
+            team_id: number;
+        };
         /**
          * Eligibility
          * @description Seasons of eligibility the athlete has left after `as_of_season`, read
@@ -2618,6 +2788,11 @@ export interface components {
          *     gzipped flat file. Use the optional filters to keep large datasets under
          *     the row cap. A field this body does not declare is a 422: a mistyped
          *     filter must not become an unfiltered (and billed) export.
+         *
+         *     A players file ends with `positions` and `position_groups`, the
+         *     standardized reading of `position` (JSONL arrays; in CSV a cell of compact
+         *     JSON such as `["MID","FWD"]`, empty for a sport with no position vocabulary
+         *     and `[]` where the sport has one and the published text names no value).
          * @example {
          *       "conference": "NESCAC",
          *       "dataset": "players",
@@ -4568,6 +4743,218 @@ export interface components {
             venue?: string | null;
         };
         /**
+         * HighSchool
+         * @description A secondary school in full: the object players and commitments carry
+         *     (`secondary_school`) plus what the registry says about it. A school that
+         *     closed or was renumbered stays, so alumni of it still resolve.
+         */
+        HighSchool: {
+            /**
+             * Boarding
+             * @description True when the school has boarding students; null where the registry does not say.
+             */
+            boarding?: boolean | null;
+            /**
+             * Charter
+             * @description True for a charter school; null where the registry does not say.
+             */
+            charter?: boolean | null;
+            /** City */
+            city?: string | null;
+            /**
+             * Control
+             * @description 'public' or 'private'.
+             * @example public
+             */
+            control: string;
+            /**
+             * Country
+             * @description ISO 3166-1 alpha-2 country code.
+             * @example US
+             */
+            country: string;
+            /** County */
+            county?: string | null;
+            /**
+             * District
+             * @description The public school district (NCES CCD LEA name) or, in Canada, the school board; null for private schools.
+             */
+            district?: string | null;
+            /**
+             * First Vintage
+             * @description First registry release that lists the school, e.g. '2014-15'.
+             */
+            first_vintage?: string | null;
+            /**
+             * Highest Grade
+             * @description Highest grade offered.
+             */
+            highest_grade?: string | null;
+            /**
+             * Id
+             * @description Our school id; use with GET /v1/high-schools/{id} and the `high_school_id` filter.
+             */
+            id: number;
+            /**
+             * Last Vintage
+             * @description Latest registry release that lists the school.
+             */
+            last_vintage?: string | null;
+            /** Latitude */
+            latitude?: number | null;
+            /** Longitude */
+            longitude?: number | null;
+            /**
+             * Lowest Grade
+             * @description Lowest grade offered, as the registry codes it ('PK', 'KG', '09').
+             */
+            lowest_grade?: string | null;
+            /** Magnet */
+            magnet?: boolean | null;
+            /**
+             * Name
+             * @description The school's name, cased for display.
+             * @example Lincoln High School
+             */
+            name: string;
+            /**
+             * Nces Id
+             * @description The federal NCES id: the 12-digit NCESSCH for a public school, the PPIN for a private one. Null for a school outside the NCES registries, such as a Canadian school.
+             * @example 410279000563
+             */
+            nces_id?: string | null;
+            /** Offers Grade 12 */
+            offers_grade_12?: boolean | null;
+            /** Postal Code */
+            postal_code?: string | null;
+            /**
+             * Registry
+             * @description The registry the school comes from: 'nces_ccd', 'nces_pss', 'statcan_odef', or 'curated' (a school no registry lists, added by us after a person read it).
+             * @example nces_ccd
+             */
+            registry: string;
+            /**
+             * Religious Affiliation
+             * @description Private schools: the affiliation the survey records.
+             */
+            religious_affiliation?: string | null;
+            /**
+             * School Type
+             * @description The registry's school type, e.g. 'regular', 'special education', 'vocational', 'alternative'.
+             */
+            school_type?: string | null;
+            /**
+             * State
+             * @description Two-letter US state or Canadian province code.
+             * @example OR
+             */
+            state?: string | null;
+            /**
+             * Status
+             * @description 'open', or 'closed' once the registry stops listing it.
+             * @example open
+             */
+            status: string;
+            /**
+             * Superseded By
+             * @description Id of the school this one was renumbered or merged into, when the registry says so.
+             */
+            superseded_by?: number | null;
+            /**
+             * Virtual
+             * @description NCES CCD's virtual status: 'full' (exclusively virtual), 'primarily', 'supplemental' or 'none'; null where the registry does not say.
+             */
+            virtual?: string | null;
+        };
+        /**
+         * HighSchoolPage
+         * @description A page of high schools.
+         */
+        HighSchoolPage: {
+            /** Data */
+            data: components["schemas"]["HighSchool"][];
+            /**
+             * Has More
+             * @description True when another page is available.
+             * @default false
+             */
+            has_more: boolean;
+            /**
+             * Next Cursor
+             * @description Opaque cursor for the next page; null when there are no more results.
+             * @example eyJvZmZzZXQiOiAyNX0=
+             */
+            next_cursor?: string | null;
+        };
+        /**
+         * HighSchoolRef
+         * @description A secondary school from a federal or national registry: NCES's Common
+         *     Core of Data (public schools) and Private School Survey (private schools),
+         *     and Statistics Canada's open database of educational facilities. Look one
+         *     up with GET /v1/high-schools/{id}; find players and commitments by it
+         *     with `high_school_nces_id` / `high_school_id`.
+         */
+        HighSchoolRef: {
+            /**
+             * Charter
+             * @description True for a charter school; null where the registry does not say.
+             */
+            charter?: boolean | null;
+            /** City */
+            city?: string | null;
+            /**
+             * Control
+             * @description 'public' or 'private'.
+             * @example public
+             */
+            control: string;
+            /**
+             * Country
+             * @description ISO 3166-1 alpha-2 country code.
+             * @example US
+             */
+            country: string;
+            /**
+             * Id
+             * @description Our school id; use with GET /v1/high-schools/{id} and the `high_school_id` filter.
+             */
+            id: number;
+            /**
+             * Name
+             * @description The school's name, cased for display.
+             * @example Lincoln High School
+             */
+            name: string;
+            /**
+             * Nces Id
+             * @description The federal NCES id: the 12-digit NCESSCH for a public school, the PPIN for a private one. Null for a school outside the NCES registries, such as a Canadian school.
+             * @example 410279000563
+             */
+            nces_id?: string | null;
+            /**
+             * Registry
+             * @description The registry the school comes from: 'nces_ccd', 'nces_pss', 'statcan_odef', or 'curated' (a school no registry lists, added by us after a person read it).
+             * @example nces_ccd
+             */
+            registry: string;
+            /**
+             * School Type
+             * @description The registry's school type, e.g. 'regular', 'special education', 'vocational', 'alternative'.
+             */
+            school_type?: string | null;
+            /**
+             * State
+             * @description Two-letter US state or Canadian province code.
+             * @example OR
+             */
+            state?: string | null;
+            /**
+             * Virtual
+             * @description NCES CCD's virtual status: 'full' (exclusively virtual), 'primarily', 'supplemental' or 'none'; null where the registry does not say.
+             */
+            virtual?: string | null;
+        };
+        /**
          * IceHockeyStats
          * @description Season stats for ice-hockey: the stat fields GET /v1/filters/catalog lists for the sport. Every field is present on every row; null means the source did not publish it.
          */
@@ -5371,9 +5758,19 @@ export interface components {
             name?: string | null;
             /**
              * Position
-             * @description Players only.
+             * @description Players only. The position as the school published it ('F', 'Fwd', 'Forward', 'M/F'). Spellings differ from school to school; read `positions` and `position_groups` for one value per sport.
              */
             position?: string | null;
+            /**
+             * Position Groups
+             * @description Players only. The broadest category of each of `positions`: baseball 'SS' is in 'INF', 'RHP' in 'P'; basketball 'PG' in 'GUARD'; ice hockey 'LW' in 'F'; football 'OT' in 'OL'. A sport whose vocabulary is flat (soccer, volleyball, lacrosse, field hockey) repeats `positions`. Null or [] exactly where `positions` is.
+             */
+            position_groups?: string[] | null;
+            /**
+             * Positions
+             * @description Players only. The standardized position or positions `position` names, in the sport's canonical vocabulary: the values GET /v1/filters/catalog lists for the player `position` field ('GK', 'DEF', 'MID', 'FWD' in soccer; 'PG', 'SS', 'OH', 'QB', ...). A list because a school can print two: soccer 'M/F' is ['MID', 'FWD']. Each value is one you can filter by, and a `position` filter matches the row by the same reading, so a player returned for `position=FWD` carries 'FWD' here. Null for a sport with no positions (tennis, golf, swimming and diving, track and field); [] where the sport has them and the published text names none (nothing published, a role such as 'Special Teams', a spelling not yet in the vocabulary).
+             */
+            positions?: string[] | null;
             /**
              * Title
              * @description Coaches only — current title.
@@ -5444,6 +5841,7 @@ export interface components {
          *       "height": "5-10",
          *       "height_inches": 70,
          *       "high_school": "Lincoln",
+         *       "high_school_kind": "high_school",
          *       "home_city": "Portland",
          *       "home_country": "USA",
          *       "home_state": "OR",
@@ -5457,8 +5855,27 @@ export interface components {
          *       "name": "Jordan Rivera",
          *       "person_id": 90211,
          *       "position": "Midfielder",
+         *       "position_groups": [
+         *         "MID"
+         *       ],
+         *       "positions": [
+         *         "MID"
+         *       ],
          *       "previous_school": null,
          *       "region": null,
+         *       "secondary_school": {
+         *         "charter": false,
+         *         "city": "Portland",
+         *         "control": "public",
+         *         "country": "US",
+         *         "id": 51204,
+         *         "name": "Lincoln High School",
+         *         "nces_id": "410279000563",
+         *         "registry": "nces_ccd",
+         *         "school_type": "regular",
+         *         "state": "OR",
+         *         "virtual": "none"
+         *       },
          *       "sport": "soccer",
          *       "sport_path": "mens-soccer",
          *       "stats_by_season": [
@@ -5614,8 +6031,17 @@ export interface components {
             height?: string | null;
             /** Height Inches */
             height_inches?: number | null;
-            /** High School */
+            /**
+             * High School
+             * @description As the source printed it.
+             */
             high_school?: string | null;
+            /**
+             * High School Kind
+             * @description What the `high_school` text names: 'high_school' (a school; see `secondary_school`), 'college' (a college the player attended before this one), 'club' (a club or academy program), 'homeschool', 'not_a_school', or 'unresolved' (we looked and could not tell which school, or which kind of place, it is). Null when there is no `high_school` text or it has not been classified yet. `high_school` itself is always the text the source printed.
+             * @example high_school
+             */
+            high_school_kind?: ("high_school" | "college" | "club" | "homeschool" | "not_a_school" | "unresolved") | null;
             /** Home City */
             home_city?: string | null;
             /** Home Country */
@@ -5661,8 +6087,27 @@ export interface components {
              * @description Cross-program person id; use with GET /v1/persons/{person_id}.
              */
             person_id?: number | null;
-            /** Position */
+            /**
+             * Position
+             * @description The position as the school published it ('F', 'Fwd', 'Forward', 'M/F'). Spellings differ from school to school; read `positions` and `position_groups` for one value per sport.
+             */
             position?: string | null;
+            /**
+             * Position Groups
+             * @description The broadest category of each of `positions`: baseball 'SS' is in 'INF', 'RHP' in 'P'; basketball 'PG' in 'GUARD'; ice hockey 'LW' in 'F'; football 'OT' in 'OL'. A sport whose vocabulary is flat (soccer, volleyball, lacrosse, field hockey) repeats `positions`. Null or [] exactly where `positions` is.
+             * @example [
+             *       "MID"
+             *     ]
+             */
+            position_groups?: string[] | null;
+            /**
+             * Positions
+             * @description The standardized position or positions `position` names, in the sport's canonical vocabulary: the values GET /v1/filters/catalog lists for the player `position` field ('GK', 'DEF', 'MID', 'FWD' in soccer; 'PG', 'SS', 'OH', 'QB', ...). A list because a school can print two: soccer 'M/F' is ['MID', 'FWD']. Each value is one you can filter by, and a `position` filter matches the row by the same reading, so a player returned for `position=FWD` carries 'FWD' here. Null for a sport with no positions (tennis, golf, swimming and diving, track and field); [] where the sport has them and the published text names none (nothing published, a role such as 'Special Teams', a spelling not yet in the vocabulary).
+             * @example [
+             *       "MID"
+             *     ]
+             */
+            positions?: string[] | null;
             /**
              * Previous School
              * @description The school or schools the athlete came from, as their newest roster or profile page at this team lists them; several are joined with ' / ', e.g. 'Papillion La Vista H.S. / Iowa Western CC'.
@@ -5679,6 +6124,8 @@ export interface components {
              * @description Deprecated, removed on 2027-01-12: use `stats_by_season`, `stats_totals` and `track_bests`. An object keyed 'season_<year>' (and 'cumulative_null'), each a one-item list holding the season row.
              */
             season_stats?: unknown;
+            /** @description The registry school `high_school` names, when `high_school_kind` is 'high_school'; null otherwise. */
+            secondary_school?: components["schemas"]["HighSchoolRef"] | null;
             /**
              * Sport
              * @description Sport, as in the request: 'soccer', 'track-and-field', ...
@@ -5743,6 +6190,8 @@ export interface components {
              * @example eyJvZmZzZXQiOiAyNX0=
              */
             next_cursor?: string | null;
+            /** School Resolutions */
+            school_resolutions?: components["schemas"]["SchoolDiscoveryResponse"][];
         };
         /**
          * PlayerSearchRequest
@@ -5775,6 +6224,17 @@ export interface components {
          *           "min": 10
          *         }
          *       }
+         *     }
+         * @example {
+         *       "division": "D3",
+         *       "gender": "men",
+         *       "high_school_kind": "high_school",
+         *       "high_school_nces_id": [
+         *         "410279000563",
+         *         "410279000564"
+         *       ],
+         *       "limit": 25,
+         *       "sport": "soccer"
          *     }
          */
         PlayerSearchRequest: {
@@ -5845,9 +6305,24 @@ export interface components {
             height_inches_min?: number | null;
             /**
              * High School
-             * @description High school, exact. One value, an array of values, or a comma-separated string (any of).
+             * @description High school, exact, as the source printed it. One value, an array of values, or a comma-separated string (any of).
              */
             high_school?: string | string[] | null;
+            /**
+             * High School Id
+             * @description Players whose `high_school` resolves to these schools, by our id (`secondary_school.id`; GET /v1/high-schools finds them).
+             */
+            high_school_id?: number[] | null;
+            /**
+             * High School Kind
+             * @description What the `high_school` text was classified as: 'high_school', 'college', 'club', 'homeschool', 'not_a_school' or 'unresolved'. Players with no classification yet are left out. One value, an array of values, or a comma-separated string (any of).
+             */
+            high_school_kind?: string | string[] | null;
+            /**
+             * High School Nces Id
+             * @description Players whose `high_school` resolves to the school with this NCES id: the 12-digit NCESSCH of a public school or the PPIN of a private one (`secondary_school.nces_id`). Every spelling of the school's name finds the player, which `high_school` does not. An id no school carries matches nobody. One value, an array of values, or a comma-separated string (any of).
+             */
+            high_school_nces_id?: string | string[] | null;
             /**
              * Home Country
              * @description Home country. One value, an array of values, or a comma-separated string (any of).
@@ -5927,6 +6402,16 @@ export interface components {
              */
             region_not?: string | string[] | null;
             /**
+             * School
+             * @description Identity-aware college discovery. One scalar is one whole name; use an array for several. Names/aliases select identities; partial/typo matches return school_resolutions candidates. Persist the chosen school_id/team_id for follow-up requests.
+             */
+            school?: string | string[] | null;
+            /**
+             * School Id
+             * @description College institution IDs; every program in the requested scope.
+             */
+            school_id?: number[] | null;
+            /**
              * Season
              * @description Season of the stat rows as its championship year, the label every response carries, e.g. '2025' (basketball's 2025-26 is '2026'); defaults to the current season. One value, an array of values, or a comma-separated string (any of).
              */
@@ -5982,13 +6467,18 @@ export interface components {
                 [key: string]: components["schemas"]["NumberRange"];
             };
             /**
+             * Team Id
+             * @description College program IDs, from school discovery or GET /v1/teams. Scoped as usual.
+             */
+            team_id?: number[] | null;
+            /**
              * Team Name
-             * @description Team (school) name; resolved to the program it names. One value, an array of values, or a comma-separated string (any of).
+             * @description Team (school) name; resolved to the program it names. A recognized whole name keeps its punctuation, including commas. Use an array for several names; each item is one complete name. Legacy comma-separated strings are also accepted when the whole string does not name a program.
              */
             team_name?: string | string[] | null;
             /**
              * Team Name Not
-             * @description Exclude these values. Players with no value for the field are left out too.
+             * @description Exclude these team names; the same name and array rules as team_name apply.
              */
             team_name_not?: string | string[] | null;
             /**
@@ -6098,6 +6588,7 @@ export interface components {
          *       "height": "5-10",
          *       "height_inches": 70,
          *       "high_school": "Lincoln",
+         *       "high_school_kind": "high_school",
          *       "home_city": "Portland",
          *       "home_country": "USA",
          *       "home_state": "OR",
@@ -6111,8 +6602,27 @@ export interface components {
          *       "name": "Jordan Rivera",
          *       "person_id": 90211,
          *       "position": "Midfielder",
+         *       "position_groups": [
+         *         "MID"
+         *       ],
+         *       "positions": [
+         *         "MID"
+         *       ],
          *       "region": null,
          *       "season": "2026",
+         *       "secondary_school": {
+         *         "charter": false,
+         *         "city": "Portland",
+         *         "control": "public",
+         *         "country": "US",
+         *         "id": 51204,
+         *         "name": "Lincoln High School",
+         *         "nces_id": "410279000563",
+         *         "registry": "nces_ccd",
+         *         "school_type": "regular",
+         *         "state": "OR",
+         *         "virtual": "none"
+         *       },
          *       "sport": "soccer",
          *       "sport_path": "mens-soccer",
          *       "stats": {
@@ -6195,8 +6705,17 @@ export interface components {
             height?: string | null;
             /** Height Inches */
             height_inches?: number | null;
-            /** High School */
+            /**
+             * High School
+             * @description As the source printed it.
+             */
             high_school?: string | null;
+            /**
+             * High School Kind
+             * @description What the `high_school` text names: 'high_school' (a school; see `secondary_school`), 'college' (a college the player attended before this one), 'club' (a club or academy program), 'homeschool', 'not_a_school', or 'unresolved' (we looked and could not tell which school, or which kind of place, it is). Null when there is no `high_school` text or it has not been classified yet. `high_school` itself is always the text the source printed.
+             * @example high_school
+             */
+            high_school_kind?: ("high_school" | "college" | "club" | "homeschool" | "not_a_school" | "unresolved") | null;
             /** Home City */
             home_city?: string | null;
             /** Home Country */
@@ -6242,8 +6761,27 @@ export interface components {
              * @description Cross-program person id; use with GET /v1/persons/{person_id}.
              */
             person_id?: number | null;
-            /** Position */
+            /**
+             * Position
+             * @description The position as the school published it ('F', 'Fwd', 'Forward', 'M/F'). Spellings differ from school to school; read `positions` and `position_groups` for one value per sport.
+             */
             position?: string | null;
+            /**
+             * Position Groups
+             * @description The broadest category of each of `positions`: baseball 'SS' is in 'INF', 'RHP' in 'P'; basketball 'PG' in 'GUARD'; ice hockey 'LW' in 'F'; football 'OT' in 'OL'. A sport whose vocabulary is flat (soccer, volleyball, lacrosse, field hockey) repeats `positions`. Null or [] exactly where `positions` is.
+             * @example [
+             *       "MID"
+             *     ]
+             */
+            position_groups?: string[] | null;
+            /**
+             * Positions
+             * @description The standardized position or positions `position` names, in the sport's canonical vocabulary: the values GET /v1/filters/catalog lists for the player `position` field ('GK', 'DEF', 'MID', 'FWD' in soccer; 'PG', 'SS', 'OH', 'QB', ...). A list because a school can print two: soccer 'M/F' is ['MID', 'FWD']. Each value is one you can filter by, and a `position` filter matches the row by the same reading, so a player returned for `position=FWD` carries 'FWD' here. Null for a sport with no positions (tennis, golf, swimming and diving, track and field); [] where the sport has them and the published text names none (nothing published, a role such as 'Special Teams', a spelling not yet in the vocabulary).
+             * @example [
+             *       "MID"
+             *     ]
+             */
+            positions?: string[] | null;
             /**
              * Region
              * @description The association's region, for NJCAA and NCCAA teams: the team's region, e.g. 'NJCAA Region IV'. Null for every other team. A region is not a conference: an NJCAA team can have both.
@@ -6254,6 +6792,8 @@ export interface components {
              * @description Season the stats belong to, e.g. '2026'.
              */
             season?: string | null;
+            /** @description The registry school `high_school` names, when `high_school_kind` is 'high_school'; null otherwise. */
+            secondary_school?: components["schemas"]["HighSchoolRef"] | null;
             /**
              * Sport
              * @description Sport, as in the request: 'soccer', 'track-and-field', ...
@@ -6705,6 +7245,7 @@ export interface components {
          *       "height": "5-10",
          *       "height_inches": 70,
          *       "high_school": "Lincoln",
+         *       "high_school_kind": "high_school",
          *       "home_city": "Portland",
          *       "home_country": "USA",
          *       "home_state": "OR",
@@ -6716,7 +7257,26 @@ export interface components {
          *       "membership_source": null,
          *       "name": "Jordan Rivera",
          *       "person_id": 90211,
-         *       "position": "Midfielder"
+         *       "position": "Midfielder",
+         *       "position_groups": [
+         *         "MID"
+         *       ],
+         *       "positions": [
+         *         "MID"
+         *       ],
+         *       "secondary_school": {
+         *         "charter": false,
+         *         "city": "Portland",
+         *         "control": "public",
+         *         "country": "US",
+         *         "id": 51204,
+         *         "name": "Lincoln High School",
+         *         "nces_id": "410279000563",
+         *         "registry": "nces_ccd",
+         *         "school_type": "regular",
+         *         "state": "OR",
+         *         "virtual": "none"
+         *       }
          *     }
          */
         RosterEntry: {
@@ -6747,8 +7307,16 @@ export interface components {
             height?: string | null;
             /** Height Inches */
             height_inches?: number | null;
-            /** High School */
+            /**
+             * High School
+             * @description As the source printed it.
+             */
             high_school?: string | null;
+            /**
+             * High School Kind
+             * @description What the `high_school` text names: 'high_school' (a school; see `secondary_school`), 'college' (a college the player attended before this one), 'club' (a club or academy program), 'homeschool', 'not_a_school', or 'unresolved' (we looked and could not tell which school, or which kind of place, it is). Null when there is no `high_school` text or it has not been classified yet. `high_school` itself is always the text the source printed.
+             */
+            high_school_kind?: ("high_school" | "college" | "club" | "homeschool" | "not_a_school" | "unresolved") | null;
             /** Home City */
             home_city?: string | null;
             /** Home Country */
@@ -6783,13 +7351,34 @@ export interface components {
             name?: string | null;
             /** Person Id */
             person_id?: number | null;
-            /** Position */
+            /**
+             * Position
+             * @description The position as the school published it ('F', 'Fwd', 'Forward', 'M/F'). Spellings differ from school to school; read `positions` and `position_groups` for one value per sport.
+             */
             position?: string | null;
+            /**
+             * Position Groups
+             * @description The broadest category of each of `positions`: baseball 'SS' is in 'INF', 'RHP' in 'P'; basketball 'PG' in 'GUARD'; ice hockey 'LW' in 'F'; football 'OT' in 'OL'. A sport whose vocabulary is flat (soccer, volleyball, lacrosse, field hockey) repeats `positions`. Null or [] exactly where `positions` is.
+             * @example [
+             *       "MID"
+             *     ]
+             */
+            position_groups?: string[] | null;
+            /**
+             * Positions
+             * @description The standardized position or positions `position` names, in the sport's canonical vocabulary: the values GET /v1/filters/catalog lists for the player `position` field ('GK', 'DEF', 'MID', 'FWD' in soccer; 'PG', 'SS', 'OH', 'QB', ...). A list because a school can print two: soccer 'M/F' is ['MID', 'FWD']. Each value is one you can filter by, and a `position` filter matches the row by the same reading, so a player returned for `position=FWD` carries 'FWD' here. Null for a sport with no positions (tennis, golf, swimming and diving, track and field); [] where the sport has them and the published text names none (nothing published, a role such as 'Special Teams', a spelling not yet in the vocabulary).
+             * @example [
+             *       "MID"
+             *     ]
+             */
+            positions?: string[] | null;
             /**
              * Previous School
              * @description The school or schools that season's roster lists the athlete as coming from.
              */
             previous_school?: string | null;
+            /** @description The registry school `high_school` names, when `high_school_kind` is 'high_school'; null otherwise. */
+            secondary_school?: components["schemas"]["HighSchoolRef"] | null;
         };
         /**
          * RosterPage
@@ -6843,6 +7432,11 @@ export interface components {
          */
         SandboxEventRequest: {
             /**
+             * Commitment Id
+             * @description commitment_updated and commitment_retracted: the commitment's `id` (GET /v1/commitments), in the scope of `sport` and `gender`.
+             */
+            commitment_id?: number | null;
+            /**
              * Division
              * @description Division scope, e.g. 'D1'.
              */
@@ -6863,16 +7457,21 @@ export interface components {
              */
             sport: string;
             /**
+             * Status
+             * @description commitment_updated: the status the commitment moves to. commitment_published: `signed` publishes a signing; the default is `committed`.
+             */
+            status?: ("committed" | "signed" | "decommitted") | null;
+            /**
              * Team Id
              * @description The program it happens at. Defaults to the first program in scope.
              */
             team_id?: number | null;
             /**
              * Type
-             * @description What happens: a portal entry, a player joining a roster, or a coach joining a staff.
+             * @description What happens: a portal entry, a player joining a roster, a coach joining a staff, or a commitment being published, updated (signed or decommitted) or retracted.
              * @enum {string}
              */
-            type: "portal_entry" | "player_movement" | "coach_movement";
+            type: "portal_entry" | "player_movement" | "coach_movement" | "commitment_published" | "commitment_updated" | "commitment_retracted";
         };
         /** SandboxEventResponse */
         SandboxEventResponse: {
@@ -6943,6 +7542,123 @@ export interface components {
             state?: string | null;
             /** Teams */
             teams?: components["schemas"]["SchoolTeamRef"][];
+        };
+        /**
+         * SchoolDiscoveryRequest
+         * @description Discover one institution; use explicit arrays for several names in retrieval.
+         * @example {
+         *       "division": "D2",
+         *       "gender": "women",
+         *       "kind": "college",
+         *       "query": "Lock Haven University",
+         *       "sport": "soccer"
+         *     }
+         * @example {
+         *       "kind": "high_school",
+         *       "query": "Knoch High School",
+         *       "state": "PA"
+         *     }
+         */
+        SchoolDiscoveryRequest: {
+            /**
+             * City
+             * @description High school's own city, not athlete hometown.
+             */
+            city?: string | null;
+            /**
+             * Country
+             * @description High school's ISO country code.
+             */
+            country?: string | null;
+            /**
+             * Division
+             * @description Required for colleges; program scope only.
+             */
+            division?: string | null;
+            /** Gender */
+            gender?: string | null;
+            /**
+             * High School Id
+             * @description Secondary-school registry ID.
+             */
+            high_school_id?: number | null;
+            /**
+             * Ipeds Unitid
+             * @description College federal IPEDS ID.
+             */
+            ipeds_unitid?: number | null;
+            /**
+             * Kind
+             * @default college
+             * @enum {string}
+             */
+            kind: "college" | "high_school";
+            /**
+             * Nces Id
+             * @description Secondary-school NCES string ID; preserve leading zeroes.
+             */
+            nces_id?: string | null;
+            /**
+             * Query
+             * @description One whole school name, including punctuation, alias or qualifier.
+             */
+            query?: string | null;
+            /**
+             * School Id
+             * @description College institution ID (schools.id).
+             */
+            school_id?: number | null;
+            /**
+             * Sport
+             * @description Required for colleges; program scope only.
+             */
+            sport?: string | null;
+            /**
+             * State
+             * @description High school's US state/Canadian province code. For colleges put qualifiers in query.
+             */
+            state?: string | null;
+        };
+        /** SchoolDiscoveryResponse */
+        SchoolDiscoveryResponse: {
+            /**
+             * Candidates
+             * @description Ranked identities, with location, external IDs and college programs. Candidate IDs are suggestions until selected.
+             */
+            candidates?: components["schemas"]["DiscoveryCandidate"][];
+            /** Division */
+            division?: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "college" | "high_school";
+            /** Method */
+            method?: string | null;
+            /**
+             * More Candidates
+             * @default false
+             */
+            more_candidates: number | boolean;
+            /** Next Step */
+            next_step: string;
+            /** Notes */
+            notes?: string[];
+            /** Passed Over */
+            passed_over?: {
+                [key: string]: unknown;
+            }[];
+            /** Query */
+            query?: string | null;
+            /** @description Automatically identified institution, or null when context must select a candidate. */
+            selected?: components["schemas"]["DiscoveryCandidate"] | null;
+            /** Sport Path */
+            sport_path?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "resolved" | "candidates" | "ambiguous" | "unresolved";
         };
         /**
          * SchoolMajor
@@ -7282,7 +7998,7 @@ export interface components {
             games_played?: number | null;
             /**
              * Games With Box Scores
-             * @description Of `games_held`, how many have a team box score for this team. Null for a sport with no game box scores (track and field).
+             * @description Of `games_held`, how many have a box score for this team. In tennis a dual's box score is its line results (doubles and singles), so a dual counts when any of its lines is held. Null for a sport with no game box scores (track and field).
              */
             games_with_box_scores?: number | null;
             /**
@@ -8120,7 +8836,9 @@ export interface components {
          *       "phone": null,
          *       "profile_slug": null,
          *       "role": "Head Men's Soccer Coach",
-         *       "season": "2025"
+         *       "season": "2025",
+         *       "staff_category": "coach",
+         *       "staff_function": "coach"
          *     }
          */
         TeamCoachEntry: {
@@ -8180,6 +8898,16 @@ export interface components {
              * @description Season this staff row belongs to.
              */
             season?: string | null;
+            /**
+             * Staff Category
+             * @description Whether this person is coaching staff, set from `role` by the database on every write: `coach`, `program_staff` (operations, video, recruiting, analysts, managers), `support_staff` (athletic training, communications, strength, academics, administration, ...), `not_staff`, `unclassified` (the title is not a job title) or `unknown` (no title published). The list holds the staff page the school publishes for the sport, so it includes non-coaches; filter with `staff_category=coach` for coaches only.
+             */
+            staff_category?: string | null;
+            /**
+             * Staff Function
+             * @description The specific job behind `staff_category`, e.g. `coach`, `athletic_training`, `sports_information`, `strength_conditioning`, `administration`, `video`, `analyst`, `operations`.
+             */
+            staff_function?: string | null;
         };
         /**
          * TeamCoachesResponse
@@ -8311,6 +9039,8 @@ export interface components {
              * @example eyJvZmZzZXQiOiAyNX0=
              */
             next_cursor?: string | null;
+            /** School Resolutions */
+            school_resolutions?: components["schemas"]["SchoolDiscoveryResponse"][];
         };
         /**
          * TeamPostseasonCoverage
@@ -10305,6 +11035,8 @@ export interface operations {
                 state_not?: string | null;
                 /** @description The athlete's home state, two-letter codes. One value, or several separated by commas (any of). */
                 home_state?: string | null;
+                /** @description The athlete's high school, by NCES id: the 12-digit NCESSCH of a public school or the PPIN of a private one (`athlete.secondary_school.nces_id`). Finds the athletes of every spelling of the school's name; an athlete whose school is not resolved is not found. One value, or several separated by commas (any of). */
+                high_school_nces_id?: string | null;
                 /** @description Only commitments this source lists (GET /v1/commitments/sources). One value, or several separated by commas (any of). */
                 source?: string | null;
                 /** @description The athletes' person ids (`athlete.person_id`): every commitment each athlete has made, standing or decommitted. An id that was merged into another person finds that person's commitments. One value, or several separated by commas (any of). */
@@ -10348,7 +11080,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description The key's plan does not include commitments (Developer Pro and up). */
+            /** @description The key's plan does not include commitments (Premium and up). */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -10428,7 +11160,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description The key's plan does not include commitments (Developer Pro and up). */
+            /** @description The key's plan does not include commitments (Premium and up). */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -10493,7 +11225,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description The key's plan does not include commitments (Developer Pro and up). */
+            /** @description The key's plan does not include commitments (Premium and up). */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -10542,7 +11274,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description The key's plan does not include commitments (Developer Pro and up). */
+            /** @description The key's plan does not include commitments (Premium and up). */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -11682,6 +12414,122 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Missing, malformed, or revoked API key. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description No resource with that id in the requested scope. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The request failed validation; `error.fields` names each field. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
+                };
+            };
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    list_high_schools: {
+        parameters: {
+            query?: {
+                /** @description Case-insensitive name contains. */
+                q?: string | null;
+                /** @description Two-letter US state or Canadian province code of the school. One value, or several separated by commas (any of). */
+                state?: string | null;
+                /** @description ISO 3166-1 alpha-2 country code, e.g. 'US' or 'CA'. One value, or several separated by commas (any of). */
+                country?: string | null;
+                /** @description NCES ids: the 12-digit NCESSCH of a public school or the PPIN of a private one. One value, or several separated by commas (any of). */
+                nces_id?: string | null;
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HighSchoolPage"];
+                };
+            };
+            /** @description Missing, malformed, or revoked API key. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The request failed validation; `error.fields` names each field. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
+                };
+            };
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    get_high_school: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                high_school_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HighSchool"];
                 };
             };
             /** @description Missing, malformed, or revoked API key. */
@@ -13023,6 +13871,66 @@ export interface operations {
             };
         };
     };
+    resolve_school: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SchoolDiscoveryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchoolDiscoveryResponse"];
+                };
+            };
+            /** @description Invalid request — unknown sport/gender/division scope, bad cursor, or bad parameter. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Missing, malformed, or revoked API key. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The request failed validation; `error.fields` names each field. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
+                };
+            };
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
     get_school: {
         parameters: {
             query?: never;
@@ -13362,6 +14270,8 @@ export interface operations {
                 gender?: string | null;
                 /** @description Case-insensitive team name contains. */
                 q?: string | null;
+                /** @description Identity-aware whole school name or alias. Partial/typo candidates appear in school_resolutions; choose IDs for subsequent requests. name and q retain literal matching. */
+                school?: string | null;
                 /** @description Exact team name. One value, or several separated by commas (any of). */
                 name?: string | null;
                 /** @description Team ids. One value, or several separated by commas (any of). */
@@ -13539,6 +14449,8 @@ export interface operations {
                 role?: string | null;
                 /** @description true: head coaches only; false: the rest of the staff. */
                 is_head_coach?: boolean | null;
+                /** @description Comma-separated staff kinds to return: coach, program_staff, support_staff, not_staff, unclassified, unknown. Without it the response holds the whole staff page, non-coaches included; `staff_category=coach` returns coaches only. */
+                staff_category?: string | null;
                 /** @description Enterprise: player id of a managed athlete who has authorized your account. Contact fields are then evaluated against that athlete's verified claim and the read is recorded in the athlete's access log. */
                 on_behalf_of?: number | null;
             };

@@ -4,6 +4,10 @@
 import type { components } from "./generated/api.js";
 
 type Schemas = components["schemas"];
+export type SchoolDiscoveryRequest = Schemas["SchoolDiscoveryRequest"];
+export type SchoolDiscoveryResponse = Schemas["SchoolDiscoveryResponse"];
+export type DiscoveryCandidate = Schemas["DiscoveryCandidate"];
+export type DiscoveryProgram = Schemas["DiscoveryProgram"];
 
 export type SportEntry = Schemas["SportEntry"];
 export type SportListResponse = Schemas["SportListResponse"];

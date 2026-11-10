@@ -168,6 +168,23 @@ and connection failures — up to `maxRetries` (default 2), honoring the server'
 `Retry-After`. Billable or non-idempotent creates (`query.create`, `alerts.create`, `sandbox.createEvent`) are never
 retried automatically.
 
+## School discovery
+
+```typescript
+const scope = { sport: "soccer", gender: "women", division: "D2" };
+const found = await client.schools.resolve({ ...scope, kind: "college", query: "Lock Haven University" });
+if (found.selected?.in_scope_team_ids?.length) {
+  const players = await client.players.search({ ...scope, team_id: found.selected.in_scope_team_ids });
+} else {
+  console.log(found.candidates);
+}
+```
+
+Use candidate location and program details to choose an identity. For secondary
+schools, use `kind: "high_school"` and an optional state or city, then pass the
+returned `high_school_id` or NCES ID to player search. Name-based player and team
+searches return evidence on `page.schoolResolutions`.
+
 ## Types
 
 All request/response types live in the `types` export and are generated from the

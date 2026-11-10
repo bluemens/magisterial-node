@@ -1502,7 +1502,28 @@
                 "type": "null"
               }
             ],
+            "description": "As the source printed it.",
             "title": "High School"
+          },
+          "high_school_kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "high_school",
+                  "college",
+                  "club",
+                  "homeschool",
+                  "not_a_school",
+                  "unresolved"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "What the `high_school` text names: 'high_school' (a school; see `secondary_school`), 'college' (a college the player attended before this one), 'club' (a club or academy program), 'homeschool', 'not_a_school', or 'unresolved' (we looked and could not tell which school, or which kind of place, it is). Null when there is no `high_school` text or it has not been classified yet. `high_school` itself is always the text the source printed.",
+            "title": "High School Kind"
           },
           "home_state": {
             "anyOf": [
@@ -1574,11 +1595,62 @@
                 "type": "null"
               }
             ],
-            "description": "As the source prints it.",
+            "description": "As the recruiting source prints it ('MF', 'CM', 'ATH'); sources differ. Read `positions` and `position_groups` for one value per sport.",
             "examples": [
               "MF"
             ],
             "title": "Position"
+          },
+          "position_groups": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The broadest category of each of `positions`: baseball 'SS' is in 'INF', 'RHP' in 'P'; basketball 'PG' in 'GUARD'; ice hockey 'LW' in 'F'; football 'OT' in 'OL'. A sport whose vocabulary is flat (soccer, volleyball, lacrosse, field hockey) repeats `positions`. Null or [] exactly where `positions` is. Read the same way as `positions`.",
+            "examples": [
+              [
+                "MID"
+              ]
+            ],
+            "title": "Position Groups"
+          },
+          "positions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The standardized position or positions `position` names, in the sport's canonical vocabulary: the values GET /v1/filters/catalog lists for the player `position` field ('GK', 'DEF', 'MID', 'FWD' in soccer; 'PG', 'SS', 'OH', 'QB', ...). A list because a school can print two: soccer 'M/F' is ['MID', 'FWD']. Each value is one you can filter by, and a `position` filter matches the row by the same reading, so a player returned for `position=FWD` carries 'FWD' here. Null for a sport with no positions (tennis, golf, swimming and diving, track and field); [] where the sport has them and the published text names none (nothing published, a role such as 'Special Teams', a spelling not yet in the vocabulary). Read from the commitment's sport and `position` when the commitment is served or sent, the same on a GET and in a webhook: a vocabulary change reaches every commitment at once, without a revision or a `commitment.updated`.",
+            "examples": [
+              [
+                "MID"
+              ]
+            ],
+            "title": "Positions"
+          },
+          "secondary_school": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HighSchoolRef"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The registry school `high_school` names, when `high_school_kind` is 'high_school'; null otherwise. Read when the commitment is built: a school linked or corrected later shows here without a new revision or a `commitment.updated`. Filter by it with `high_school_nces_id`."
           }
         },
         "required": [
@@ -2161,6 +2233,214 @@
         "title": "CommitmentSourceRef",
         "type": "object"
       },
+      "DiscoveryCandidate": {
+        "additionalProperties": true,
+        "properties": {
+          "all_team_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "All Team Ids",
+            "type": "array"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "country": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "ISO code, or null when not held.",
+            "title": "Country"
+          },
+          "divisions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Divisions",
+            "type": "array"
+          },
+          "high_school_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Secondary-school ID only.",
+            "title": "High School Id"
+          },
+          "in_scope_team_ids": {
+            "description": "College programs satisfying sport AND division.",
+            "items": {
+              "type": "integer"
+            },
+            "title": "In Scope Team Ids",
+            "type": "array"
+          },
+          "ipeds_unitid": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ipeds Unitid"
+          },
+          "kind": {
+            "enum": [
+              "college",
+              "high_school"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "names": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Names",
+            "type": "array"
+          },
+          "nces_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nces Id"
+          },
+          "program_status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "available",
+                  "no_program_in_scope"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Program Status"
+          },
+          "programs": {
+            "items": {
+              "$ref": "#/components/schemas/DiscoveryProgram"
+            },
+            "title": "Programs",
+            "type": "array"
+          },
+          "school_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "College institution ID only.",
+            "title": "School Id"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          },
+          "team_ids": {
+            "description": "College programs in the requested sport, all divisions.",
+            "items": {
+              "type": "integer"
+            },
+            "title": "Team Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind",
+          "name"
+        ],
+        "title": "DiscoveryCandidate",
+        "type": "object"
+      },
+      "DiscoveryProgram": {
+        "properties": {
+          "division": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Division"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "sport_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sport Path"
+          },
+          "team_id": {
+            "title": "Team Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "team_id"
+        ],
+        "title": "DiscoveryProgram",
+        "type": "object"
+      },
       "Eligibility": {
         "description": "Seasons of eligibility the athlete has left after `as_of_season`, read\nfrom their whole career under their governing body's rules. A reading,\nnot a ruling: a range with a confidence. GET /v1/eligibility/rules lists\nthe rules and their sources.",
         "properties": {
@@ -2326,7 +2606,7 @@
       },
       "ExportCreateRequest": {
         "additionalProperties": false,
-        "description": "Body for POST /v1/exports (usage-billed by result size).\n\nOne export = one dataset in one sport/division scope, written as a single\ngzipped flat file. Use the optional filters to keep large datasets under\nthe row cap. A field this body does not declare is a 422: a mistyped\nfilter must not become an unfiltered (and billed) export.",
+        "description": "Body for POST /v1/exports (usage-billed by result size).\n\nOne export = one dataset in one sport/division scope, written as a single\ngzipped flat file. Use the optional filters to keep large datasets under\nthe row cap. A field this body does not declare is a 422: a mistyped\nfilter must not become an unfiltered (and billed) export.\n\nA players file ends with `positions` and `position_groups`, the\nstandardized reading of `position` (JSONL arrays; in CSV a cell of compact\nJSON such as `[\"MID\",\"FWD\"]`, empty for a sport with no position vocabulary\nand `[]` where the sport has one and the published text names no value).",
         "examples": [
           {
             "conference": "NESCAC",
@@ -6304,6 +6584,471 @@
         "title": "GolfTournamentSummary",
         "type": "object"
       },
+      "HighSchool": {
+        "description": "A secondary school in full: the object players and commitments carry\n(`secondary_school`) plus what the registry says about it. A school that\nclosed or was renumbered stays, so alumni of it still resolve.",
+        "properties": {
+          "boarding": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "True when the school has boarding students; null where the registry does not say.",
+            "title": "Boarding"
+          },
+          "charter": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "True for a charter school; null where the registry does not say.",
+            "title": "Charter"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "control": {
+            "description": "'public' or 'private'.",
+            "examples": [
+              "public"
+            ],
+            "title": "Control",
+            "type": "string"
+          },
+          "country": {
+            "description": "ISO 3166-1 alpha-2 country code.",
+            "examples": [
+              "US"
+            ],
+            "title": "Country",
+            "type": "string"
+          },
+          "county": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "County"
+          },
+          "district": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The public school district (NCES CCD LEA name) or, in Canada, the school board; null for private schools.",
+            "title": "District"
+          },
+          "first_vintage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "First registry release that lists the school, e.g. '2014-15'.",
+            "title": "First Vintage"
+          },
+          "highest_grade": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Highest grade offered.",
+            "title": "Highest Grade"
+          },
+          "id": {
+            "description": "Our school id; use with GET /v1/high-schools/{id} and the `high_school_id` filter.",
+            "title": "Id",
+            "type": "integer"
+          },
+          "last_vintage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Latest registry release that lists the school.",
+            "title": "Last Vintage"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "lowest_grade": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Lowest grade offered, as the registry codes it ('PK', 'KG', '09').",
+            "title": "Lowest Grade"
+          },
+          "magnet": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Magnet"
+          },
+          "name": {
+            "description": "The school's name, cased for display.",
+            "examples": [
+              "Lincoln High School"
+            ],
+            "title": "Name",
+            "type": "string"
+          },
+          "nces_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The federal NCES id: the 12-digit NCESSCH for a public school, the PPIN for a private one. Null for a school outside the NCES registries, such as a Canadian school.",
+            "examples": [
+              "410279000563"
+            ],
+            "title": "Nces Id"
+          },
+          "offers_grade_12": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Offers Grade 12"
+          },
+          "postal_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Postal Code"
+          },
+          "registry": {
+            "description": "The registry the school comes from: 'nces_ccd', 'nces_pss', 'statcan_odef', or 'curated' (a school no registry lists, added by us after a person read it).",
+            "examples": [
+              "nces_ccd"
+            ],
+            "title": "Registry",
+            "type": "string"
+          },
+          "religious_affiliation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Private schools: the affiliation the survey records.",
+            "title": "Religious Affiliation"
+          },
+          "school_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The registry's school type, e.g. 'regular', 'special education', 'vocational', 'alternative'.",
+            "title": "School Type"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Two-letter US state or Canadian province code.",
+            "examples": [
+              "OR"
+            ],
+            "title": "State"
+          },
+          "status": {
+            "description": "'open', or 'closed' once the registry stops listing it.",
+            "examples": [
+              "open"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "superseded_by": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Id of the school this one was renumbered or merged into, when the registry says so.",
+            "title": "Superseded By"
+          },
+          "virtual": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "NCES CCD's virtual status: 'full' (exclusively virtual), 'primarily', 'supplemental' or 'none'; null where the registry does not say.",
+            "title": "Virtual"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "country",
+          "control",
+          "registry",
+          "status"
+        ],
+        "title": "HighSchool",
+        "type": "object"
+      },
+      "HighSchoolPage": {
+        "description": "A page of high schools.",
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/HighSchool"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "has_more": {
+            "default": false,
+            "description": "True when another page is available.",
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Opaque cursor for the next page; null when there are no more results.",
+            "examples": [
+              "eyJvZmZzZXQiOiAyNX0="
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "HighSchoolPage",
+        "type": "object"
+      },
+      "HighSchoolRef": {
+        "description": "A secondary school from a federal or national registry: NCES's Common\nCore of Data (public schools) and Private School Survey (private schools),\nand Statistics Canada's open database of educational facilities. Look one\nup with GET /v1/high-schools/{id}; find players and commitments by it\nwith `high_school_nces_id` / `high_school_id`.",
+        "properties": {
+          "charter": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "True for a charter school; null where the registry does not say.",
+            "title": "Charter"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "control": {
+            "description": "'public' or 'private'.",
+            "examples": [
+              "public"
+            ],
+            "title": "Control",
+            "type": "string"
+          },
+          "country": {
+            "description": "ISO 3166-1 alpha-2 country code.",
+            "examples": [
+              "US"
+            ],
+            "title": "Country",
+            "type": "string"
+          },
+          "id": {
+            "description": "Our school id; use with GET /v1/high-schools/{id} and the `high_school_id` filter.",
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "description": "The school's name, cased for display.",
+            "examples": [
+              "Lincoln High School"
+            ],
+            "title": "Name",
+            "type": "string"
+          },
+          "nces_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The federal NCES id: the 12-digit NCESSCH for a public school, the PPIN for a private one. Null for a school outside the NCES registries, such as a Canadian school.",
+            "examples": [
+              "410279000563"
+            ],
+            "title": "Nces Id"
+          },
+          "registry": {
+            "description": "The registry the school comes from: 'nces_ccd', 'nces_pss', 'statcan_odef', or 'curated' (a school no registry lists, added by us after a person read it).",
+            "examples": [
+              "nces_ccd"
+            ],
+            "title": "Registry",
+            "type": "string"
+          },
+          "school_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The registry's school type, e.g. 'regular', 'special education', 'vocational', 'alternative'.",
+            "title": "School Type"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Two-letter US state or Canadian province code.",
+            "examples": [
+              "OR"
+            ],
+            "title": "State"
+          },
+          "virtual": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "NCES CCD's virtual status: 'full' (exclusively virtual), 'primarily', 'supplemental' or 'none'; null where the registry does not say.",
+            "title": "Virtual"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "country",
+          "control",
+          "registry"
+        ],
+        "title": "HighSchoolRef",
+        "type": "object"
+      },
       "IceHockeyStats": {
         "additionalProperties": true,
         "description": "Season stats for ice-hockey: the stat fields GET /v1/filters/catalog lists for the sport. Every field is present on every row; null means the source did not publish it.",
@@ -8136,8 +8881,38 @@
                 "type": "null"
               }
             ],
-            "description": "Players only.",
+            "description": "Players only. The position as the school published it ('F', 'Fwd', 'Forward', 'M/F'). Spellings differ from school to school; read `positions` and `position_groups` for one value per sport.",
             "title": "Position"
+          },
+          "position_groups": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Players only. The broadest category of each of `positions`: baseball 'SS' is in 'INF', 'RHP' in 'P'; basketball 'PG' in 'GUARD'; ice hockey 'LW' in 'F'; football 'OT' in 'OL'. A sport whose vocabulary is flat (soccer, volleyball, lacrosse, field hockey) repeats `positions`. Null or [] exactly where `positions` is.",
+            "title": "Position Groups"
+          },
+          "positions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Players only. The standardized position or positions `position` names, in the sport's canonical vocabulary: the values GET /v1/filters/catalog lists for the player `position` field ('GK', 'DEF', 'MID', 'FWD' in soccer; 'PG', 'SS', 'OH', 'QB', ...). A list because a school can print two: soccer 'M/F' is ['MID', 'FWD']. Each value is one you can filter by, and a `position` filter matches the row by the same reading, so a player returned for `position=FWD` carries 'FWD' here. Null for a sport with no positions (tennis, golf, swimming and diving, track and field); [] where the sport has them and the published text names none (nothing published, a role such as 'Special Teams', a spelling not yet in the vocabulary).",
+            "title": "Positions"
           },
           "title": {
             "anyOf": [
@@ -8254,6 +9029,7 @@
             "height": "5-10",
             "height_inches": 70,
             "high_school": "Lincoln",
+            "high_school_kind": "high_school",
             "home_city": "Portland",
             "home_country": "USA",
             "home_state": "OR",
@@ -8267,8 +9043,27 @@
             "name": "Jordan Rivera",
             "person_id": 90211,
             "position": "Midfielder",
+            "position_groups": [
+              "MID"
+            ],
+            "positions": [
+              "MID"
+            ],
             "previous_school": null,
             "region": null,
+            "secondary_school": {
+              "charter": false,
+              "city": "Portland",
+              "control": "public",
+              "country": "US",
+              "id": 51204,
+              "name": "Lincoln High School",
+              "nces_id": "410279000563",
+              "registry": "nces_ccd",
+              "school_type": "regular",
+              "state": "OR",
+              "virtual": "none"
+            },
             "sport": "soccer",
             "sport_path": "mens-soccer",
             "stats_by_season": [
@@ -8525,7 +9320,31 @@
                 "type": "null"
               }
             ],
+            "description": "As the source printed it.",
             "title": "High School"
+          },
+          "high_school_kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "high_school",
+                  "college",
+                  "club",
+                  "homeschool",
+                  "not_a_school",
+                  "unresolved"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "What the `high_school` text names: 'high_school' (a school; see `secondary_school`), 'college' (a college the player attended before this one), 'club' (a club or academy program), 'homeschool', 'not_a_school', or 'unresolved' (we looked and could not tell which school, or which kind of place, it is). Null when there is no `high_school` text or it has not been classified yet. `high_school` itself is always the text the source printed.",
+            "examples": [
+              "high_school"
+            ],
+            "title": "High School Kind"
           },
           "home_city": {
             "anyOf": [
@@ -8675,7 +9494,48 @@
                 "type": "null"
               }
             ],
+            "description": "The position as the school published it ('F', 'Fwd', 'Forward', 'M/F'). Spellings differ from school to school; read `positions` and `position_groups` for one value per sport.",
             "title": "Position"
+          },
+          "position_groups": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The broadest category of each of `positions`: baseball 'SS' is in 'INF', 'RHP' in 'P'; basketball 'PG' in 'GUARD'; ice hockey 'LW' in 'F'; football 'OT' in 'OL'. A sport whose vocabulary is flat (soccer, volleyball, lacrosse, field hockey) repeats `positions`. Null or [] exactly where `positions` is.",
+            "examples": [
+              [
+                "MID"
+              ]
+            ],
+            "title": "Position Groups"
+          },
+          "positions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The standardized position or positions `position` names, in the sport's canonical vocabulary: the values GET /v1/filters/catalog lists for the player `position` field ('GK', 'DEF', 'MID', 'FWD' in soccer; 'PG', 'SS', 'OH', 'QB', ...). A list because a school can print two: soccer 'M/F' is ['MID', 'FWD']. Each value is one you can filter by, and a `position` filter matches the row by the same reading, so a player returned for `position=FWD` carries 'FWD' here. Null for a sport with no positions (tennis, golf, swimming and diving, track and field); [] where the sport has them and the published text names none (nothing published, a role such as 'Special Teams', a spelling not yet in the vocabulary).",
+            "examples": [
+              [
+                "MID"
+              ]
+            ],
+            "title": "Positions"
           },
           "previous_school": {
             "anyOf": [
@@ -8705,6 +9565,17 @@
             "deprecated": true,
             "description": "Deprecated, removed on 2027-01-12: use `stats_by_season`, `stats_totals` and `track_bests`. An object keyed 'season_<year>' (and 'cumulative_null'), each a one-item list holding the season row.",
             "title": "Season Stats"
+          },
+          "secondary_school": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HighSchoolRef"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The registry school `high_school` names, when `high_school_kind` is 'high_school'; null otherwise."
           },
           "sport": {
             "anyOf": [
@@ -8846,6 +9717,13 @@
               "eyJvZmZzZXQiOiAyNX0="
             ],
             "title": "Next Cursor"
+          },
+          "school_resolutions": {
+            "items": {
+              "$ref": "#/components/schemas/SchoolDiscoveryResponse"
+            },
+            "title": "School Resolutions",
+            "type": "array"
           }
         },
         "required": [
@@ -8880,6 +9758,17 @@
                 "min": 10
               }
             }
+          },
+          {
+            "division": "D3",
+            "gender": "men",
+            "high_school_kind": "high_school",
+            "high_school_nces_id": [
+              "410279000563",
+              "410279000564"
+            ],
+            "limit": 25,
+            "sport": "soccer"
           }
         ],
         "properties": {
@@ -9091,8 +9980,60 @@
                 "type": "null"
               }
             ],
-            "description": "High school, exact. One value, an array of values, or a comma-separated string (any of).",
+            "description": "High school, exact, as the source printed it. One value, an array of values, or a comma-separated string (any of).",
             "title": "High School"
+          },
+          "high_school_id": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "maxItems": 500,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Players whose `high_school` resolves to these schools, by our id (`secondary_school.id`; GET /v1/high-schools finds them).",
+            "title": "High School Id"
+          },
+          "high_school_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "What the `high_school` text was classified as: 'high_school', 'college', 'club', 'homeschool', 'not_a_school' or 'unresolved'. Players with no classification yet are left out. One value, an array of values, or a comma-separated string (any of).",
+            "title": "High School Kind"
+          },
+          "high_school_nces_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Players whose `high_school` resolves to the school with this NCES id: the 12-digit NCESSCH of a public school or the PPIN of a private one (`secondary_school.nces_id`). Every spelling of the school's name finds the player, which `high_school` does not. An id no school carries matches nobody. One value, an array of values, or a comma-separated string (any of).",
+            "title": "High School Nces Id"
           },
           "home_country": {
             "anyOf": [
@@ -9352,6 +10293,40 @@
             "description": "Exclude these values. Players with no value for the field are left out too.",
             "title": "Region Not"
           },
+          "school": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Identity-aware college discovery. One scalar is one whole name; use an array for several. Names/aliases select identities; partial/typo matches return school_resolutions candidates. Persist the chosen school_id/team_id for follow-up requests.",
+            "title": "School"
+          },
+          "school_id": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "maxItems": 500,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "College institution IDs; every program in the requested scope.",
+            "title": "School Id"
+          },
           "season": {
             "anyOf": [
               {
@@ -9481,6 +10456,22 @@
             "title": "Swim Marks",
             "type": "object"
           },
+          "team_id": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "maxItems": 500,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "College program IDs, from school discovery or GET /v1/teams. Scoped as usual.",
+            "title": "Team Id"
+          },
           "team_name": {
             "anyOf": [
               {
@@ -9496,7 +10487,7 @@
                 "type": "null"
               }
             ],
-            "description": "Team (school) name; resolved to the program it names. One value, an array of values, or a comma-separated string (any of).",
+            "description": "Team (school) name; resolved to the program it names. A recognized whole name keeps its punctuation, including commas. Use an array for several names; each item is one complete name. Legacy comma-separated strings are also accepted when the whole string does not name a program.",
             "title": "Team Name"
           },
           "team_name_not": {
@@ -9514,7 +10505,7 @@
                 "type": "null"
               }
             ],
-            "description": "Exclude these values. Players with no value for the field are left out too.",
+            "description": "Exclude these team names; the same name and array rules as team_name apply.",
             "title": "Team Name Not"
           },
           "throws": {
@@ -9724,6 +10715,7 @@
             "height": "5-10",
             "height_inches": 70,
             "high_school": "Lincoln",
+            "high_school_kind": "high_school",
             "home_city": "Portland",
             "home_country": "USA",
             "home_state": "OR",
@@ -9737,8 +10729,27 @@
             "name": "Jordan Rivera",
             "person_id": 90211,
             "position": "Midfielder",
+            "position_groups": [
+              "MID"
+            ],
+            "positions": [
+              "MID"
+            ],
             "region": null,
             "season": "2026",
+            "secondary_school": {
+              "charter": false,
+              "city": "Portland",
+              "control": "public",
+              "country": "US",
+              "id": 51204,
+              "name": "Lincoln High School",
+              "nces_id": "410279000563",
+              "registry": "nces_ccd",
+              "school_type": "regular",
+              "state": "OR",
+              "virtual": "none"
+            },
             "sport": "soccer",
             "sport_path": "mens-soccer",
             "stats": {
@@ -9924,7 +10935,31 @@
                 "type": "null"
               }
             ],
+            "description": "As the source printed it.",
             "title": "High School"
+          },
+          "high_school_kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "high_school",
+                  "college",
+                  "club",
+                  "homeschool",
+                  "not_a_school",
+                  "unresolved"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "What the `high_school` text names: 'high_school' (a school; see `secondary_school`), 'college' (a college the player attended before this one), 'club' (a club or academy program), 'homeschool', 'not_a_school', or 'unresolved' (we looked and could not tell which school, or which kind of place, it is). Null when there is no `high_school` text or it has not been classified yet. `high_school` itself is always the text the source printed.",
+            "examples": [
+              "high_school"
+            ],
+            "title": "High School Kind"
           },
           "home_city": {
             "anyOf": [
@@ -10074,7 +11109,48 @@
                 "type": "null"
               }
             ],
+            "description": "The position as the school published it ('F', 'Fwd', 'Forward', 'M/F'). Spellings differ from school to school; read `positions` and `position_groups` for one value per sport.",
             "title": "Position"
+          },
+          "position_groups": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The broadest category of each of `positions`: baseball 'SS' is in 'INF', 'RHP' in 'P'; basketball 'PG' in 'GUARD'; ice hockey 'LW' in 'F'; football 'OT' in 'OL'. A sport whose vocabulary is flat (soccer, volleyball, lacrosse, field hockey) repeats `positions`. Null or [] exactly where `positions` is.",
+            "examples": [
+              [
+                "MID"
+              ]
+            ],
+            "title": "Position Groups"
+          },
+          "positions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The standardized position or positions `position` names, in the sport's canonical vocabulary: the values GET /v1/filters/catalog lists for the player `position` field ('GK', 'DEF', 'MID', 'FWD' in soccer; 'PG', 'SS', 'OH', 'QB', ...). A list because a school can print two: soccer 'M/F' is ['MID', 'FWD']. Each value is one you can filter by, and a `position` filter matches the row by the same reading, so a player returned for `position=FWD` carries 'FWD' here. Null for a sport with no positions (tennis, golf, swimming and diving, track and field); [] where the sport has them and the published text names none (nothing published, a role such as 'Special Teams', a spelling not yet in the vocabulary).",
+            "examples": [
+              [
+                "MID"
+              ]
+            ],
+            "title": "Positions"
           },
           "region": {
             "anyOf": [
@@ -10099,6 +11175,17 @@
             ],
             "description": "Season the stats belong to, e.g. '2026'.",
             "title": "Season"
+          },
+          "secondary_school": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HighSchoolRef"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The registry school `high_school` names, when `high_school_kind` is 'high_school'; null otherwise."
           },
           "sport": {
             "anyOf": [
@@ -11004,6 +12091,7 @@
             "height": "5-10",
             "height_inches": 70,
             "high_school": "Lincoln",
+            "high_school_kind": "high_school",
             "home_city": "Portland",
             "home_country": "USA",
             "home_state": "OR",
@@ -11015,7 +12103,26 @@
             "membership_source": null,
             "name": "Jordan Rivera",
             "person_id": 90211,
-            "position": "Midfielder"
+            "position": "Midfielder",
+            "position_groups": [
+              "MID"
+            ],
+            "positions": [
+              "MID"
+            ],
+            "secondary_school": {
+              "charter": false,
+              "city": "Portland",
+              "control": "public",
+              "country": "US",
+              "id": 51204,
+              "name": "Lincoln High School",
+              "nces_id": "410279000563",
+              "registry": "nces_ccd",
+              "school_type": "regular",
+              "state": "OR",
+              "virtual": "none"
+            }
           }
         ],
         "properties": {
@@ -11119,7 +12226,28 @@
                 "type": "null"
               }
             ],
+            "description": "As the source printed it.",
             "title": "High School"
+          },
+          "high_school_kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "high_school",
+                  "college",
+                  "club",
+                  "homeschool",
+                  "not_a_school",
+                  "unresolved"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "What the `high_school` text names: 'high_school' (a school; see `secondary_school`), 'college' (a college the player attended before this one), 'club' (a club or academy program), 'homeschool', 'not_a_school', or 'unresolved' (we looked and could not tell which school, or which kind of place, it is). Null when there is no `high_school` text or it has not been classified yet. `high_school` itself is always the text the source printed.",
+            "title": "High School Kind"
           },
           "home_city": {
             "anyOf": [
@@ -11255,7 +12383,48 @@
                 "type": "null"
               }
             ],
+            "description": "The position as the school published it ('F', 'Fwd', 'Forward', 'M/F'). Spellings differ from school to school; read `positions` and `position_groups` for one value per sport.",
             "title": "Position"
+          },
+          "position_groups": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The broadest category of each of `positions`: baseball 'SS' is in 'INF', 'RHP' in 'P'; basketball 'PG' in 'GUARD'; ice hockey 'LW' in 'F'; football 'OT' in 'OL'. A sport whose vocabulary is flat (soccer, volleyball, lacrosse, field hockey) repeats `positions`. Null or [] exactly where `positions` is.",
+            "examples": [
+              [
+                "MID"
+              ]
+            ],
+            "title": "Position Groups"
+          },
+          "positions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The standardized position or positions `position` names, in the sport's canonical vocabulary: the values GET /v1/filters/catalog lists for the player `position` field ('GK', 'DEF', 'MID', 'FWD' in soccer; 'PG', 'SS', 'OH', 'QB', ...). A list because a school can print two: soccer 'M/F' is ['MID', 'FWD']. Each value is one you can filter by, and a `position` filter matches the row by the same reading, so a player returned for `position=FWD` carries 'FWD' here. Null for a sport with no positions (tennis, golf, swimming and diving, track and field); [] where the sport has them and the published text names none (nothing published, a role such as 'Special Teams', a spelling not yet in the vocabulary).",
+            "examples": [
+              [
+                "MID"
+              ]
+            ],
+            "title": "Positions"
           },
           "previous_school": {
             "anyOf": [
@@ -11268,6 +12437,17 @@
             ],
             "description": "The school or schools that season's roster lists the athlete as coming from.",
             "title": "Previous School"
+          },
+          "secondary_school": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HighSchoolRef"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The registry school `high_school` names, when `high_school_kind` is 'high_school'; null otherwise."
           }
         },
         "title": "RosterEntry",
@@ -11380,6 +12560,18 @@
           }
         ],
         "properties": {
+          "commitment_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "commitment_updated and commitment_retracted: the commitment's `id` (GET /v1/commitments), in the scope of `sport` and `gender`.",
+            "title": "Commitment Id"
+          },
           "division": {
             "description": "Division scope, e.g. 'D1'.",
             "title": "Division",
@@ -11415,6 +12607,23 @@
             "title": "Sport",
             "type": "string"
           },
+          "status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "committed",
+                  "signed",
+                  "decommitted"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "commitment_updated: the status the commitment moves to. commitment_published: `signed` publishes a signing; the default is `committed`.",
+            "title": "Status"
+          },
           "team_id": {
             "anyOf": [
               {
@@ -11428,11 +12637,14 @@
             "title": "Team Id"
           },
           "type": {
-            "description": "What happens: a portal entry, a player joining a roster, or a coach joining a staff.",
+            "description": "What happens: a portal entry, a player joining a roster, a coach joining a staff, or a commitment being published, updated (signed or decommitted) or retracted.",
             "enum": [
               "portal_entry",
               "player_movement",
-              "coach_movement"
+              "coach_movement",
+              "commitment_published",
+              "commitment_updated",
+              "commitment_retracted"
             ],
             "title": "Type",
             "type": "string"
@@ -11605,6 +12817,303 @@
           "id"
         ],
         "title": "SchoolDetail",
+        "type": "object"
+      },
+      "SchoolDiscoveryRequest": {
+        "additionalProperties": false,
+        "description": "Discover one institution; use explicit arrays for several names in retrieval.",
+        "examples": [
+          {
+            "division": "D2",
+            "gender": "women",
+            "kind": "college",
+            "query": "Lock Haven University",
+            "sport": "soccer"
+          },
+          {
+            "kind": "high_school",
+            "query": "Knoch High School",
+            "state": "PA"
+          }
+        ],
+        "properties": {
+          "city": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "High school's own city, not athlete hometown.",
+            "title": "City"
+          },
+          "country": {
+            "anyOf": [
+              {
+                "maxLength": 2,
+                "minLength": 2,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "High school's ISO country code.",
+            "title": "Country"
+          },
+          "division": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Required for colleges; program scope only.",
+            "title": "Division"
+          },
+          "gender": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gender"
+          },
+          "high_school_id": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Secondary-school registry ID.",
+            "title": "High School Id"
+          },
+          "ipeds_unitid": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "College federal IPEDS ID.",
+            "title": "Ipeds Unitid"
+          },
+          "kind": {
+            "default": "college",
+            "enum": [
+              "college",
+              "high_school"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "nces_id": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Secondary-school NCES string ID; preserve leading zeroes.",
+            "title": "Nces Id"
+          },
+          "query": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "One whole school name, including punctuation, alias or qualifier.",
+            "title": "Query"
+          },
+          "school_id": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "College institution ID (schools.id).",
+            "title": "School Id"
+          },
+          "sport": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Required for colleges; program scope only.",
+            "title": "Sport"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "maxLength": 2,
+                "minLength": 2,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "High school's US state/Canadian province code. For colleges put qualifiers in query.",
+            "title": "State"
+          }
+        },
+        "title": "SchoolDiscoveryRequest",
+        "type": "object"
+      },
+      "SchoolDiscoveryResponse": {
+        "properties": {
+          "candidates": {
+            "description": "Ranked identities, with location, external IDs and college programs. Candidate IDs are suggestions until selected.",
+            "items": {
+              "$ref": "#/components/schemas/DiscoveryCandidate"
+            },
+            "title": "Candidates",
+            "type": "array"
+          },
+          "division": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Division"
+          },
+          "kind": {
+            "enum": [
+              "college",
+              "high_school"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "method": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Method"
+          },
+          "more_candidates": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "boolean"
+              }
+            ],
+            "default": false,
+            "title": "More Candidates"
+          },
+          "next_step": {
+            "title": "Next Step",
+            "type": "string"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "passed_over": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Passed Over",
+            "type": "array"
+          },
+          "query": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Query"
+          },
+          "selected": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DiscoveryCandidate"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Automatically identified institution, or null when context must select a candidate."
+          },
+          "sport_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sport Path"
+          },
+          "status": {
+            "enum": [
+              "resolved",
+              "candidates",
+              "ambiguous",
+              "unresolved"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "status",
+          "next_step"
+        ],
+        "title": "SchoolDiscoveryResponse",
         "type": "object"
       },
       "SchoolMajor": {
@@ -12286,7 +13795,7 @@
                 "type": "null"
               }
             ],
-            "description": "Of `games_held`, how many have a team box score for this team. Null for a sport with no game box scores (track and field).",
+            "description": "Of `games_held`, how many have a box score for this team. In tennis a dual's box score is its line results (doubles and singles), so a dual counts when any of its lines is held. Null for a sport with no game box scores (track and field).",
             "title": "Games With Box Scores"
           },
           "missing_games": {
@@ -14041,7 +15550,9 @@
             "phone": null,
             "profile_slug": null,
             "role": "Head Men's Soccer Coach",
-            "season": "2025"
+            "season": "2025",
+            "staff_category": "coach",
+            "staff_function": "coach"
           }
         ],
         "properties": {
@@ -14197,6 +15708,30 @@
             ],
             "description": "Season this staff row belongs to.",
             "title": "Season"
+          },
+          "staff_category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Whether this person is coaching staff, set from `role` by the database on every write: `coach`, `program_staff` (operations, video, recruiting, analysts, managers), `support_staff` (athletic training, communications, strength, academics, administration, ...), `not_staff`, `unclassified` (the title is not a job title) or `unknown` (no title published). The list holds the staff page the school publishes for the sport, so it includes non-coaches; filter with `staff_category=coach` for coaches only.",
+            "title": "Staff Category"
+          },
+          "staff_function": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The specific job behind `staff_category`, e.g. `coach`, `athletic_training`, `sports_information`, `strength_conditioning`, `administration`, `video`, `analyst`, `operations`.",
+            "title": "Staff Function"
           }
         },
         "title": "TeamCoachEntry",
@@ -14521,6 +16056,13 @@
               "eyJvZmZzZXQiOiAyNX0="
             ],
             "title": "Next Cursor"
+          },
+          "school_resolutions": {
+            "items": {
+              "$ref": "#/components/schemas/SchoolDiscoveryResponse"
+            },
+            "title": "School Resolutions",
+            "type": "array"
           }
         },
         "required": [
@@ -17302,7 +18844,7 @@
     }
   },
   "info": {
-    "description": "REST API for college sports data across NCAA D1/D2/D3, NAIA, and NJCAA:\nplayers, teams and schools, rosters and coaching staffs, cross-program\ncareers, games, roster and staff movements, the live transfer portal, and an\nagent-backed natural-language query endpoint.\n\n## Authentication\n\nEvery endpoint requires an API key sent as a bearer token:\n\n```\nAuthorization: Bearer mag_live_...\n```\n\nCreate and manage keys in the developer console at\n[magisterial.ai/console/api-keys](https://magisterial.ai/console/api-keys).\nKeys are prefixed `mag_live_` (production) or `mag_test_` (the sandbox: see\n[Sandbox](#sandbox)).\n\nEvery key also carries an exact delegated capability list. A key's effective\nauthority is the intersection of those scopes with the actor's current role,\nverification, account plan, and requested sport. Scope names do not imply one\nanother by prefix. New keys default to the non-PII `chat.use` scope.\n\n## Scoping\n\nData access is scoped by `sport`, `division`, and (for dual-gender sports)\n`gender`. `GET /v1/sports` lists every sport with its genders and the\ndivisions each gender is offered in, and `GET /v1/divisions?sport=...` returns\none sport's list. Divisions differ by sport (football has `D1-FBS` and\n`D1-FCS`, men's volleyball has no `NWAC`), so build a scope from the sport's\nown list: any non-empty comma-separated subset of it is valid, e.g.\n`D1,NAIA,NJCAA-D1`. Football's `D1` is the combined view of `D1-FBS` and\n`D1-FCS`; request the combined code or the subdivisions, not both.\n\nA query parameter an endpoint does not accept is refused with 400\n`unknown_parameter`, and the error lists what the endpoint accepts. A filter\nis never silently ignored.\n\n## Names\n\nA player's `name` is in natural order (`Jordan Rivera`) on every player,\nroster, transfer-portal, movement and managed-athlete record. `first_name`\nand `last_name` are set when the roster source published the name in split\nform and null when it published one undivided name. Box-score and\nplay-by-play lines inside `GET /v1/games/{game_id}` carry each name as the\ngame source printed it; use the line's `player_id` for the player record.\n\n## Data sources and freshness\n\nMagisterial holds no licensed NCAA, conference, or vendor feed. Records are\ncompiled from publicly available sources and from the people they describe:\n\n- **School athletics sites.** Rosters, coaching staffs, schedules, results,\n  box scores, and season statistics come from each program's official\n  athletics website (Sidearm Sports, Presto Sports, and WMT-hosted sites),\n  read as published and normalized into one schema. `bio_url`,\n  `boxscore_url`, and a school's `athletics_domain` point back at the source.\n- **Public federations and registries.** stats.ncaa.org for play-by-play and\n  shot charts, TFRRS for track and field and cross-country performances, the\n  NCAA transfer-portal listings, and federal IPEDS / College Scorecard data\n  for institution profiles and the `ipeds_unitid` join key.\n- **The people themselves.** Coaches and athletes who claim their profile add\n  and correct their own information; recruiting questionnaires and in-product\n  use contribute verified contact and preference data that is exposed only\n  under the contact capabilities described in the Managed athletes section.\n\nHeadshots and logos are the schools' own published assets, served by\nreference (some through our image proxy); we claim no rights in them.\n\nFreshness is a property of each record, not of the API. Roster, coaching\nstaff, and team responses carry a `freshness` object (`observed_at`, when the\nsource page was last fetched; `changed_at`, when the content last changed;\n`next_check_at`), and `GET /v1/coverage` lists the last run of every ingest\nlane. For rosters and coaching staffs `changed_at` is when what this API\nreturns for the team's latest season last changed (a player added, removed or\nedited in any returned field, a staff member added, removed or retitled),\nwhichever source the change came from. It is never earlier than the change\nit reports, so to sync incrementally list `GET /v1/teams` with\n`roster_changed_since` or `coaches_changed_since` set to the start of your\nprevious sync and re-read only those teams. A program's first `changed_at`\nis when tracking began for it, not a change: every program holding a roster\nor staff when tracking started carries that same first timestamp, so one full\nread after it is the baseline. Tracking covers every association alike\n(NCAA, NAIA, NJCAA, 3C2A, NWAC, NCCAA, USCAA); a change is seen when the\nprogram's roster or staff lane next reads its source (the table below). Roster and coaching-staff responses also carry `coverage`, which says\nwhat the list means: `held`, `season_not_held` (other seasons are held, not\nthe one requested), `none_listed` (the program's page was read and lists\nnobody), `not_collected` (no source has been read for the program yet, so an\nempty list says nothing about it), `not_sponsored`, or `discontinued`. A\nteam's `status` and `discontinued_at` say whether the program still competes;\n`GET /v1/teams?status=active` lists only those that do. The refresh policy is\nseasonal:\n\n| Data | Inside its churn window | Otherwise |\n|---|---|---|\n| Rosters | every 24 hours | every 7 days |\n| Coaching staffs | every 7 days (Mar 1 to Jun 30) | every 14 days |\n| Season statistics | every 7 days in season | every 14 days |\n| Schedules and box scores | every 24 hours, sport lanes every 4 to 6 hours in season | daily |\n| Movements | observed at scrape time, identity resolution every 6 hours | published once confirmed |\n| Commitments | each source read daily or weekly (`GET /v1/commitments/sources` says when) | in the feed within minutes of the read |\n| Portal supply | the NCAA portal read several times a day | counted once a day, after 10:00 UTC |\n\nMovement events carry both `observed_at` (when the roster or staff page\nchanged) and `published_at` (when the event was confirmed and entered the\nfeed). The published feed carries a transfer once it is resolved to the\ntransfer edge it made (the arrival at the new school and the departure from\nthe old one), a coach's move once it is resolved to the post at another\nschool they held the season before, and confirmed head-coach changes. A\ndeparture with no known destination, a new hire with no known previous post,\nand a link to a post that ended more than a season earlier are not published.\nEnterprise keys can read the resolver stream directly with `status=resolved`\nor `status=observed` on `GET /v1/movements`.\n\n## Commitments\n\n`GET /v1/commitments` (Developer Pro and up) is the college commitment feed:\none athlete committed to one program, reconciled across every public source\nthat lists it, from the national recruiting trackers to the platforms where\nathletes record their own commitments (which carry most of D2, D3, NAIA and\njunior college). A commitment is published only once its program is\nresolved to a team, so `team_id` always joins to `GET /v1/teams/{team_id}`.\nEach commitment carries its `sources`, each source's own date and what that\ndate means (`announced`, `recorded`, `added` or `published`); `committed_on`\nis the best of them and `first_reported_at` is when we first read it.\nSources that disagree about the program are separate commitments. A source\nreporting a signing makes it `signed`; one reporting a decommitment, or\nlisting the athlete at another program, makes it `decommitted`. Ice hockey\ntrackers give the college entry year rather than a high-school class\n(`entry_year`). Most athletes are high-school students: no contact details,\ndates of birth or social accounts are collected.\n\n`GET /v1/commitments/changes` is the change log (each commitment that is or\nwas published, in its current state, oldest change first; retractions carry\ntheir reason), the `commitment.*` webhooks push the same changes, and\n`GET /v1/commitments/sources` says what each source covers and when it was\nlast read.\n\n## Portal supply\n\n`GET /v1/portal/supply` (Developer Ultra and up) is the transfer portal\nwithout names: one row per program and position group, holding counts.\n`in_portal` is the program's entries on the market now, `in_portal_returning`\nthe part of those known not to be in their last season (the openings the\nportal adds beyond graduation), and `signed_out` the entries that signed or\nenrolled elsewhere this cycle. The position group is the roster position's\ngroup in team sports and football, the event group from results in track\nand field and in swimming and diving, and the dual-match lineup tier in\ntennis. Golf has no positions; its entries, and any entry not linked to a\nroster player, count in the program's row with `lane` null. No row carries a name, class year, entry date or per-person id, so\nnothing joins to `GET /v1/portal` (which stays verified-coach only).\n\nCounts are taken once a day. `GET /v1/portal/supply/changes` is the change\nlog, dated by the snapshot day rather than the moment anything changed, and\nthe `portal_supply.changed` webhook pushes the same changes.\n\n## Short seasons\n\nThe record and stats on a team's season (`documents` on `GET /v1/teams/{team_id}`)\nare counted from the games Magisterial holds, and a past season can hold fewer\ngames than the team played. Every season record carries a `schedule` object\nthat says so. `games_played` is how many completed games the team's own\npublished schedule counts toward its record for the season, as last read:\nexhibitions, scrimmages and games the school marks as not counting are left\nout, whether the page labels them or only its schedule data does.\n`official_record` is the record the school gives over those games, from the\nsame read, and `games_held` is how many final games we hold for the team that\nare not exhibitions for it. A game one school counts and the other calls an\nexhibition is held for the first and not the second. Each season's games are\nread in the division the team was in that season, so a program that has since\nmoved division keeps its earlier seasons.\n\nWhen `status` is `partial`, `games_held` is below `games_played` by\n`missing_games`, and the season's record and stats cover only the games held.\nWhen it is `complete`, we hold exactly the games the school counts and\n`record_from_held_games` equals `official_record`. When it is `inconsistent`,\n`games_held` is above `games_played`, or equal to it with a different record:\na held game is not one the school counts, or a held result differs from the\nschool's, and `record_from_held_games` should not be shown as the season's\nrecord. When it is `unverified` we have not read the team's schedule for that\nseason, so `games_played`, `missing_games` and `official_record` are null and\nnothing says whether the season is complete. `official_record` is given for a\npartial or inconsistent season too, with `official_record_source`\n`school_schedule`; a schedule read before the school's record was captured has\n`official_record` only when the season is complete, with\n`official_record_source` `held_games`. `record_from_held_games` is the record\nover the games held whatever the status. A season is short when `status` is\n`partial`.\n\nEach season's `overall_record` ('W-L' or 'W-L-T') is the record on the\nseason's document, and `overall_record_source` says where it comes from:\n`school_page`, the record the school posts on its own athletics site, or\n`held_games`, our tally of the games we hold. A season label is the calendar\nyear the season ends in: fall sports (soccer, football, women's volleyball,\nfield hockey) are the fall they are played in; winter and academic-year sports\n(basketball, ice hockey, swimming and diving, tennis, golf) are labelled by the\nyear the school year ends, so `2024` is the 2023-24 season (a tennis or golf\nseason spans the fall and the spring); and spring sports (baseball, softball,\nlacrosse, men's volleyball) are that spring.\n\n## Schools and external identifiers\n\nEvery team carries a `school` object with our school id, a stable slug, the\nschool's athletics domain, and its federal IPEDS UNITID (`ipeds_unitid`)\nwhere the institution is in the federal universe (about 87% of schools, and\n93% of NCAA programs). `GET /v1/schools` lists institutions with a\n`ipeds_unitid` lookup, and `GET /v1/schools/{school_id}` returns every program\na school fields across sports and divisions, so you can join on UNITID first\nand fall back to name, state, and conference only for the remainder.\n\nThe two school endpoints also carry the institution's `profile` from the U.S.\nDepartment of Education's College Scorecard (the federal IPEDS reporting it\npublishes): admission rate, SAT and ACT 25th/75th percentiles, undergraduate\nenrollment, published in-state and out-of-state tuition and fees, average net\nprice, six-year graduation and first-year retention rates, religious\naffiliation, campus setting, and the top fields of study by degrees awarded,\nwith the release year in `data_year`. A null field means the institution did\nnot report that measure or it does not apply (no admission rate at an\nopen-admission college, no graduation rate at a two-year one, no religious\naffiliation at a secular one); `profile` itself is null where no federal\nprofile is held. Average net price is what aided students pay after grants,\nnot the cost of attendance; GPA ranges and the full cost of attendance are not\nprovided. The `school` object embedded in teams is unchanged and carries no\nprofile. `GET /v1/schools` filters on `religious_affiliation`, admission rate\nand undergraduate enrollment ranges as well as `control`.\n\n## Coach contacts\n\nCoach contact fields (`email` and `phone` on `GET /v1/teams/{team_id}/coaches`)\nare returned in three cases. None of them is metered. When they are withheld\nthe response says why in `contacts_unavailable_reason`.\n\n**Coach directory.** Developer Pro, Developer Ultra and Enterprise include\nthe coach directory. A key with the exact `coach.contact.directory_read`\nscope reads coach contacts on `GET /v1/teams/{team_id}/coaches` like any\nother read. A coach who asked not to be contacted is still listed, with\n`contact_opt_out` true and no contact fields. Contact fields are never part\nof bulk exports.\n\n**Your own verified claim.** A key whose owner is a verified player and carries\n`outreach.coach.read` reads contacts for that athlete, as in the app.\n\n**Managed athletes.** A platform that represents many athletes obtains the\nbacking per athlete. Invite a player profile with `POST /v1/athletes`; the\nathlete receives an email at an address we can vouch for (their on-file\ncontact, their school .edu address, or the account that already claimed the\nprofile) and accepts on magisterial.ai, which also completes their verified\nclaim. From then on any key on the account that carries `outreach.coach.read`\nmay pass `on_behalf_of=<player_id>` to read coach contacts for that athlete.\nEvery such read is recorded in the athlete's access log, and athletes can\nwithdraw the authorization at any time; a revoked or unclaimed grant denies on\nthe next call. Requires the Enterprise plan and the `managed_athlete.manage`\nkey scope; seats default to 250 per account.\n\n## Filtering\n\nEvery list endpoint filters the same way. Each endpoint's parameter list\nnames the fields it filters on; the forms are always these:\n\n| Form | Meaning |\n|---|---|\n| `field=value` | Exact match. Text compares case-insensitively. |\n| `field=a,b,c` | Any of the values. |\n| `field_not=a,b` | None of the values. A row with no value for the field is left out too. |\n| `field_min=`, `field_max=` | Inclusive range, for numbers and dates. |\n| `q=text` | Name contains, case-insensitive. |\n| `sort_by=`, `sort_order=` | Where a list has more than one useful order. |\n\nFilters combine with AND. A parameter the endpoint does not declare returns\n400 `unknown_parameter` together with the list it accepts, so a mistyped\nfilter never comes back as an unfiltered page.\n\n`POST /v1/players/search` takes the same names in its JSON body, with arrays\nin place of comma lists, and every season stat as a range under `stats`,\nkeyed by the stat fields `GET /v1/filters/catalog` lists for the sport:\n\n```json\n{\"sport\": \"soccer\", \"division\": \"D3\", \"position\": \"Forward\",\n \"class_year_not\": \"Senior / Graduate\", \"stats\": {\"g\": {\"min\": 10}}}\n```\n\nPosition, class year and home state are published by each school in its own\nwords ('F', 'Fwd', 'Forward'; 'Jr.', 'Junior'; 'OH', 'Ohio'). A filter on one\nof them matches every spelling of the value you give, so use the canonical\nvalues from the filter catalog.\n\n`GET /v1/filters/catalog` says how each field can be used. `search_ops` is\nwhat `POST /v1/players/search` takes: `eq` and `in` are the field as one value\nor an array, `neq` and `not_in` are `field_not`, `gte` and `lte` are\n`field_min` and `field_max` (for a stat, `min` and `max` under `stats`).\n`alert_ops` is the `op` values an alert predicate on the field accepts. Until\n2027-01-12 the catalog also returns the keys it had before (`request_key`,\n`manual_search_operators` and the others marked deprecated); they name\nparameters of the Magisterial app's own search, which no /v1 endpoint accepts.\n\nSchools and movements span sports, so they take no required scope: one\n`school_id` on `GET /v1/movements` is that school's movements in every sport,\nand `GET /v1/schools/{school_id}` lists every team it fields.\n\n## Postman\n\nA ready-made Postman collection of every endpoint, generated from this\nspecification, is served at\n[`/v1/postman.json`](https://api.magisterial.ai/v1/postman.json). In Postman\nchoose Import, paste that URL, then set the collection variable `api_key` to\nyour key once; every request sends it as the bearer token.\n\n## Pagination\n\nList endpoints paginate with an opaque `cursor`. Pass the `next_cursor` from\none response as the `cursor` of the next request; `has_more` signals whether\nanother page exists.\n\n## Errors\n\nEvery 4xx/5xx returns a JSON envelope:\n\n```json\n{ \"error\": { \"type\": \"invalid_request\", \"code\": \"invalid_scope\", \"message\": \"...\" } }\n```\n\nAn error may carry more keys than those three: `unknown_parameter` adds\n`unknown` and `allowed`, and `plan_required` adds `required_plan` and\n`current_plan`.\n\nA request that fails validation (422) uses the same envelope, with code\n`validation_error` and an `error.fields` list naming each offending field.\nUntil 2027-01-12 it also carries FastAPI's `detail` list beside `error`.\nRate-limited responses (429) include `X-RateLimit-Limit`,\n`X-RateLimit-Remaining`, `X-RateLimit-Reset`, and `Retry-After` headers. A 429\n`monthly_quota_exceeded` also carries the `X-Monthly-Quota-*` headers below.\n\n## Player stats\n\nA stat has one name everywhere. `GET /v1/filters/catalog` lists each sport's\nstat fields (`stats_by_sport`), with a label and a type; those are the names\n`POST /v1/players/search` filters and sorts by, and the names in every `stats`\nobject the API returns: a search row's `stats`, each entry of a player's\n`stats_by_season`, `stats_totals`, and the stat columns of a players export.\nEvery stat field of the sport is present on every row; a stat the source did\nnot publish is null. Track and field has no season stats: a search row reports\nthe athlete's best mark in `track`, and a player's `track_bests` lists the best\nper event.\n\nA player row carries its profile fields at the top level under the names the\nfilters use (`home_state`, `jersey_number`, `height_inches`, `bats`, ...).\n\nUntil 2027-01-12 the three player endpoints also return what they returned\nbefore: inside a search row's `stats`, copies of the profile fields and the\nsoccer keys `sh%`, `sog%`, `sv%`, `yc-rc` and `pg-pa`; and `season_stats` on a\nplayer and on season history. Those responses carry `Deprecation` and `Sunset`\nheaders.\n\n## Plans\n\nEvery key inherits its owner's Developer-API plan. Six plans exist:\n\n| Plan | Price | Read limit | Monthly requests | Portal, query, alerts, exports | Included query usage | Coach directory |\n|---|---|---|---|---|---|---|\n| Free | $0, every account | 10 / minute | 1,000 | Not available | None | No |\n| Plus | $19.99 / month | 20 / minute | 25,000 | Available; portal and alerts usage-billed | $5 / month | No |\n| Premium | $49.99 / month | 100 / minute | 100,000 | Available; portal and alerts usage-billed | $15 / month | No |\n| Developer Pro | $99.99 / month | 300 / minute | 250,000 | Available; portal and alerts included | $40 / month | Included |\n| Developer Ultra | $199 / month | 1,200 / minute | 1,000,000 | Available; portal and alerts included | $100 / month | Included |\n| Enterprise | Contact sales | Custom (6,000 / minute default) | Unlimited | Available, custom ceilings | Custom | Included |\n\nThe `plan` value in responses and headers is `free`, `plus`, `premium`,\n`developer` (Developer Pro), `ultra` (Developer Ultra) or `enterprise`.\nA paid plan also pays for the account's chat in the Magisterial app, counted\nagainst the same limits. It adds no coaching tier.\n\nDeveloper Pro, Developer Ultra and Enterprise accounts can have a team (5, 20\nand 100 people by default, the owner included). Every key held by someone on\nthe account runs on the account's plan, and the per-minute limits and the\nmonthly quota are counted once for the whole account. A key, and the alerts\nand query runs made with it, stay its owner's own.\n\nThe free read endpoints (players, season stats, teams, schools, rosters,\ncoaches, games, careers, transfers, published movements, reference data) are on every plan at\nthe plan's limits. Every response carries `X-Magisterial-Plan`; plans with a\nmonthly quota add `X-Monthly-Quota-Limit`, `X-Monthly-Quota-Remaining` and\n`X-Monthly-Quota-Reset` (Unix seconds of the next reset: 00:00 UTC on the 1st\nof the month, not your billing date), and a capped account receives 429\n`monthly_quota_exceeded`, with the same headers, until the UTC calendar month\nrolls over. Plans and prices:\n[magisterial.ai/pricing/developers](https://magisterial.ai/pricing/developers).\nUpgrade in the developer console\n([magisterial.ai/console/billing](https://magisterial.ai/console/billing));\nEnterprise is arranged per customer.\n\n## Billing\n\nEndpoints marked *usage-billed* (`/v1/portal`, `/v1/query`, `/v1/alerts`,\n`/v1/exports`) are open on every paid plan (a Free key receives 403\n`plan_required`), require usage billing to be enabled on the account, and\nmeter usage against a monthly budget you set. List prices: exports $0.10 per\nstarted 10,000-row block (billed on success only), and query at model cost\nwith a 3x markup, drawn first from the plan's included monthly query usage.\nOn Plus and Premium the portal is $0.05 per request and alerts are $5 per\nactive alert per month; from Developer Pro up both are included and only\ncount against the plan's request quota and alert cap. Buying a plan enables\nusage billing on the same subscription. Billing-not-enabled and past-due states return 403; an exhausted monthly\nbudget returns 402.\n\nBilling is additive, not authorization. In particular, `/v1/portal`, API\nportal alerts (`/v1/alerts`, the `alert.triggered` webhook), portal answers\nfrom `/v1/query` and the portal section of `/v1/filters/catalog` are bound to\na verified coach: the key must delegate the relevant portal capability and\nthe current actor must be an active, verified coach. No coaching plan is needed; the paid API plan covers\nthem. Enabling usage billing by itself never grants portal or athlete-contact\naccess. Athlete contacts require the separate `portal.contact.read` scope\nunder the same actor policy.\n\nMovements are separate from the portal. `GET /v1/movements` and the movement\nwebhooks report roster and staff changes seen on school pages, and need no\ncoach verification on any plan.\n\n## Bulk exports\n\nFor full-dataset pulls, use the bulk lane instead of walking paginated\nendpoints: `POST /v1/exports` starts an async job that writes one dataset\n(players, teams, games, or coaches) in one sport/division scope to a gzipped\nCSV or JSONL file, and `GET /v1/exports/{export_id}` returns a short-lived\nsigned download URL once it succeeds. Billed on success by result size\n(per started 10,000-row block); failed exports are never billed.\n\n## Sandbox\n\nA test key (`mag_test_`) reads a synthetic world instead of production: 24\ninvented schools in D1 and D3 with men's and women's soccer and basketball,\nand everything the endpoints return for them (rosters, coaching staffs, games\nwith box scores, season statistics, rankings, postseason results, the transfer\nportal and movements). No real person, school or address is in it, and its ids\nsit far above any live id. Every response carries\n`Magisterial-Environment: sandbox`.\n\nTest keys are free. The usage-billed endpoints work without a paid plan or\nbilling, nothing is billed, and sandbox requests do not count toward the\nmonthly quota. Your plan's per-minute rate limits and the key's scopes still\napply, so what you build against a test key behaves the same with a live one.\n\n`POST /v1/query` calls no model with a test key. It answers a short list of\nsample questions from the sandbox data and answers anything else with a fixed\nmessage that lists them. Exports and alerts run over the sandbox world.\n`POST /v1/sandbox/events` makes something happen in it (a portal entry, an\nathlete or a coach joining a program): your sandbox alerts are evaluated, and\nyour registered webhook endpoints receive the resulting events with\n`\"test\": true`. Managed athletes are not available with a test key\n(501 `sandbox_not_supported`).\n\n## Webhooks\n\nInstead of polling, register webhook endpoints in the\n[console](https://magisterial.ai/console/webhooks) to receive signed events:\n`alert.triggered` when a watch alert finds new portal matches, and\n`query.completed` when an async query run finishes. Payloads carry a\n`Magisterial-Signature` header (`t=<ts>,v1=<hmac_sha256_hex>` over\n`{t}.{raw_body}`, keyed with the endpoint's `whsec_` secret); failed\ndeliveries retry with backoff for about two days. See the webhooks guide at\n[magisterial.ai/docs](https://magisterial.ai/docs#webhooks-guide).\n\nDeveloper Pro, Developer Ultra and Enterprise can also have the published\nmovement feed pushed: `coach_movement.published`, `coach_movement.updated`\nand `coach_movement.retracted`, and the same three for `player_movement`.\nEach event carries one movement, as the object `GET /v1/movements` returns,\nwith a per-movement `revision` that rises with every event. Apply them in\nrevision order and you hold what the published feed holds, corrections\nincluded. Movement webhooks need no coach verification.\n\nOn every plan, `GET /v1/movements/changes` serves the same change log to a\nconsumer that polls: each movement that is or was published, in its current\nstate, oldest change first.\n",
+    "description": "REST API for college sports data across NCAA D1/D2/D3, NAIA, and NJCAA:\nplayers, teams and schools, rosters and coaching staffs, cross-program\ncareers, games, roster and staff movements, the live transfer portal, and an\nagent-backed natural-language query endpoint.\n\n## Authentication\n\nEvery endpoint requires an API key sent as a bearer token:\n\n```\nAuthorization: Bearer mag_live_...\n```\n\nCreate and manage keys in the developer console at\n[magisterial.ai/console/api-keys](https://magisterial.ai/console/api-keys).\nKeys are prefixed `mag_live_` (production) or `mag_test_` (the sandbox: see\n[Sandbox](#sandbox)).\n\nEvery key also carries an exact delegated capability list. A key's effective\nauthority is the intersection of those scopes with the actor's current role,\nverification, account plan, and requested sport. Scope names do not imply one\nanother by prefix. New keys default to the non-PII `chat.use` scope.\n\n## Scoping\n\nData access is scoped by `sport`, `division`, and (for dual-gender sports)\n`gender`. `GET /v1/sports` lists every sport with its genders and the\ndivisions each gender is offered in, and `GET /v1/divisions?sport=...` returns\none sport's list. Divisions differ by sport (football has `D1-FBS` and\n`D1-FCS`, men's volleyball has no `NWAC`), so build a scope from the sport's\nown list: any non-empty comma-separated subset of it is valid, e.g.\n`D1,NAIA,NJCAA-D1`. Football's `D1` is the combined view of `D1-FBS` and\n`D1-FCS`; request the combined code or the subdivisions, not both.\n\nA query parameter an endpoint does not accept is refused with 400\n`unknown_parameter`, and the error lists what the endpoint accepts. A filter\nis never silently ignored.\n\n## Names\n\nA player's `name` is in natural order (`Jordan Rivera`) on every player,\nroster, transfer-portal, movement and managed-athlete record. `first_name`\nand `last_name` are set when the roster source published the name in split\nform and null when it published one undivided name. Box-score and\nplay-by-play lines inside `GET /v1/games/{game_id}` carry each name as the\ngame source printed it; use the line's `player_id` for the player record.\n\n## School identity discovery\n\nUse `POST /v1/schools/resolve` with `kind=college`, one whole `query`, and\n`sport`, `gender`, `division` to identify a college. For example,\n`{\"kind\":\"college\",\"query\":\"Lock Haven University\",\"sport\":\"soccer\",\"gender\":\"women\",\"division\":\"D2\"}`.\nCanonical names and aliases return `selected`; partial or typo matches return\nranked `candidates` with location, external IDs and available program IDs.\nChoose using your user's context, then persist the college `school_id` or\nprogram `team_id`. Identity is found before checking program scope: a known\ninstitution without this sport/division returns its identity and empty\n`in_scope_team_ids`, never a similar in-scope institution.\n\n`GET /v1/teams?school=...` and `POST /v1/players/search` with `school` share\nthis contract and include `school_resolutions`. For player searches, a scalar\n`school` is one whole name (including punctuation commas); an array is any-of.\nUse `school_id: [1904]` or `team_id: [14306]` for subsequent player reads.\nSeparate filter fields intersect. Existing `/teams` `name` (exact) and `q`\n(contains), player `high_school` (exact source text), and legacy player\n`team_name` filters retain their meanings. `school` is the explicit migration\nfrom legacy matching to identity discovery. Team-name arrays preserve complete\nnames; scalar legacy CSV is retained only when the whole name is not recognized.\n\nFor secondary schools, use `kind=high_school`, `query` and optional school\n`city`, `state`, `country`, or explicit `high_school_id` / string `nces_id`.\nKnoch and Knoch High School discover the same registry identity; Freeport\ncandidates include their states. School location is distinct from an athlete's\nhometown. College `school_id`, college `team_id`, high-school `high_school_id`,\nIPEDS UNITID and NCES ID are separate namespaces. Use the returned high-school\nIDs with player/commitment attendance filters. Discovery is read-only; attendance\ncoverage depends on completed source-record linking.\n\n## Using API data\n\nOn any paid API plan, you may use, store, modify, display, redistribute, and resell the data returned by the API, including in commercial products. No separate license, attribution, written permission, or Enterprise agreement is required.\n\nChoose a plan for the data access, features, and usage limits you need.\nEnterprise offers higher volumes, custom limits, and dedicated support.\n\n## Data sources and freshness\n\nRecords are compiled from publicly available sources and from the people\nthey describe:\n\n- **School athletics sites.** Rosters, coaching staffs, schedules, results,\n  box scores, and season statistics come from each program's official\n  athletics website (Sidearm Sports, Presto Sports, and WMT-hosted sites),\n  read as published and normalized into one schema. `bio_url`,\n  `boxscore_url`, and a school's `athletics_domain` point back at the source.\n- **Public federations and registries.** stats.ncaa.org for play-by-play and\n  shot charts, TFRRS for track and field and cross-country performances, the\n  NCAA transfer-portal listings, and federal IPEDS / College Scorecard data\n  for institution profiles and the `ipeds_unitid` join key.\n- **The people themselves.** Coaches and athletes who claim their profile add\n  and correct their own information; recruiting questionnaires and in-product\n  use contribute verified contact and preference data that is exposed only\n  under the contact capabilities described in the Managed athletes section.\n\nHeadshots and logos are served by reference from school athletics sites\n(some through our image proxy).\n\nFreshness is a property of each record, not of the API. Roster, coaching\nstaff, and team responses carry a `freshness` object (`observed_at`, when the\nsource page was last fetched; `changed_at`, when the content last changed;\n`next_check_at`), and `GET /v1/coverage` lists the last run of every ingest\nlane. For rosters and coaching staffs `changed_at` is when what this API\nreturns for the team's latest season last changed (a player added, removed or\nedited in any returned field, a staff member added, removed or retitled),\nwhichever source the change came from. It is never earlier than the change\nit reports, so to sync incrementally list `GET /v1/teams` with\n`roster_changed_since` or `coaches_changed_since` set to the start of your\nprevious sync and re-read only those teams. A program's first `changed_at`\nis when tracking began for it, not a change: every program holding a roster\nor staff when tracking started carries that same first timestamp, so one full\nread after it is the baseline. Tracking covers every association alike\n(NCAA, NAIA, NJCAA, 3C2A, NWAC, NCCAA, USCAA); a change is seen when the\nprogram's roster or staff lane next reads its source (the table below). Roster and coaching-staff responses also carry `coverage`, which says\nwhat the list means: `held`, `season_not_held` (other seasons are held, not\nthe one requested), `none_listed` (the program's page was read and lists\nnobody), `not_collected` (no source has been read for the program yet, so an\nempty list says nothing about it), `not_sponsored`, or `discontinued`. A\nteam's `status` and `discontinued_at` say whether the program still competes;\n`GET /v1/teams?status=active` lists only those that do. The refresh policy is\nseasonal:\n\n| Data | Inside its churn window | Otherwise |\n|---|---|---|\n| Rosters | every 24 hours | every 7 days |\n| Coaching staffs | every 7 days (Mar 1 to Jun 30) | every 14 days |\n| Season statistics | every 7 days in season | every 14 days |\n| Schedules and box scores | every 24 hours, sport lanes every 4 to 6 hours in season | daily |\n| Movements | observed at scrape time, identity resolution every 6 hours | published once confirmed |\n| Commitments | each source read daily or weekly (`GET /v1/commitments/sources` says when) | in the feed within minutes of the read |\n| Portal supply | the NCAA portal read several times a day | counted once a day, after 10:00 UTC |\n\nMovement events carry both `observed_at` (when the roster or staff page\nchanged) and `published_at` (when the event was confirmed and entered the\nfeed). The published feed carries a transfer once it is resolved to the\ntransfer edge it made (the arrival at the new school and the departure from\nthe old one), a coach's move once it is resolved to the post at another\nschool they held the season before, and confirmed head-coach changes. A\ndeparture with no known destination, a new hire with no known previous post,\nand a link to a post that ended more than a season earlier are not published.\nEnterprise keys can read the resolver stream directly with `status=resolved`\nor `status=observed` on `GET /v1/movements`.\n\n## Commitments\n\n`GET /v1/commitments` (Premium and up) is the college commitment feed:\none athlete committed to one program, reconciled across every public source\nthat lists it, from the national recruiting trackers to the platforms where\nathletes record their own commitments (which carry most of D2, D3, NAIA and\njunior college). A commitment is published only once its program is\nresolved to a team, so `team_id` always joins to `GET /v1/teams/{team_id}`.\nEach commitment carries its `sources`, each source's own date and what that\ndate means (`announced`, `recorded`, `added` or `published`); `committed_on`\nis the best of them and `first_reported_at` is when we first read it.\nSources that disagree about the program are separate commitments. A source\nreporting a signing makes it `signed`; one reporting a decommitment, or\nlisting the athlete at another program, makes it `decommitted`. Ice hockey\ntrackers give the college entry year rather than a high-school class\n(`entry_year`). Most athletes are high-school students: no contact details,\ndates of birth or social accounts are collected.\n\n`GET /v1/commitments/changes` is the change log (each commitment that is or\nwas published, in its current state, oldest change first; retractions carry\ntheir reason), the `commitment.*` webhooks push the same changes, and\n`GET /v1/commitments/sources` says what each source covers and when it was\nlast read.\n\n## Portal supply\n\n`GET /v1/portal/supply` (Developer Ultra and up) is the transfer portal\nwithout names: one row per program and position group, holding counts.\n`in_portal` is the program's entries on the market now, `in_portal_returning`\nthe part of those known not to be in their last season (the openings the\nportal adds beyond graduation), and `signed_out` the entries that signed or\nenrolled elsewhere this cycle. The position group is the roster position's\ngroup in team sports and football, the event group from results in track\nand field and in swimming and diving, and the dual-match lineup tier in\ntennis. Golf has no positions; its entries, and any entry not linked to a\nroster player, count in the program's row with `lane` null. No row carries a name, class year, entry date or per-person id, so\nnothing joins to `GET /v1/portal` (which stays verified-coach only).\n\nCounts are taken once a day. `GET /v1/portal/supply/changes` is the change\nlog, dated by the snapshot day rather than the moment anything changed, and\nthe `portal_supply.changed` webhook pushes the same changes.\n\n## Short seasons\n\nThe record and stats on a team's season (`documents` on `GET /v1/teams/{team_id}`)\nare counted from the games Magisterial holds, and a past season can hold fewer\ngames than the team played. Every season record carries a `schedule` object\nthat says so. `games_played` is how many completed games the team's own\npublished schedule counts toward its record for the season, as last read:\nexhibitions, scrimmages and games the school marks as not counting are left\nout, whether the page labels them or only its schedule data does.\n`official_record` is the record the school gives over those games, from the\nsame read, and `games_held` is how many final games we hold for the team that\nare not exhibitions for it. A game one school counts and the other calls an\nexhibition is held for the first and not the second. Each season's games are\nread in the division the team was in that season, so a program that has since\nmoved division keeps its earlier seasons.\n\nWhen `status` is `partial`, `games_held` is below `games_played` by\n`missing_games`, and the season's record and stats cover only the games held.\nWhen it is `complete`, we hold exactly the games the school counts and\n`record_from_held_games` equals `official_record`. When it is `inconsistent`,\n`games_held` is above `games_played`, or equal to it with a different record:\na held game is not one the school counts, or a held result differs from the\nschool's, and `record_from_held_games` should not be shown as the season's\nrecord. When it is `unverified` we have not read the team's schedule for that\nseason, so `games_played`, `missing_games` and `official_record` are null and\nnothing says whether the season is complete. `official_record` is given for a\npartial or inconsistent season too, with `official_record_source`\n`school_schedule`; a schedule read before the school's record was captured has\n`official_record` only when the season is complete, with\n`official_record_source` `held_games`. `record_from_held_games` is the record\nover the games held whatever the status. A season is short when `status` is\n`partial`.\n\nEach season's `overall_record` ('W-L' or 'W-L-T') is the record on the\nseason's document, and `overall_record_source` says where it comes from:\n`school_page`, the record the school posts on its own athletics site, or\n`held_games`, our tally of the games we hold. A season label is the calendar\nyear the season ends in: fall sports (soccer, football, women's volleyball,\nfield hockey) are the fall they are played in; winter and academic-year sports\n(basketball, ice hockey, swimming and diving, tennis, golf) are labelled by the\nyear the school year ends, so `2024` is the 2023-24 season (a tennis or golf\nseason spans the fall and the spring); and spring sports (baseball, softball,\nlacrosse, men's volleyball) are that spring.\n\n## Schools and external identifiers\n\nEvery team carries a `school` object with our school id, a stable slug, the\nschool's athletics domain, and its federal IPEDS UNITID (`ipeds_unitid`)\nwhere the institution is in the federal universe (about 87% of schools, and\n93% of NCAA programs). `GET /v1/schools` lists institutions with a\n`ipeds_unitid` lookup, and `GET /v1/schools/{school_id}` returns every program\na school fields across sports and divisions, so you can join on UNITID first\nand fall back to name, state, and conference only for the remainder.\n\nThe two school endpoints also carry the institution's `profile` from the U.S.\nDepartment of Education's College Scorecard (the federal IPEDS reporting it\npublishes): admission rate, SAT and ACT 25th/75th percentiles, undergraduate\nenrollment, published in-state and out-of-state tuition and fees, average net\nprice, six-year graduation and first-year retention rates, religious\naffiliation, campus setting, and the top fields of study by degrees awarded,\nwith the release year in `data_year`. A null field means the institution did\nnot report that measure or it does not apply (no admission rate at an\nopen-admission college, no graduation rate at a two-year one, no religious\naffiliation at a secular one); `profile` itself is null where no federal\nprofile is held. Average net price is what aided students pay after grants,\nnot the cost of attendance; GPA ranges and the full cost of attendance are not\nprovided. The `school` object embedded in teams is unchanged and carries no\nprofile. `GET /v1/schools` filters on `religious_affiliation`, admission rate\nand undergraduate enrollment ranges as well as `control`.\n\n## High schools\n\n`high_school` is the text a source printed and is never changed. Beside it,\nplayers (search rows, profiles, rosters) and a commitment's `athlete` carry\n`high_school_kind`, what we classified that text as (`high_school`, `college`,\n`club`, `homeschool`, `not_a_school`, or `unresolved`; null when there is no\ntext or it has not been classified yet), and `secondary_school`, the registry\nschool it names, only when the kind is `high_school`. Public schools are\nidentified by their NCES `nces_id` (NCESSCH), private schools by their PPIN;\na school outside the NCES registries, such as a Canadian one, has none and is\nidentified by `id`. `GET /v1/high-schools` looks schools up by name, state or\n`nces_id`. `POST /v1/players/search` filters by `high_school_nces_id`,\n`high_school_id` and `high_school_kind`, and `GET /v1/commitments` by\n`high_school_nces_id`, so every spelling of a school's name finds its athletes.\n\n## Coach contacts\n\nCoach contact fields (`email` and `phone` on `GET /v1/teams/{team_id}/coaches`)\nare returned in three cases. None of them is metered. When they are withheld\nthe response says why in `contacts_unavailable_reason`.\n\n**Coach directory.** Coach email and phone are included with Developer Pro,\nDeveloper Ultra and Enterprise. No separate approval is needed. When creating\nyour API key, enable the `coach.contact.directory_read` scope to include\nthese fields on `GET /v1/teams/{team_id}/coaches`. A coach who asked not to be contacted is still listed, with\n`contact_opt_out` true and no contact fields. Contact fields are never part\nof bulk exports.\n\n**Your own verified claim.** A key whose owner is a verified player and carries\n`outreach.coach.read` reads contacts for that athlete, as in the app.\n\n**Managed athletes.** A platform that represents many athletes obtains the\nbacking per athlete. Invite a player profile with `POST /v1/athletes`; the\nathlete receives an email at an address we can vouch for (their on-file\ncontact, their school .edu address, or the account that already claimed the\nprofile) and accepts on magisterial.ai, which also completes their verified\nclaim. From then on any key on the account that carries `outreach.coach.read`\nmay pass `on_behalf_of=<player_id>` to read coach contacts for that athlete.\nEvery such read is recorded in the athlete's access log, and athletes can\nwithdraw the authorization at any time; a revoked or unclaimed grant denies on\nthe next call. Requires the Enterprise plan and the `managed_athlete.manage`\nkey scope; seats default to 250 per account.\n\n## Filtering\n\nEvery list endpoint filters the same way. Each endpoint's parameter list\nnames the fields it filters on; the forms are always these:\n\n| Form | Meaning |\n|---|---|\n| `field=value` | Exact match. Text compares case-insensitively. |\n| `field=a,b,c` | Any of the values. |\n| `field_not=a,b` | None of the values. A row with no value for the field is left out too. |\n| `field_min=`, `field_max=` | Inclusive range, for numbers and dates. |\n| `q=text` | Name contains, case-insensitive. |\n| `sort_by=`, `sort_order=` | Where a list has more than one useful order. |\n\nFilters combine with AND. A parameter the endpoint does not declare returns\n400 `unknown_parameter` together with the list it accepts, so a mistyped\nfilter never comes back as an unfiltered page.\n\n`POST /v1/players/search` takes the same names in its JSON body, with arrays\nin place of comma lists, and every season stat as a range under `stats`,\nkeyed by the stat fields `GET /v1/filters/catalog` lists for the sport:\n\n```json\n{\"sport\": \"soccer\", \"division\": \"D3\", \"position\": \"Forward\",\n \"class_year_not\": \"Senior / Graduate\", \"stats\": {\"g\": {\"min\": 10}}}\n```\n\nPosition, class year and home state are published by each school in its own\nwords ('F', 'Fwd', 'Forward'; 'Jr.', 'Junior'; 'OH', 'Ohio'). A filter on one\nof them matches every spelling of the value you give, so use the canonical\nvalues from the filter catalog.\n\n`GET /v1/filters/catalog` says how each field can be used. `search_ops` is\nwhat `POST /v1/players/search` takes: `eq` and `in` are the field as one value\nor an array, `neq` and `not_in` are `field_not`, `gte` and `lte` are\n`field_min` and `field_max` (for a stat, `min` and `max` under `stats`).\n`alert_ops` is the `op` values an alert predicate on the field accepts. Until\n2027-01-12 the catalog also returns the keys it had before (`request_key`,\n`manual_search_operators` and the others marked deprecated); they name\nparameters of the Magisterial app's own search, which no /v1 endpoint accepts.\n\nSchools and movements span sports, so they take no required scope: one\n`school_id` on `GET /v1/movements` is that school's movements in every sport,\nand `GET /v1/schools/{school_id}` lists every team it fields.\n\n## Postman\n\nA ready-made Postman collection of every endpoint, generated from this\nspecification, is served at\n[`/v1/postman.json`](https://api.magisterial.ai/v1/postman.json). In Postman\nchoose Import, paste that URL, then set the collection variable `api_key` to\nyour key once; every request sends it as the bearer token.\n\n## Pagination\n\nList endpoints paginate with an opaque `cursor`. Pass the `next_cursor` from\none response as the `cursor` of the next request; `has_more` signals whether\nanother page exists.\n\n## Errors\n\nEvery 4xx/5xx returns a JSON envelope:\n\n```json\n{ \"error\": { \"type\": \"invalid_request\", \"code\": \"invalid_scope\", \"message\": \"...\" } }\n```\n\nAn error may carry more keys than those three: `unknown_parameter` adds\n`unknown` and `allowed`, and `plan_required` adds `required_plan` and\n`current_plan`.\n\nA request that fails validation (422) uses the same envelope, with code\n`validation_error` and an `error.fields` list naming each offending field.\nUntil 2027-01-12 it also carries FastAPI's `detail` list beside `error`.\nRate-limited responses (429) include `X-RateLimit-Limit`,\n`X-RateLimit-Remaining`, `X-RateLimit-Reset`, and `Retry-After` headers. A 429\n`monthly_quota_exceeded` also carries the `X-Monthly-Quota-*` headers below.\n\n## Player stats\n\nA stat has one name everywhere. `GET /v1/filters/catalog` lists each sport's\nstat fields (`stats_by_sport`), with a label and a type; those are the names\n`POST /v1/players/search` filters and sorts by, and the names in every `stats`\nobject the API returns: a search row's `stats`, each entry of a player's\n`stats_by_season`, `stats_totals`, and the stat columns of a players export.\nEvery stat field of the sport is present on every row; a stat the source did\nnot publish is null. Track and field has no season stats: a search row reports\nthe athlete's best mark in `track`, and a player's `track_bests` lists the best\nper event.\n\nA player row carries its profile fields at the top level under the names the\nfilters use (`home_state`, `jersey_number`, `height_inches`, `bats`, ...).\n\nUntil 2027-01-12 the three player endpoints also return what they returned\nbefore: inside a search row's `stats`, copies of the profile fields and the\nsoccer keys `sh%`, `sog%`, `sv%`, `yc-rc` and `pg-pa`; and `season_stats` on a\nplayer and on season history. Those responses carry `Deprecation` and `Sunset`\nheaders.\n\n## Plans\n\nEvery key inherits its owner's Developer-API plan. Six plans exist:\n\n| Plan | Price | Read limit | Monthly requests | Portal, query, alerts, exports | Included query usage | Coach directory |\n|---|---|---|---|---|---|---|\n| Free | $0, every account | 10 / minute | 1,000 | Not available | None | No |\n| Plus | $19.99 / month | 20 / minute | 25,000 | Available; portal and alerts usage-billed | $5 / month | No |\n| Premium | $49.99 / month | 100 / minute | 100,000 | Available; portal and alerts usage-billed | $15 / month | No |\n| Developer Pro | $99.99 / month | 300 / minute | 250,000 | Available; portal and alerts included | $40 / month | Included |\n| Developer Ultra | $199 / month | 1,200 / minute | 1,000,000 | Available; portal and alerts included | $100 / month | Included |\n| Enterprise | Contact sales | Custom (6,000 / minute default) | Unlimited | Available, custom ceilings | Custom | Included |\n\nThe `plan` value in responses and headers is `free`, `plus`, `premium`,\n`developer` (Developer Pro), `ultra` (Developer Ultra) or `enterprise`.\nA paid plan also pays for the account's chat in the Magisterial app, counted\nagainst the same limits. It adds no coaching tier.\n\nDeveloper Pro, Developer Ultra and Enterprise accounts can have a team (5, 20\nand 100 people by default, the owner included). Every key held by someone on\nthe account runs on the account's plan, and the per-minute limits and the\nmonthly quota are counted once for the whole account. A key, and the alerts\nand query runs made with it, stay its owner's own.\n\nThe free read endpoints (players, season stats, teams, schools, rosters,\ncoaches, games, careers, transfers, published movements, reference data) are on every plan at\nthe plan's limits. Every response carries `X-Magisterial-Plan`; plans with a\nmonthly quota add `X-Monthly-Quota-Limit`, `X-Monthly-Quota-Remaining` and\n`X-Monthly-Quota-Reset` (Unix seconds of the next reset: 00:00 UTC on the 1st\nof the month, not your billing date), and a capped account receives 429\n`monthly_quota_exceeded`, with the same headers, until the UTC calendar month\nrolls over. Plans and prices:\n[magisterial.ai/pricing/developers](https://magisterial.ai/pricing/developers).\nUpgrade in the developer console\n([magisterial.ai/console/billing](https://magisterial.ai/console/billing));\nEnterprise is arranged per customer.\n\n## Billing\n\nEndpoints marked *usage-billed* (`/v1/portal`, `/v1/query`, `/v1/alerts`,\n`/v1/exports`) are open on every paid plan (a Free key receives 403\n`plan_required`), require usage billing to be enabled on the account, and\nmeter usage against a monthly budget you set. List prices: exports $0.10 per\nstarted 10,000-row block (billed on success only), and query at model cost\nwith a 3x markup, drawn first from the plan's included monthly query usage.\nOn Plus and Premium the portal is $0.05 per request and alerts are $5 per\nactive alert per month; from Developer Pro up both are included and only\ncount against the plan's request quota and alert cap. Buying a plan enables\nusage billing on the same subscription. Billing-not-enabled and past-due states return 403; an exhausted monthly\nbudget returns 402.\n\nBilling is additive, not authorization. In particular, `/v1/portal`, API\nportal alerts (`/v1/alerts`, the `alert.triggered` webhook), portal answers\nfrom `/v1/query` and the portal section of `/v1/filters/catalog` are bound to\na verified coach: the key must delegate the relevant portal capability and\nthe current actor must be an active, verified coach. No coaching plan is needed; the paid API plan covers\nthem. Enabling usage billing by itself never grants portal or athlete-contact\naccess. Athlete contacts require the separate `portal.contact.read` scope\nunder the same actor policy.\n\nMovements are separate from the portal. `GET /v1/movements` and the movement\nwebhooks report roster and staff changes seen on school pages, and need no\ncoach verification on any plan.\n\n## Bulk exports\n\nFor full-dataset pulls, use the bulk lane instead of walking paginated\nendpoints: `POST /v1/exports` starts an async job that writes one dataset\n(players, teams, games, or coaches) in one sport/division scope to a gzipped\nCSV or JSONL file, and `GET /v1/exports/{export_id}` returns a short-lived\nsigned download URL once it succeeds. Billed on success by result size\n(per started 10,000-row block); failed exports are never billed.\n\nA players file ends with `positions` and `position_groups`, the standardized\nreading of `position` that every other player object carries. In JSONL they\nare arrays. In CSV a cell is the list as compact JSON (`[\"MID\",\"FWD\"]`), the\nway a games file writes period scores. An empty CSV cell (null in JSONL) is a\nsport with no position vocabulary (tennis, golf, swimming and diving, track and\nfield); `[]` is a sport that has one and a published position that names no\nvalue in it. A players header only grows at its end, so these two columns come\nafter every column a file already had.\n\n## Sandbox\n\nA test key (`mag_test_`) reads a synthetic world instead of production: 24\ninvented schools in D1 and D3 with men's and women's soccer and basketball,\nand everything the endpoints return for them (rosters, coaching staffs, games\nwith box scores, season statistics, rankings, postseason results, the transfer\nportal and movements). No real person, school or address is in it, and its ids\nsit far above any live id. Every response carries\n`Magisterial-Environment: sandbox`.\n\nTest keys are free. The usage-billed endpoints work without a paid plan or\nbilling, nothing is billed, and sandbox requests do not count toward the\nmonthly quota. Your plan's per-minute rate limits and the key's scopes still\napply, so what you build against a test key behaves the same with a live one.\n\n`POST /v1/query` calls no model with a test key. It answers a short list of\nsample questions from the sandbox data and answers anything else with a fixed\nmessage that lists them. Exports and alerts run over the sandbox world.\n`POST /v1/sandbox/events` makes something happen in it (a portal entry, an\nathlete or a coach joining a program, a commitment published, updated or\nretracted): your sandbox alerts are evaluated, and your registered webhook\nendpoints receive the resulting events with `\"test\": true`. The commitment\nfeed (`GET /v1/commitments` and its change log and sources) is served from\ninvented high-school prospects committed to the sandbox's schools. Managed athletes are not available with a test key\n(501 `sandbox_not_supported`).\n\n## Webhooks\n\nInstead of polling, register webhook endpoints in the\n[console](https://magisterial.ai/console/webhooks) to receive signed events:\n`alert.triggered` when a watch alert finds new portal matches, and\n`query.completed` when an async query run finishes. Payloads carry a\n`Magisterial-Signature` header (`t=<ts>,v1=<hmac_sha256_hex>` over\n`{t}.{raw_body}`, keyed with the endpoint's `whsec_` secret); failed\ndeliveries retry with backoff for about two days. See the webhooks guide at\n[magisterial.ai/docs](https://magisterial.ai/docs#webhooks-guide).\n\nDeveloper Pro, Developer Ultra and Enterprise can also have the published\nmovement feed pushed: `coach_movement.published`, `coach_movement.updated`\nand `coach_movement.retracted`, and the same three for `player_movement`.\nEach event carries one movement, as the object `GET /v1/movements` returns,\nwith a per-movement `revision` that rises with every event. Apply them in\nrevision order and you hold what the published feed holds, corrections\nincluded. Movement webhooks need no coach verification.\n\nOn every plan, `GET /v1/movements/changes` serves the same change log to a\nconsumer that polls: each movement that is or was published, in its current\nstate, oldest change first.\n",
     "summary": "College sports data: players, teams, careers, games, the transfer portal, and natural-language query.",
     "title": "Magisterial Developer API",
     "version": "1.0.0"
@@ -18209,7 +19751,7 @@
     },
     "/v1/commitments": {
       "get": {
-        "description": "College commitments, newest first, across every sport and division.\nEach is one athlete committed to one program, reconciled across every\npublic source that lists it (`sources`): the national trackers, the\nsport-specific directories, and the platforms where athletes record\ntheir own commitments, which carry most of D2, D3, NAIA and junior\ncollege. A commitment is published only once its program is resolved to\na team we hold (`team_id`).\n\n`committed_on` is the best date any source gives and `committed_on_kind`\nsays what kind of date it is; `first_reported_at` is when we first read\nit. To poll for new commitments pass the newest `first_reported_at` you\nhold as `since` and drop ids you already have. That finds new\ncommitments, not changes to them (a signing, a decommitment, a\ncorrection, a retraction): to keep a copy correct, poll GET\n/v1/commitments/changes instead, or subscribe to the commitment.*\nwebhooks.\n\n`athlete.person_id` identifies the athlete from the moment they commit and\nstays theirs once they enroll (it is the `person_id` on their player\nrecord, across transfers); `person_id` filters by it. Developer Pro and\nup.",
+        "description": "College commitments, newest first, across every sport and division.\nEach is one athlete committed to one program, reconciled across every\npublic source that lists it (`sources`): the national trackers, the\nsport-specific directories, and the platforms where athletes record\ntheir own commitments, which carry most of D2, D3, NAIA and junior\ncollege. A commitment is published only once its program is resolved to\na team we hold (`team_id`).\n\n`committed_on` is the best date any source gives and `committed_on_kind`\nsays what kind of date it is; `first_reported_at` is when we first read\nit. To poll for new commitments pass the newest `first_reported_at` you\nhold as `since` and drop ids you already have. That finds new\ncommitments, not changes to them (a signing, a decommitment, a\ncorrection, a retraction): to keep a copy correct, poll GET\n/v1/commitments/changes instead, or subscribe to the commitment.*\nwebhooks.\n\n`athlete.person_id` identifies the athlete from the moment they commit and\nstays theirs once they enroll (it is the `person_id` on their player\nrecord, across transfers); `person_id` filters by it. Premium and up.",
         "operationId": "list_commitments",
         "parameters": [
           {
@@ -18519,6 +20061,24 @@
             }
           },
           {
+            "description": "The athlete's high school, by NCES id: the 12-digit NCESSCH of a public school or the PPIN of a private one (`athlete.secondary_school.nces_id`). Finds the athletes of every spelling of the school's name; an athlete whose school is not resolved is not found. One value, or several separated by commas (any of).",
+            "in": "query",
+            "name": "high_school_nces_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The athlete's high school, by NCES id: the 12-digit NCESSCH of a public school or the PPIN of a private one (`athlete.secondary_school.nces_id`). Finds the athletes of every spelling of the school's name; an athlete whose school is not resolved is not found. One value, or several separated by commas (any of).",
+              "title": "High School Nces Id"
+            }
+          },
+          {
             "description": "Only commitments this source lists (GET /v1/commitments/sources). One value, or several separated by commas (any of).",
             "in": "query",
             "name": "source",
@@ -18715,7 +20275,7 @@
                 }
               }
             },
-            "description": "The key's plan does not include commitments (Developer Pro and up)."
+            "description": "The key's plan does not include commitments (Premium and up)."
           },
           "422": {
             "content": {
@@ -18761,7 +20321,7 @@
     },
     "/v1/commitments/changes": {
       "get": {
-        "description": "The change log of GET /v1/commitments, oldest change first: every\ncommitment that is or was in the feed, in its current state, ordered by\nwhen that state was last recorded. A commitment that changes (a signing,\na decommitment, a new source, a corrected date or program) comes back\nwith a higher `revision`; one that leaves the feed comes back with\n`state` 'retracted' and the `reason`.\n\nTo sync, read pages until `has_more` is false, keep the last entry's\n`changed_at`, and pass it as `since` on the next poll (`since` is\ninclusive, so expect that entry again). Apply each entry by\n`commitment.id`: store `commitment` when `state` is 'published', remove\nwhat you hold when it is 'retracted'. An entry is the commitment's latest\nstate, not one event per change. A change to how a school is displayed is\nnot a revision. Changes are recorded within about a minute of the source\npass that found them; the commitment.* webhooks deliver the same changes.\nDeveloper Pro and up.",
+        "description": "The change log of GET /v1/commitments, oldest change first: every\ncommitment that is or was in the feed, in its current state, ordered by\nwhen that state was last recorded. A commitment that changes (a signing,\na decommitment, a new source, a corrected date or program) comes back\nwith a higher `revision`; one that leaves the feed comes back with\n`state` 'retracted' and the `reason`.\n\nTo sync, read pages until `has_more` is false, keep the last entry's\n`changed_at`, and pass it as `since` on the next poll (`since` is\ninclusive, so expect that entry again). Apply each entry by\n`commitment.id`: store `commitment` when `state` is 'published', remove\nwhat you hold when it is 'retracted'. An entry is the commitment's latest\nstate, not one event per change. A change to how a school is displayed is\nnot a revision. Changes are recorded within about a minute of the source\npass that found them; the commitment.* webhooks deliver the same changes.\nPremium and up.",
         "operationId": "list_commitment_changes",
         "parameters": [
           {
@@ -18930,7 +20490,7 @@
                 }
               }
             },
-            "description": "The key's plan does not include commitments (Developer Pro and up)."
+            "description": "The key's plan does not include commitments (Premium and up)."
           },
           "422": {
             "content": {
@@ -18976,7 +20536,7 @@
     },
     "/v1/commitments/sources": {
       "get": {
-        "description": "Every source the commitment feed reads: what its dates mean, whether\nits rows are self-reported, how many published commitments it supports\nnow, and when it was last read (and last read in full). Developer Pro\nand up.",
+        "description": "Every source the commitment feed reads: what its dates mean, whether\nits rows are self-reported, how many published commitments it supports\nnow, and when it was last read (and last read in full). Premium and\nup.",
         "operationId": "list_commitment_sources",
         "responses": {
           "200": {
@@ -19007,7 +20567,7 @@
                 }
               }
             },
-            "description": "The key's plan does not include commitments (Developer Pro and up)."
+            "description": "The key's plan does not include commitments (Premium and up)."
           },
           "429": {
             "content": {
@@ -19033,7 +20593,7 @@
     },
     "/v1/commitments/{commitment_id}": {
       "get": {
-        "description": "One published commitment. A retracted one is a 404 here and appears in\nGET /v1/commitments/changes with its reason. Developer Pro and up.",
+        "description": "One published commitment. A retracted one is a 404 here and appears in\nGET /v1/commitments/changes with its reason. Premium and up.",
         "operationId": "get_commitment",
         "parameters": [
           {
@@ -19075,7 +20635,7 @@
                 }
               }
             },
-            "description": "The key's plan does not include commitments (Developer Pro and up)."
+            "description": "The key's plan does not include commitments (Premium and up)."
           },
           "404": {
             "content": {
@@ -19641,7 +21201,7 @@
         ]
       },
       "post": {
-        "description": "Export one dataset (players, teams, games, or coaches) in one\nsport/division scope as a gzipped CSV or JSONL file. Returns 202 with an\n`export_id` immediately \u2014 poll GET /v1/exports/{export_id} for the signed\ndownload URL (most exports finish in well under a minute). Billed on\nsuccess by result size; failed exports are never billed.",
+        "description": "Export one dataset (players, teams, games, or coaches) in one\nsport/division scope as a gzipped CSV or JSONL file. Returns 202 with an\n`export_id` immediately \u2014 poll GET /v1/exports/{export_id} for the signed\ndownload URL (most exports finish in well under a minute). Billed on\nsuccess by result size; failed exports are never billed.\n\nA players file ends with `positions` and `position_groups`, the\nstandardized reading of `position`: arrays in JSONL; in CSV a cell of\ncompact JSON (`[\"MID\",\"FWD\"]`), empty for a sport with no position\nvocabulary and `[]` where the sport has one and the text names no value.",
         "operationId": "create_export",
         "requestBody": {
           "content": {
@@ -21427,6 +22987,245 @@
         "summary": "Get a golf tournament",
         "tags": [
           "Golf"
+        ]
+      }
+    },
+    "/v1/high-schools": {
+      "get": {
+        "description": "Secondary schools from the federal and national registries behind the\n`secondary_school` object on players and commitments, alphabetical: NCES's\nCommon Core of Data (public schools) and Private School Survey (private\nschools), and Statistics Canada's database of educational facilities. Closed\nschools stay (`status` 'closed'), so alumni of them still resolve.\n\nMap your own records onto ours with `nces_id`, or type-ahead a school with\n`q` (narrow it with `state`). Then pass the id to POST /v1/players/search\n(`high_school_id`) or GET /v1/commitments (`high_school_nces_id`) to find\nthe athletes who attended.",
+        "operationId": "list_high_schools",
+        "parameters": [
+          {
+            "description": "Case-insensitive name contains.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 80,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Case-insensitive name contains.",
+              "title": "Q"
+            }
+          },
+          {
+            "description": "Two-letter US state or Canadian province code of the school. One value, or several separated by commas (any of).",
+            "in": "query",
+            "name": "state",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Two-letter US state or Canadian province code of the school. One value, or several separated by commas (any of).",
+              "title": "State"
+            }
+          },
+          {
+            "description": "ISO 3166-1 alpha-2 country code, e.g. 'US' or 'CA'. One value, or several separated by commas (any of).",
+            "in": "query",
+            "name": "country",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "ISO 3166-1 alpha-2 country code, e.g. 'US' or 'CA'. One value, or several separated by commas (any of).",
+              "title": "Country"
+            }
+          },
+          {
+            "description": "NCES ids: the 12-digit NCESSCH of a public school or the PPIN of a private one. One value, or several separated by commas (any of).",
+            "in": "query",
+            "name": "nces_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "NCES ids: the 12-digit NCESSCH of a public school or the PPIN of a private one. One value, or several separated by commas (any of).",
+              "title": "Nces Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HighSchoolPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed, or revoked API key."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiValidationErrorResponse"
+                }
+              }
+            },
+            "description": "The request failed validation; `error.fields` names each field."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset."
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "List high schools",
+        "tags": [
+          "High schools"
+        ]
+      }
+    },
+    "/v1/high-schools/{high_school_id}": {
+      "get": {
+        "description": "One secondary school, open or closed, by our id (`secondary_school.id`).",
+        "operationId": "get_high_school",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "high_school_id",
+            "required": true,
+            "schema": {
+              "title": "High School Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HighSchool"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed, or revoked API key."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "No resource with that id in the requested scope."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiValidationErrorResponse"
+                }
+              }
+            },
+            "description": "The request failed validation; `error.fields` names each field."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset."
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Get a high school",
+        "tags": [
+          "High schools"
         ]
       }
     },
@@ -24828,6 +26627,83 @@
         ]
       }
     },
+    "/v1/schools/resolve": {
+      "post": {
+        "description": "Resolve names/aliases to identities; partial and typo matches list\ncandidates with location and IDs for contextual selection. College identity\nis discovered across sports before program availability is evaluated.\nSupply a college sport/division scope. High-school discovery uses the\nexisting registry resolver; no player links are written. Follow-up data\nreads use school_id/team_id or high_school_id/nces_id in their own namespace.",
+        "operationId": "resolve_school",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SchoolDiscoveryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchoolDiscoveryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid request \u2014 unknown sport/gender/division scope, bad cursor, or bad parameter."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed, or revoked API key."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiValidationErrorResponse"
+                }
+              }
+            },
+            "description": "The request failed validation; `error.fields` names each field."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset."
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Discover a college or high school",
+        "tags": [
+          "Schools"
+        ]
+      }
+    },
     "/v1/schools/{school_id}": {
       "get": {
         "description": "One institution plus every program it fields or fielded across sports\nand divisions (team ids for the scoped team endpoints), each with its\nprogram `status`, and the institution's College Scorecard `profile`.\nAthletics stats stay behind the sport/division-scoped endpoints.",
@@ -25585,6 +27461,25 @@
             }
           },
           {
+            "description": "Identity-aware whole school name or alias. Partial/typo candidates appear in school_resolutions; choose IDs for subsequent requests. name and q retain literal matching.",
+            "in": "query",
+            "name": "school",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Identity-aware whole school name or alias. Partial/typo candidates appear in school_resolutions; choose IDs for subsequent requests. name and q retain literal matching.",
+              "title": "School"
+            }
+          },
+          {
             "description": "Exact team name. One value, or several separated by commas (any of).",
             "in": "query",
             "name": "name",
@@ -26208,6 +28103,25 @@
               ],
               "description": "true: head coaches only; false: the rest of the staff.",
               "title": "Is Head Coach"
+            }
+          },
+          {
+            "description": "Comma-separated staff kinds to return: coach, program_staff, support_staff, not_staff, unclassified, unknown. Without it the response holds the whole staff page, non-coaches included; `staff_category=coach` returns coaches only.",
+            "in": "query",
+            "name": "staff_category",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 120,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Comma-separated staff kinds to return: coach, program_staff, support_staff, not_staff, unclassified, unknown. Without it the response holds the whole staff page, non-coaches included; `staff_category=coach` returns coaches only.",
+              "title": "Staff Category"
             }
           },
           {
@@ -27388,6 +29302,10 @@
       "name": "Schools"
     },
     {
+      "description": "Secondary schools from the NCES and Statistics Canada registries, the school object (`secondary_school`) that players and commitments carry, with the NCES id for joining to external records.",
+      "name": "High schools"
+    },
+    {
       "description": "Cross-program careers and transfer histories, spanning divisions.",
       "name": "Persons"
     },
@@ -27396,7 +29314,7 @@
       "name": "Movements"
     },
     {
-      "description": "College commitments reconciled across every public recruiting source, with a change log, the source catalog and commitment.* webhooks. Developer Pro and up.",
+      "description": "College commitments reconciled across every public recruiting source, with a change log, the source catalog and commitment.* webhooks. Premium and up.",
       "name": "Commitments"
     },
     {

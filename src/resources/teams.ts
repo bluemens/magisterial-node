@@ -15,6 +15,13 @@ import type {
 import type { ScopeParams } from "./players.js";
 
 export interface TeamListParams extends ScopeParams {
+  /** Whole name/alias identity discovery; candidates appear on page.schoolResolutions. */
+  school?: string;
+  school_id?: string;
+  id?: string;
+  /** Literal exact name; q is a literal contains filter. */
+  name?: string;
+  q?: string;
   conference?: string;
   /** Filter to the school with this federal IPEDS UNITID. */
   ipeds_unitid?: number;
