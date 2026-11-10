@@ -1,3 +1,5 @@
+import type { SchoolDiscoveryResponse } from "./types.js";
+
 // Cursor pagination. Every list endpoint returns
 // {"data": [...], "next_cursor": "...", "has_more": bool}. A Page holds one
 // response; `for await (const item of page)` walks EVERY page transparently,
@@ -8,6 +10,7 @@ export class Page<T> implements AsyncIterable<T> {
   nextCursor: string | null;
   hasMore: boolean;
   season: string | null;
+  schoolResolutions: SchoolDiscoveryResponse[];
   /** Set on swim meet results pages: the meet the results belong to. */
   meetId: number | null;
   #fetchNext: (cursor: string) => Promise<Page<T>>;
@@ -19,12 +22,14 @@ export class Page<T> implements AsyncIterable<T> {
     fetchNext: (cursor: string) => Promise<Page<T>>,
     season: string | null = null,
     meetId: number | null = null,
+    schoolResolutions: SchoolDiscoveryResponse[] = [],
   ) {
     this.data = data;
     this.nextCursor = nextCursor;
     this.hasMore = hasMore;
     this.season = season;
     this.meetId = meetId;
+    this.schoolResolutions = schoolResolutions;
     this.#fetchNext = fetchNext;
   }
 
@@ -49,6 +54,7 @@ export interface RawPage<T> {
   has_more?: boolean;
   season?: string | null;
   meet_id?: number | null;
+  school_resolutions?: SchoolDiscoveryResponse[];
 }
 
 export function pageFromRaw<T>(
@@ -62,5 +68,6 @@ export function pageFromRaw<T>(
     fetchNext,
     raw.season ?? null,
     raw.meet_id ?? null,
+    raw.school_resolutions ?? [],
   );
 }

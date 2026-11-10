@@ -1101,7 +1101,31 @@ describe("0.7.0 endpoints", () => {
     expect(calls).toBe(1);
   });
 
-  it("reports the 0.7.0 version", () => {
-    expect(VERSION).toBe("0.7.0");
+  it("reports the 0.8.0 version", () => {
+    expect(VERSION).toBe("0.8.0");
   });
+});
+
+it("discovers a school and retains its program ID and evidence in player search", async () => {
+  const name = "California State University, Bakersfield";
+  const selected = { kind: "college", name, school_id: 990, in_scope_team_ids: [1554] };
+  const result = { kind: "college", status: "resolved", selected, next_step: "Use the program ID." };
+  const { client } = makeClient((url, init) => {
+    const body = JSON.parse(String(init.body));
+    if (url.endsWith("/v1/schools/resolve")) {
+      expect(init.method).toBe("POST");
+      expect(body.query).toBe(name);
+      return json(200, result);
+    }
+    expect(url).toContain("/v1/players/search");
+    expect(body.team_id).toEqual([1554]);
+    expect(body.school).toEqual([name]);
+    return json(200, { data: [], has_more: false, school_resolutions: [result] });
+  });
+  const scope = { sport: "soccer", gender: "women", division: "D1" };
+  const discovery = await client.schools.resolve({ ...scope, kind: "college", query: name });
+  const page = await client.players.search({
+    ...scope, school: [name], team_id: discovery.selected?.in_scope_team_ids,
+  });
+  expect(page.schoolResolutions[0].selected).toEqual(selected);
 });

@@ -15,7 +15,13 @@ export interface PlayerSearchParams<S extends string = string> {
   sport: S;
   division: string;
   gender?: string;
-  team_name?: string;
+  team_name?: string | string[];
+  /** Whole school name(s), including punctuation commas. Retain resolved IDs. */
+  school?: string | string[];
+  school_id?: number[];
+  team_id?: number[];
+  high_school_id?: number[];
+  high_school_nces_id?: string | string[];
   conference?: string;
   position?: string;
   class_year?: string;
