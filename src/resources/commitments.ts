@@ -41,6 +41,10 @@ export interface CommitmentListParams {
   /** Two-letter US state code of the school. */
   state?: string;
   state_not?: string;
+  /** ISO 3166-1 alpha-2 country of the school: 'US' (territories included) or 'CA'. Comma-separated for any of. */
+  country?: string;
+  /** Exclude these countries (comma-separated). */
+  country_not?: string;
   /** The athlete's home state, two-letter codes. */
   home_state?: string;
   /** Only commitments this source lists (see `commitments.sources()`). */
