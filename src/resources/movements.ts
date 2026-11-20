@@ -24,6 +24,14 @@ export interface MovementListParams {
   region?: string;
   /** Exclude these regions (comma-separated). */
   regionNot?: string;
+  /** ISO 3166-1 alpha-2 country of the school: 'US' (territories included) or 'CA'. Comma-separated for any of. */
+  country?: string;
+  /** Exclude these countries (comma-separated). */
+  countryNot?: string;
+  /** The school's US state, DC or territory (USPS) or Canadian province code. */
+  state?: string;
+  /** Exclude these states or provinces (comma-separated). */
+  stateNot?: string;
   limit?: number;
   cursor?: string;
 }
@@ -66,6 +74,10 @@ export class Movements {
             status: query.status,
             region: query.region,
             region_not: query.regionNot,
+            country: query.country,
+            country_not: query.countryNot,
+            state: query.state,
+            state_not: query.stateNot,
             limit: query.limit,
             cursor: query.cursor,
           },

@@ -7,8 +7,16 @@ import type { SchoolDetail, SchoolPage, SchoolSummary, SchoolDiscoveryRequest, S
 export interface SchoolListParams {
   /** Case-insensitive name contains. */
   q?: string;
-  /** Two-letter US state code. */
+  /** US state, DC or territory (USPS) or Canadian province code. Comma-separated for any of. */
   state?: string;
+  /** Exclude these states or provinces (comma-separated). */
+  stateNot?: string;
+  /** ISO 3166-1 alpha-2 country of the school: 'US' (territories included) or 'CA'. Comma-separated for any of. */
+  country?: string;
+  /** Exclude these countries (comma-separated). */
+  countryNot?: string;
+  /** City of the school. Comma-separated for any of. */
+  city?: string;
   /** Exact federal IPEDS UNITID. */
   ipedsUnitid?: number;
   /** 'Public', 'Private nonprofit' or 'Private for-profit' (the school's `control`). */
@@ -44,6 +52,10 @@ export class Schools {
         query: {
           q: query.q,
           state: query.state,
+          state_not: query.stateNot,
+          country: query.country,
+          country_not: query.countryNot,
+          city: query.city,
           ipeds_unitid: query.ipedsUnitid,
           control: query.control,
           religious_affiliation: query.religiousAffiliation,

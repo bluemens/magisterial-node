@@ -29,6 +29,18 @@ export interface TeamListParams extends ScopeParams {
   region?: string;
   /** Exclude these regions (comma-separated). */
   region_not?: string;
+  /** ISO 3166-1 alpha-2 country of the school: 'US' (territories included) or 'CA'. Comma-separated for any of. */
+  country?: string;
+  /** Exclude these countries (comma-separated). */
+  country_not?: string;
+  /** The school's US state, DC or territory (USPS) or Canadian province code. Comma-separated for any of. */
+  state?: string;
+  /** Exclude these states or provinces (comma-separated). */
+  state_not?: string;
+  /** City of the school. Comma-separated for any of. */
+  city?: string;
+  /** 'active' (programs that currently compete), 'discontinued' or 'all' (the default). */
+  status?: "active" | "discontinued" | "all";
   /** ISO 8601 timestamp; only teams whose roster `freshness.changed_at` is
    * at/after it. Pass the time of your last sync. */
   roster_changed_since?: string;

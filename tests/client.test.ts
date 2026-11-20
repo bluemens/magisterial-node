@@ -728,6 +728,32 @@ describe("0.7.0 endpoints", () => {
     expect(seen.url.searchParams.get("region_not")).toBe("Region 3");
   });
 
+  it("filters lists by the school's place (0.9.0)", async () => {
+    const teams = recording(emptyPage);
+    await teams.client.teams.list({
+      sport: "soccer", gender: "women", division: "D1,NAIA", country: "US", state_not: "PR,VI", status: "active",
+    });
+    expect(teams.seen.url.pathname).toBe("/v1/teams");
+    expect(teams.seen.url.searchParams.get("country")).toBe("US");
+    expect(teams.seen.url.searchParams.get("state_not")).toBe("PR,VI");
+    expect(teams.seen.url.searchParams.get("status")).toBe("active");
+
+    const schools = recording(emptyPage);
+    await schools.client.schools.list({ countryNot: "CA", stateNot: "PR", city: "Boston" });
+    expect(Object.fromEntries(schools.seen.url.searchParams)).toEqual({
+      country_not: "CA", state_not: "PR", city: "Boston",
+    });
+
+    const moves = recording(emptyPage);
+    await moves.client.movements.list({ kind: "coach", country: "US", state: "OH" });
+    expect(moves.seen.url.searchParams.get("country")).toBe("US");
+    expect(moves.seen.url.searchParams.get("state")).toBe("OH");
+
+    const commits = recording(emptyPage);
+    await commits.client.commitments.list({ country: "CA" });
+    expect(commits.seen.url.searchParams.get("country")).toBe("CA");
+  });
+
   it("lists regions and eligibility rules", async () => {
     const r = recording({ data: ["NJCAA Region IV"] });
     const regions = await r.client.reference.regions({
@@ -1101,8 +1127,8 @@ describe("0.7.0 endpoints", () => {
     expect(calls).toBe(1);
   });
 
-  it("reports the 0.8.0 version", () => {
-    expect(VERSION).toBe("0.8.0");
+  it("reports the 0.9.0 version", () => {
+    expect(VERSION).toBe("0.9.0");
   });
 });
 

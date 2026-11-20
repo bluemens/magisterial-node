@@ -1309,8 +1309,10 @@ export interface paths {
          * List teams
          * @description Teams in the requested sport/division scope, alphabetical. Filter by
          *     name, conference, region, or the school behind the team (id, IPEDS UNITID,
-         *     state, city, control). Each team carries its `school` (id, slug, athletics
-         *     domain, IPEDS UNITID) and its program `status`; pass `status=active` to
+         *     country, state, city, control): `country=US` is every US program, including
+         *     the campuses that have no federal record of their own. Each team carries its
+         *     `school` (id, slug, athletics domain, IPEDS UNITID, country, state, city)
+         *     and its program `status`; pass `status=active` to
          *     list only programs that currently compete. `roster_changed_since` and
          *     `coaches_changed_since` list only the programs whose roster or staff
          *     changed since a time, for incremental sync. Paginates with an opaque
@@ -1367,9 +1369,8 @@ export interface paths {
          *     owner's own verified player claim allows coach-outreach reads; or
          *     `on_behalf_of` names a managed athlete who authorized the account
          *     (Enterprise). See the Coach contacts section. None of these is metered.
-         *     When contacts are withheld, `contacts_unavailable_reason` says why. A
-         *     coach who asked not to be contacted has `contact_opt_out` true and no
-         *     contact fields. A delegated request that cannot be authorized fails with
+         *     When contacts are withheld, `contacts_unavailable_reason` says why.
+         *     A delegated request that cannot be authorized fails with
          *     403 rather than silently returning nulls. `freshness` says when the staff
          *     page was last read; `coverage` says what an empty list means (for example
          *     'not_collected' when we have not read a staff page for this program yet).
@@ -1503,6 +1504,33 @@ export interface paths {
          *     where a player's tournament record and a team's are read.
          */
         get: operations["list_tennis_matches"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/transfers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List transfers
+         * @description Every recorded school change across the platform, newest recorded first:
+         *     one edge per move, with both schools' `team_id`, `school_id`, name,
+         *     division and conference, and the `person_id` that links into
+         *     GET /v1/persons/{person_id}. It is the bulk form of
+         *     GET /v1/persons/{person_id}/transfers, and the same edge a player
+         *     movement's `transfer` carries. No division scope is required. Pages are
+         *     cut by a keyset cursor, so a transfer recorded while you page never
+         *     shifts a row you have not read yet.
+         */
+        get: operations["list_transfers"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2553,7 +2581,7 @@ export interface components {
             last_complete_read_at?: string | null;
             /**
              * Last Read At
-             * @description Its most recent finished pass.
+             * @description Its most recent completed or partial source read. Failed attempts and reprocessing of stored observations do not advance this timestamp.
              */
             last_read_at?: string | null;
             /**
@@ -5589,7 +5617,15 @@ export interface components {
          *     named a different school; never inferred from career history.
          */
         MovementCounterpart: {
-            /** Division */
+            /**
+             * Conference
+             * @description Conference of the other school's team.
+             */
+            conference?: string | null;
+            /**
+             * Division
+             * @description Division of the other school's team.
+             */
             division?: string | null;
             /**
              * School Id
@@ -5600,6 +5636,16 @@ export interface components {
             school_logo_url?: string | null;
             /** School Name */
             school_name?: string | null;
+            /**
+             * Season
+             * @description The season that anchors the other side: the last season at the origin school for an addition, the first season at the destination for a removal.
+             */
+            season?: string | null;
+            /**
+             * Sport Path
+             * @description Sport of the other school's team.
+             */
+            sport_path?: string | null;
             /** Team Id */
             team_id?: number | null;
         };
@@ -5687,9 +5733,11 @@ export interface components {
             subject: components["schemas"]["MovementSubject"];
             /** Team Id */
             team_id?: number | null;
+            /** @description That transfer edge with both sides named (`from_team_id`, `to_team_id`, divisions, conferences, seasons), so direction is the same on the arrival and the departure. Null when the movement has no transfer edge. */
+            transfer?: components["schemas"]["MovementTransfer"] | null;
             /**
              * Transfer Id
-             * @description Transfer edge minted by this movement (players).
+             * @description Transfer edge behind this movement (players): the one the arrival minted, which a departure shares with it.
              */
             transfer_id?: number | null;
         };
@@ -5781,6 +5829,50 @@ export interface components {
              * @description Coaches, title changes only.
              */
             to_title?: string | null;
+        };
+        /**
+         * MovementTransfer
+         * @description The transfer edge behind a player movement, with both sides spelled
+         *     out so the direction never depends on the event type. The same record
+         *     GET /v1/transfers and GET /v1/persons/{person_id}/transfers return,
+         *     without the link evidence.
+         */
+        MovementTransfer: {
+            /**
+             * First Season To
+             * @description First season at the destination school.
+             */
+            first_season_to?: string | null;
+            /** From Conference */
+            from_conference?: string | null;
+            /** From Division */
+            from_division?: string | null;
+            /**
+             * From Team Id
+             * @description Origin team id.
+             */
+            from_team_id?: number | null;
+            /**
+             * Id
+             * @description Transfer id; see GET /v1/transfers.
+             */
+            id?: number | null;
+            /**
+             * Last Season From
+             * @description Last season at the origin school.
+             */
+            last_season_from?: string | null;
+            /** Sport Path */
+            sport_path?: string | null;
+            /** To Conference */
+            to_conference?: string | null;
+            /** To Division */
+            to_division?: string | null;
+            /**
+             * To Team Id
+             * @description Destination team id.
+             */
+            to_team_id?: number | null;
         };
         /**
          * NearPoint
@@ -6473,7 +6565,7 @@ export interface components {
             team_id?: number[] | null;
             /**
              * Team Name
-             * @description Team (school) name; resolved to the program it names. A recognized whole name keeps its punctuation, including commas. Use an array for several names; each item is one complete name. Legacy comma-separated strings are also accepted when the whole string does not name a program.
+             * @description Team (school) name; resolved to the program it names. A recognized whole name keeps its punctuation, including commas. Use an array for several names; each item is one complete name. Comma-separated strings are also accepted when the whole string does not name a program.
              */
             team_name?: string | string[] | null;
             /**
@@ -7509,13 +7601,21 @@ export interface components {
              * @description The school's official athletics website domain (the source of its program data).
              */
             athletics_domain?: string | null;
-            /** City */
+            /**
+             * City
+             * @description City of the campus that fields the school's teams. Null when the school is not placed, or when its program plays on several campuses and none is its home.
+             */
             city?: string | null;
             /**
              * Control
              * @description Institutional control, e.g. 'Public' or 'Private nonprofit'.
              */
             control?: string | null;
+            /**
+             * Country
+             * @description ISO 3166-1 alpha-2 country code: 'US' (territories included) or 'CA'. Null when the school is not placed. Held for schools with no federal record too.
+             */
+            country?: string | null;
             /**
              * Id
              * @description School id; use with GET /v1/schools/{school_id}.
@@ -7537,7 +7637,7 @@ export interface components {
             slug?: string | null;
             /**
              * State
-             * @description Two-letter US state code, when known.
+             * @description Two-letter code: a US state, DC or territory (USPS, e.g. 'PR'), or a Canadian province (e.g. 'BC'). Null when the school is not placed.
              */
             state?: string | null;
             /** Teams */
@@ -7843,13 +7943,21 @@ export interface components {
              * @description The school's official athletics website domain (the source of its program data).
              */
             athletics_domain?: string | null;
-            /** City */
+            /**
+             * City
+             * @description City of the campus that fields the school's teams. Null when the school is not placed, or when its program plays on several campuses and none is its home.
+             */
             city?: string | null;
             /**
              * Control
              * @description Institutional control, e.g. 'Public' or 'Private nonprofit'.
              */
             control?: string | null;
+            /**
+             * Country
+             * @description ISO 3166-1 alpha-2 country code: 'US' (territories included) or 'CA'. Null when the school is not placed. Held for schools with no federal record too.
+             */
+            country?: string | null;
             /**
              * Id
              * @description School id; use with GET /v1/schools/{school_id}.
@@ -7869,7 +7977,7 @@ export interface components {
             slug?: string | null;
             /**
              * State
-             * @description Two-letter US state code, when known.
+             * @description Two-letter code: a US state, DC or territory (USPS, e.g. 'PR'), or a Canadian province (e.g. 'BC'). Null when the school is not placed.
              */
             state?: string | null;
         };
@@ -7884,13 +7992,21 @@ export interface components {
              * @description The school's official athletics website domain (the source of its program data).
              */
             athletics_domain?: string | null;
-            /** City */
+            /**
+             * City
+             * @description City of the campus that fields the school's teams. Null when the school is not placed, or when its program plays on several campuses and none is its home.
+             */
             city?: string | null;
             /**
              * Control
              * @description Institutional control, e.g. 'Public' or 'Private nonprofit'.
              */
             control?: string | null;
+            /**
+             * Country
+             * @description ISO 3166-1 alpha-2 country code: 'US' (territories included) or 'CA'. Null when the school is not placed. Held for schools with no federal record too.
+             */
+            country?: string | null;
             /**
              * Id
              * @description School id; use with GET /v1/schools/{school_id}.
@@ -7912,7 +8028,7 @@ export interface components {
             slug?: string | null;
             /**
              * State
-             * @description Two-letter US state code, when known.
+             * @description Two-letter code: a US state, DC or territory (USPS, e.g. 'PR'), or a Canadian province (e.g. 'BC'). Null when the school is not placed.
              */
             state?: string | null;
         };
@@ -8823,10 +8939,9 @@ export interface components {
          * TeamCoachEntry
          * @description One member of a team's coaching staff for a season. `email` and `phone`
          *     are populated when the response says `contacts_included` (see the Coach
-         *     contacts section) and the coach has not opted out of contact.
+         *     contacts section) and the data source publishes them.
          * @example {
          *       "bio_url": "https://athletics.amherst.edu/coaches/justin-serpone",
-         *       "contact_opt_out": null,
          *       "email": null,
          *       "headshot_url": "https://api.magisterial.ai/api/public/img?u=...",
          *       "id": 18234,
@@ -8853,13 +8968,8 @@ export interface components {
              */
             bio_url?: string | null;
             /**
-             * Contact Opt Out
-             * @description True when this coach asked not to be contacted, so `email` and `phone` are withheld; false otherwise. Null when the response has `contacts_included` false.
-             */
-            contact_opt_out?: boolean | null;
-            /**
              * Email
-             * @description Published coach email. Null when the response has `contacts_included` false, when the coach opted out of contact, or when none is published.
+             * @description Published coach email. Null when the response has `contacts_included` false or when none is published.
              */
             email?: string | null;
             /** Headshot Url */
@@ -10018,6 +10128,11 @@ export interface components {
              */
             best_mark_seconds?: number | null;
             /**
+             * Best Performance Id
+             * @description Player history only: ID of the result behind this best.
+             */
+            best_performance_id?: number | null;
+            /**
              * Best Points
              * @description Combined events: higher is better.
              */
@@ -10065,6 +10180,16 @@ export interface components {
              */
             season?: string | null;
             /**
+             * Source Team Id
+             * @description Program the athlete competed for on the best result, when resolved.
+             */
+            source_team_id?: number | null;
+            /**
+             * Source Team Name
+             * @description Name of the competing program on the best result, when resolved.
+             */
+            source_team_name?: string | null;
+            /**
              * Window
              * @description What the best was taken over, e.g. 'Career' or 'Selected seasons'.
              */
@@ -10088,12 +10213,94 @@ export interface components {
             primary_discipline?: string | null;
         };
         /**
+         * TransferFeedRecord
+         * @description One school-change edge in the bulk feed, with both schools named.
+         */
+        TransferFeedRecord: {
+            /**
+             * Created At
+             * @description When the edge was recorded (UTC). The clock `since` filters on.
+             */
+            created_at?: string | null;
+            /**
+             * First Season To
+             * @description First season at the destination school.
+             */
+            first_season_to?: string | null;
+            /** From Conference */
+            from_conference?: string | null;
+            /** From Division */
+            from_division?: string | null;
+            /**
+             * From School Id
+             * @description Origin school id; see GET /v1/schools/{school_id}.
+             */
+            from_school_id?: number | null;
+            /** From School Name */
+            from_school_name?: string | null;
+            /**
+             * From Team Id
+             * @description Origin team id.
+             */
+            from_team_id?: number | null;
+            /** Id */
+            id: number;
+            /**
+             * Last Season From
+             * @description Last season at the origin school.
+             */
+            last_season_from?: string | null;
+            /**
+             * Person Id
+             * @description See GET /v1/persons/{person_id}.
+             */
+            person_id?: number | null;
+            /** Sport Path */
+            sport_path?: string | null;
+            /** To Conference */
+            to_conference?: string | null;
+            /** To Division */
+            to_division?: string | null;
+            /**
+             * To School Id
+             * @description Destination school id.
+             */
+            to_school_id?: number | null;
+            /** To School Name */
+            to_school_name?: string | null;
+            /**
+             * To Team Id
+             * @description Destination team id.
+             */
+            to_team_id?: number | null;
+        };
+        /**
          * TransferListResponse
          * @description Envelope for GET /v1/persons/{person_id}/transfers.
          */
         TransferListResponse: {
             /** Data */
             data: components["schemas"]["TransferRecord"][];
+        };
+        /**
+         * TransferPage
+         * @description One page of the transfers feed.
+         */
+        TransferPage: {
+            /** Data */
+            data: components["schemas"]["TransferFeedRecord"][];
+            /**
+             * Has More
+             * @description True when another page is available.
+             * @default false
+             */
+            has_more: boolean;
+            /**
+             * Next Cursor
+             * @description Opaque cursor for the next page; null when there are no more results.
+             * @example eyJvZmZzZXQiOiAyNX0=
+             */
+            next_cursor?: string | null;
         };
         /**
          * TransferRecord
@@ -11029,10 +11236,14 @@ export interface operations {
                 region?: string | null;
                 /** @description Exclude these values (comma-separated). Rows with no value for the field are left out too. */
                 region_not?: string | null;
-                /** @description State of the school. Two-letter US state code of the school. One value, or several separated by commas (any of). */
+                /** @description State of the school. Two-letter code of the school's US state, DC or territory (e.g. 'PA', 'PR') or Canadian province (e.g. 'BC'). One value, or several separated by commas (any of). */
                 state?: string | null;
                 /** @description Exclude these values (comma-separated). Rows with no value for the field are left out too. */
                 state_not?: string | null;
+                /** @description ISO 3166-1 alpha-2 country of the school: 'US' (territories included) or 'CA'. Every school we place has one, including schools with no federal record. One value, or several separated by commas (any of). */
+                country?: string | null;
+                /** @description Exclude these values (comma-separated). Rows with no value for the field are left out too. */
+                country_not?: string | null;
                 /** @description The athlete's home state, two-letter codes. One value, or several separated by commas (any of). */
                 home_state?: string | null;
                 /** @description The athlete's high school, by NCES id: the 12-digit NCESSCH of a public school or the PPIN of a private one (`athlete.secondary_school.nces_id`). Finds the athletes of every spelling of the school's name; an athlete whose school is not resolved is not found. One value, or several separated by commas (any of). */
@@ -11920,11 +12131,11 @@ export interface operations {
                      *         "player": {
                      *           "soccer": [
                      *             "a",
+                     *             "a_per90",
                      *             "cbo",
                      *             "g",
-                     *             "ga",
-                     *             "gaa",
-                     *             "gp"
+                     *             "g_a_per90",
+                     *             "g_per90"
                      *           ]
                      *         },
                      *         "team": {
@@ -12601,10 +12812,14 @@ export interface operations {
                 region?: string | null;
                 /** @description Exclude these values (comma-separated). Rows with no value for the field are left out too. */
                 region_not?: string | null;
-                /** @description Two-letter US state code of the school. One value, or several separated by commas (any of). */
+                /** @description Two-letter code of the school's US state, DC or territory (e.g. 'PA', 'PR') or Canadian province (e.g. 'BC'). One value, or several separated by commas (any of). */
                 state?: string | null;
                 /** @description Exclude these values (comma-separated). Rows with no value for the field are left out too. */
                 state_not?: string | null;
+                /** @description ISO 3166-1 alpha-2 country of the school: 'US' (territories included) or 'CA'. Every school we place has one, including schools with no federal record. One value, or several separated by commas (any of). */
+                country?: string | null;
+                /** @description Exclude these values (comma-separated). Rows with no value for the field are left out too. */
+                country_not?: string | null;
                 /** @description Resolver outcome, e.g. 'linked_transfer' or 'new_hire' (see the `resolution_status` field). One value, or several separated by commas (any of). */
                 resolution_status?: string | null;
                 /** @description ISO datetime; only movements at/after this time. Compared against published_at on the published tier and observed_at on the resolved and observed tiers. */
@@ -13796,10 +14011,14 @@ export interface operations {
                 ipeds_unitid?: number | null;
                 /** @description Athletics site domain, e.g. 'athletics.cmu.edu'. One value, or several separated by commas (any of). */
                 athletics_domain?: string | null;
-                /** @description Two-letter US state code of the school. One value, or several separated by commas (any of). */
+                /** @description Two-letter code of the school's US state, DC or territory (e.g. 'PA', 'PR') or Canadian province (e.g. 'BC'). One value, or several separated by commas (any of). */
                 state?: string | null;
                 /** @description Exclude these values (comma-separated). Rows with no value for the field are left out too. */
                 state_not?: string | null;
+                /** @description ISO 3166-1 alpha-2 country of the school: 'US' (territories included) or 'CA'. Every school we place has one, including schools with no federal record. One value, or several separated by commas (any of). */
+                country?: string | null;
+                /** @description Exclude these values (comma-separated). Rows with no value for the field are left out too. */
+                country_not?: string | null;
                 /** @description City of the school. One value, or several separated by commas (any of). */
                 city?: string | null;
                 /** @description 'Public', 'Private nonprofit' or 'Private for-profit'. One value, or several separated by commas (any of). */
@@ -14288,10 +14507,14 @@ export interface operations {
                 region?: string | null;
                 /** @description Exclude these values (comma-separated). Rows with no value for the field are left out too. */
                 region_not?: string | null;
-                /** @description Two-letter US state code of the school. One value, or several separated by commas (any of). */
+                /** @description Two-letter code of the school's US state, DC or territory (e.g. 'PA', 'PR') or Canadian province (e.g. 'BC'). One value, or several separated by commas (any of). */
                 state?: string | null;
                 /** @description Exclude these values (comma-separated). Rows with no value for the field are left out too. */
                 state_not?: string | null;
+                /** @description ISO 3166-1 alpha-2 country of the school: 'US' (territories included) or 'CA'. Every school we place has one, including schools with no federal record. One value, or several separated by commas (any of). */
+                country?: string | null;
+                /** @description Exclude these values (comma-separated). Rows with no value for the field are left out too. */
+                country_not?: string | null;
                 /** @description City of the school. One value, or several separated by commas (any of). */
                 city?: string | null;
                 /** @description 'Public', 'Private nonprofit' or 'Private for-profit'. One value, or several separated by commas (any of). */
@@ -14830,6 +15053,64 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Missing, malformed, or revoked API key. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The request failed validation; `error.fields` names each field. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
+                };
+            };
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    list_transfers: {
+        parameters: {
+            query?: {
+                /** @description Full sport path, e.g. 'womens-volleyball'. One value, or several separated by commas (any of). */
+                sport_path?: string | null;
+                /** @description Division of either school, e.g. 'D3' or 'D1,D2': a transfer matches when its origin or its destination is in one of them. 'D1' includes football's FBS and FCS. */
+                division?: string | null;
+                /** @description First season at the destination school, e.g. '2026'. One value, or several separated by commas (any of). */
+                season?: string | null;
+                /** @description ISO datetime; only transfers recorded at/after this time (`created_at`). A transfer is not edited after it is recorded, so a poller keeps the newest `created_at` it has seen and passes it here, dropping ids it already holds (`since` is inclusive). */
+                since?: string | null;
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferPage"];
                 };
             };
             /** @description Missing, malformed, or revoked API key. */

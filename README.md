@@ -185,6 +185,23 @@ schools, use `kind: "high_school"` and an optional state or city, then pass the
 returned `high_school_id` or NCES ID to player search. Name-based player and team
 searches return evidence on `page.schoolResolutions`.
 
+## Listing by place
+
+Every school carries `country` (`US`, territories included, or `CA`), `state`
+(USPS or Canadian province code) and `city`, including schools with no federal
+record. Filter lists by them:
+
+```ts
+const usPrograms = await client.teams.list({
+  sport: "soccer", gender: "women", division: "D1,D2,D3,NAIA,NJCAA-D1",
+  status: "active", country: "US",
+});
+```
+
+`teams.list` and `commitments.list` take `country`, `country_not`, `state`,
+`state_not` (teams also `city`); `schools.list` and `movements.list` take the
+same as `country`, `countryNot`, `state`, `stateNot` (schools also `city`).
+
 ## Types
 
 All request/response types live in the `types` export and are generated from the
