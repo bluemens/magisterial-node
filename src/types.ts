@@ -204,6 +204,10 @@ export type PortalSupplyPage = Schemas["PortalSupplyPage"];
 export type PortalSupplyChange = Schemas["PortalSupplyChange"];
 export type PortalSupplyChangePage = Schemas["PortalSupplyChangePage"];
 
+export type RecruitFitRequest = Schemas["RecruitFitRequest"];
+export type RecruitFitPage = Schemas["RecruitFitPage"];
+export type RecruitFitProgram = Schemas["RecruitFitProgram"];
+
 export type QueryCreateResponse = Schemas["QueryCreateResponse"];
 export type QueryRunStatus = Schemas["QueryRunStatus"];
 

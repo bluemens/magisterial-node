@@ -12251,6 +12251,812 @@
         "title": "RecordCounts",
         "type": "object"
       },
+      "RecruitFitAthlete": {
+        "description": "The answers as they were read.",
+        "properties": {
+          "club_league": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The league code read for the athlete's season.",
+            "title": "Club League"
+          },
+          "club_league_tier": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1 is the national top flight for the gender.",
+            "title": "Club League Tier"
+          },
+          "grad_year": {
+            "title": "Grad Year",
+            "type": "integer"
+          },
+          "home_state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Home State"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          },
+          "position_group": {
+            "description": "GK, DEF, MID, FWD, or ALL without a position.",
+            "title": "Position Group",
+            "type": "string"
+          },
+          "sport_path": {
+            "title": "Sport Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sport_path",
+          "grad_year",
+          "position_group"
+        ],
+        "title": "RecruitFitAthlete",
+        "type": "object"
+      },
+      "RecruitFitComponent": {
+        "description": "One weighted part of the fit.",
+        "properties": {
+          "key": {
+            "description": "room: expected openings at the position. pipeline: recruits and roster from the athlete's state, region and league. preferences: nearness to home. level: the athlete's league against the program's recent recruits. stability: coach tenure, first-year minutes and portal reliance.",
+            "enum": [
+              "room",
+              "pipeline",
+              "preferences",
+              "level",
+              "stability"
+            ],
+            "title": "Key",
+            "type": "string"
+          },
+          "measured": {
+            "description": "False when the data is missing and the part is neutral (0.5).",
+            "title": "Measured",
+            "type": "boolean"
+          },
+          "score": {
+            "description": "0 to 1 against the other programs; higher is better.",
+            "title": "Score",
+            "type": "number"
+          },
+          "weight": {
+            "description": "Its share of the fit.",
+            "title": "Weight",
+            "type": "number"
+          }
+        },
+        "required": [
+          "key",
+          "weight",
+          "score",
+          "measured"
+        ],
+        "title": "RecruitFitComponent",
+        "type": "object"
+      },
+      "RecruitFitLevel": {
+        "description": "The athlete's league against the program's recent recruits.",
+        "properties": {
+          "above": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Share a level above.",
+            "title": "Above"
+          },
+          "below": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Share a level below.",
+            "title": "Below"
+          },
+          "measured": {
+            "description": "False unless the athlete's league and 2+ of the program's recruits' are known.",
+            "title": "Measured",
+            "type": "boolean"
+          },
+          "percentile": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Percentile"
+          },
+          "same": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Share of recruits at the athlete's league level.",
+            "title": "Same"
+          }
+        },
+        "required": [
+          "measured"
+        ],
+        "title": "RecruitFitLevel",
+        "type": "object"
+      },
+      "RecruitFitMustHave": {
+        "properties": {
+          "excluded": {
+            "description": "Programs that fail it.",
+            "title": "Excluded",
+            "type": "integer"
+          },
+          "must_have": {
+            "title": "Must Have",
+            "type": "string"
+          },
+          "unknown_excluded": {
+            "description": "Programs left out because the data to judge them is missing.",
+            "title": "Unknown Excluded",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "must_have",
+          "excluded",
+          "unknown_excluded"
+        ],
+        "title": "RecruitFitMustHave",
+        "type": "object"
+      },
+      "RecruitFitPage": {
+        "description": "Programs in rank order, with what the ranking was built from.",
+        "properties": {
+          "athlete": {
+            "$ref": "#/components/schemas/RecruitFitAthlete"
+          },
+          "built_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "When the oldest program input was built (hourly).",
+            "title": "Built At"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/RecruitFitProgram"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "has_more": {
+            "default": false,
+            "description": "True when another page is available.",
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "missing": {
+            "description": "Answers that would sharpen the scores.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Missing",
+            "type": "array"
+          },
+          "must_haves": {
+            "items": {
+              "$ref": "#/components/schemas/RecruitFitMustHave"
+            },
+            "title": "Must Haves",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Opaque cursor for the next page; null when there are no more results.",
+            "examples": [
+              "eyJvZmZzZXQiOiAyNX0="
+            ],
+            "title": "Next Cursor"
+          },
+          "programs_in_field": {
+            "description": "Every program in the sport for this class and position.",
+            "title": "Programs In Field",
+            "type": "integer"
+          },
+          "ranked": {
+            "description": "Programs that pass the targets and must-haves.",
+            "title": "Ranked",
+            "type": "integer"
+          },
+          "unknown_team_ids": {
+            "description": "Requested ids not in the field.",
+            "items": {
+              "type": "integer"
+            },
+            "title": "Unknown Team Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "data",
+          "athlete",
+          "ranked",
+          "programs_in_field",
+          "missing",
+          "must_haves"
+        ],
+        "title": "RecruitFitPage",
+        "type": "object"
+      },
+      "RecruitFitProgram": {
+        "description": "One program scored for the athlete.",
+        "properties": {
+          "avg_net_price": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Net Price"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "components": {
+            "items": {
+              "$ref": "#/components/schemas/RecruitFitComponent"
+            },
+            "title": "Components",
+            "type": "array"
+          },
+          "conference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conference"
+          },
+          "division": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Division"
+          },
+          "fit": {
+            "description": "0 to 100, relative to every program in the sport for this class and position. Not a probability of a roster spot or an offer.",
+            "title": "Fit",
+            "type": "integer"
+          },
+          "in_ranking": {
+            "title": "In Ranking",
+            "type": "boolean"
+          },
+          "level": {
+            "$ref": "#/components/schemas/RecruitFitLevel"
+          },
+          "logo_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logo Url"
+          },
+          "miles_from_home_state": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Miles From Home State"
+          },
+          "rank": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1 is the best fit among the programs ranked. Null when targets or must-haves leave it out.",
+            "title": "Rank"
+          },
+          "region": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Region"
+          },
+          "retention": {
+            "$ref": "#/components/schemas/RecruitFitRetention"
+          },
+          "room": {
+            "$ref": "#/components/schemas/RecruitFitRoom"
+          },
+          "school_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "School Id"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          },
+          "team": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Team"
+          },
+          "team_id": {
+            "description": "The program: GET /v1/teams/{team_id}.",
+            "title": "Team Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "team_id",
+          "in_ranking",
+          "fit",
+          "components",
+          "room",
+          "level",
+          "retention"
+        ],
+        "title": "RecruitFitProgram",
+        "type": "object"
+      },
+      "RecruitFitRequest": {
+        "additionalProperties": false,
+        "description": "One soccer athlete's answers. It takes no name, email or other\nidentity, and nothing is saved beyond your own request log.",
+        "examples": [
+          {
+            "club_league": "ECNL",
+            "grad_year": 2028,
+            "home_state": "MN",
+            "limit": 10,
+            "position": "CM",
+            "sport_path": "womens-soccer",
+            "target_divisions": [
+              "D1",
+              "D2"
+            ]
+          }
+        ],
+        "properties": {
+          "club_league": {
+            "anyOf": [
+              {
+                "maxLength": 60,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Youth league, by code or full name: ECNL, ECNL RL, GA, GA ASPIRE, MLS NEXT, MLS NEXT AD, N1, DPL, EDP, EA, USL ACADEMY. NPL, USYS NL, USYS NL PRO and E64 are read as N1 from 2026-27. Without one, club level is neutral.",
+            "examples": [
+              "ECNL"
+            ],
+            "title": "Club League"
+          },
+          "cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cursor"
+          },
+          "grad_year": {
+            "description": "High school class; the fall the athlete enters college. A class the scores do not cover is a 400 that lists the ones they do.",
+            "examples": [
+              2028
+            ],
+            "maximum": 2040.0,
+            "minimum": 2020.0,
+            "title": "Grad Year",
+            "type": "integer"
+          },
+          "home_state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Two-letter US state. Without one, pipeline and distance are neutral for every program, and the ranking is much weaker.",
+            "examples": [
+              "MN"
+            ],
+            "title": "Home State"
+          },
+          "intended_major": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Used by the `major` must-have, against the school's most common fields of study.",
+            "title": "Intended Major"
+          },
+          "limit": {
+            "default": 25,
+            "maximum": 500.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "max_annual_cost_usd": {
+            "anyOf": [
+              {
+                "maximum": 150000.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Used by the `cost` must-have, against the school's average net price.",
+            "title": "Max Annual Cost Usd"
+          },
+          "max_distance_miles": {
+            "anyOf": [
+              {
+                "maximum": 3000.0,
+                "minimum": 10.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Used by the `distance` must-have, measured from the home state's population center.",
+            "title": "Max Distance Miles"
+          },
+          "must_haves": {
+            "description": "Hard filters. Each needs its answer in this request (target_divisions, target_regions, intended_major, max_distance_miles, max_annual_cost_usd). A program the filter cannot judge is left out and counted in `must_haves`.",
+            "items": {
+              "enum": [
+                "division",
+                "region",
+                "major",
+                "distance",
+                "cost"
+              ],
+              "type": "string"
+            },
+            "title": "Must Haves",
+            "type": "array"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "enum": [
+                  "GK",
+                  "CB",
+                  "FB",
+                  "WB",
+                  "DM",
+                  "CM",
+                  "AM",
+                  "W",
+                  "F",
+                  "DEF",
+                  "MID",
+                  "FWD"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Without one, roster room is read for the whole roster.",
+            "title": "Position"
+          },
+          "sport_path": {
+            "description": "Soccer only for now.",
+            "enum": [
+              "womens-soccer",
+              "mens-soccer"
+            ],
+            "title": "Sport Path",
+            "type": "string"
+          },
+          "target_divisions": {
+            "description": "Rank only these divisions. Does not change a program's fit.",
+            "items": {
+              "enum": [
+                "D1",
+                "D2",
+                "D3",
+                "NAIA",
+                "NJCAA"
+              ],
+              "type": "string"
+            },
+            "title": "Target Divisions",
+            "type": "array"
+          },
+          "target_regions": {
+            "description": "Rank only these regions. Does not change a program's fit.",
+            "items": {
+              "enum": [
+                "northeast",
+                "south",
+                "midwest",
+                "west"
+              ],
+              "type": "string"
+            },
+            "title": "Target Regions",
+            "type": "array"
+          },
+          "team_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "maxItems": 500,
+                "minItems": 1,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Return only these programs, each with its fit against the whole field, including one your targets or must-haves leave out (`in_ranking` false, `rank` null).",
+            "title": "Team Ids"
+          }
+        },
+        "required": [
+          "sport_path",
+          "grad_year"
+        ],
+        "title": "RecruitFitRequest",
+        "type": "object"
+      },
+      "RecruitFitRetention": {
+        "description": "The program's high school recruits still on the roster in year two.\nShown beside the fit; it is not part of it.",
+        "properties": {
+          "arrival_seasons": {
+            "description": "First and last arrival season measured.",
+            "items": {
+              "type": "integer"
+            },
+            "title": "Arrival Seasons",
+            "type": "array"
+          },
+          "quartile": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1 (bottom) to 4 (top) within the division.",
+            "title": "Quartile"
+          },
+          "recruits": {
+            "title": "Recruits",
+            "type": "integer"
+          },
+          "share": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Null with fewer than 5 recruits measured.",
+            "title": "Share"
+          }
+        },
+        "required": [
+          "recruits",
+          "arrival_seasons"
+        ],
+        "title": "RecruitFitRetention",
+        "type": "object"
+      },
+      "RecruitFitRoom": {
+        "description": "Expected openings at the athlete's position for their entering class.",
+        "properties": {
+          "commitment_coverage": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The share of the division's high school recruits the commitment lists hold.",
+            "title": "Commitment Coverage"
+          },
+          "commitments_counted": {
+            "description": "How many of them were subtracted: all where the division's lists are complete enough to trust (`commitment_coverage` at least 0.3), otherwise none.",
+            "title": "Commitments Counted",
+            "type": "integer"
+          },
+          "entering_class": {
+            "title": "Entering Class",
+            "type": "integer"
+          },
+          "expected_openings": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Null without a roster to count.",
+            "title": "Expected Openings"
+          },
+          "known_commitments": {
+            "description": "Known commitments to this class at this position.",
+            "title": "Known Commitments",
+            "type": "integer"
+          },
+          "no_opening": {
+            "description": "Under half an opening expected; ranked below every program with one.",
+            "title": "No Opening",
+            "type": "boolean"
+          },
+          "seniors_leaving": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seniors Leaving"
+          },
+          "transfers_in": {
+            "description": "Its usual transfers in to the position in a year.",
+            "title": "Transfers In",
+            "type": "number"
+          },
+          "transfers_out": {
+            "description": "The program's usual transfers out of the position in a year.",
+            "title": "Transfers Out",
+            "type": "number"
+          }
+        },
+        "required": [
+          "entering_class",
+          "no_opening",
+          "transfers_out",
+          "transfers_in",
+          "known_commitments",
+          "commitments_counted"
+        ],
+        "title": "RecruitFitRoom",
+        "type": "object"
+      },
       "RosterEntry": {
         "description": "A roster member \u2014 identity only, no contact fields.",
         "examples": [
@@ -19302,7 +20108,7 @@
     }
   },
   "info": {
-    "description": "REST API for college sports data across NCAA D1/D2/D3, NAIA, and NJCAA:\nplayers, teams and schools, rosters and coaching staffs, cross-program\ncareers, games, roster and staff movements, the live transfer portal, and an\nagent-backed natural-language query endpoint.\n\n## Authentication\n\nEvery endpoint requires an API key sent as a bearer token:\n\n```\nAuthorization: Bearer mag_live_...\n```\n\nCreate and manage keys in the developer console at\n[magisterial.ai/console/api-keys](https://magisterial.ai/console/api-keys).\nKeys are prefixed `mag_live_` (production) or `mag_test_` (the sandbox: see\n[Sandbox](#sandbox)).\n\nEvery key also carries an exact delegated capability list. A key's effective\nauthority is the intersection of those scopes with the actor's current role,\nverification, account plan, and requested sport. Scope names do not imply one\nanother by prefix. New keys default to the non-PII `chat.use` scope.\n\n## Scoping\n\nData access is scoped by `sport`, `division`, and (for dual-gender sports)\n`gender`. `GET /v1/sports` lists every sport with its genders and the\ndivisions each gender is offered in, and `GET /v1/divisions?sport=...` returns\none sport's list. Divisions differ by sport (football has `D1-FBS` and\n`D1-FCS`, men's volleyball has no `NWAC`), so build a scope from the sport's\nown list: any non-empty comma-separated subset of it is valid, e.g.\n`D1,NAIA,NJCAA-D1`. Football's `D1` is the combined view of `D1-FBS` and\n`D1-FCS`; request the combined code or the subdivisions, not both.\n\nA query parameter an endpoint does not accept is refused with 400\n`unknown_parameter`, and the error lists what the endpoint accepts. A filter\nis never silently ignored.\n\n## Names\n\nA player's `name` is in natural order (`Jordan Rivera`) on every player,\nroster, transfer-portal, movement and managed-athlete record. `first_name`\nand `last_name` are set when the roster source published the name in split\nform and null when it published one undivided name. Box-score and\nplay-by-play lines inside `GET /v1/games/{game_id}` carry each name as the\ngame source printed it; use the line's `player_id` for the player record.\n\n## School identity discovery\n\nUse `POST /v1/schools/resolve` with `kind=college`, one whole `query`, and\n`sport`, `gender`, `division` to identify a college. For example,\n`{\"kind\":\"college\",\"query\":\"Lock Haven University\",\"sport\":\"soccer\",\"gender\":\"women\",\"division\":\"D2\"}`.\nCanonical names and aliases return `selected`; partial or typo matches return\nranked `candidates` with location, external IDs and available program IDs.\nChoose using your user's context, then persist the college `school_id` or\nprogram `team_id`. Identity is found before checking program scope: a known\ninstitution without this sport/division returns its identity and empty\n`in_scope_team_ids`, never a similar in-scope institution.\n\n`GET /v1/teams?school=...` and `POST /v1/players/search` with `school` share\nthis contract and include `school_resolutions`. For player searches, a scalar\n`school` is one whole name (including punctuation commas); an array is any-of.\nUse `school_id: [1904]` or `team_id: [14306]` for subsequent player reads.\nSeparate filter fields intersect. Existing `/teams` `name` (exact) and `q`\n(contains), player `high_school` (exact source text), and player `team_name`\nfilters retain their meanings. Use `school` for identity discovery. Team-name\narrays preserve complete names. A scalar uses comma-separated matching only\nwhen the whole name is unrecognized.\n\nFor secondary schools, use `kind=high_school`, `query` and optional school\n`city`, `state`, `country`, or explicit `high_school_id` / string `nces_id`.\nKnoch and Knoch High School discover the same registry identity; Freeport\ncandidates include their states. School location is distinct from an athlete's\nhometown. College `school_id`, college `team_id`, high-school `high_school_id`,\nIPEDS UNITID and NCES ID are separate namespaces. Use the returned high-school\nIDs with player/commitment attendance filters. Discovery is read-only; attendance\ncoverage depends on completed source-record linking.\n\n## Using API data\n\nUse data from the Magisterial API however you like, on any plan, including Free.\nYou can keep using data you\u2019ve already retrieved after changing plans,\ncanceling, or losing API access.\n\nChoose a plan for the data access, features, and usage limits you need.\nEnterprise offers higher volumes, custom limits, and dedicated support.\n\n## Data sources and freshness\n\nRecords are compiled from publicly available sources and from the people\nthey describe:\n\n- **School athletics sites.** Rosters, coaching staffs, schedules, results,\n  box scores, and season statistics come from each program's official\n  athletics website (Sidearm Sports, Presto Sports, and WMT-hosted sites),\n  read as published and normalized into one schema. `bio_url`,\n  `boxscore_url`, and a school's `athletics_domain` point back at the source.\n- **Public federations and registries.** stats.ncaa.org for play-by-play and\n  shot charts, TFRRS for track and field and cross-country performances, the\n  NCAA transfer-portal listings, and federal IPEDS / College Scorecard data\n  for institution profiles and the `ipeds_unitid` join key.\n- **The people themselves.** Coaches and athletes who claim their profile add\n  and correct their own information; recruiting questionnaires and in-product\n  use contribute verified contact and preference data that is exposed only\n  under the contact capabilities described in the Managed athletes section.\n\nHeadshots and logos are served by reference from school athletics sites\n(some through our image proxy).\n\nFreshness is a property of each record, not of the API. Roster, coaching\nstaff, and team responses carry a `freshness` object (`observed_at`, when the\nsource page was last fetched; `changed_at`, when the content last changed;\n`next_check_at`), and `GET /v1/coverage` lists the last run of every ingest\nlane. For rosters and coaching staffs `changed_at` is when what this API\nreturns for the team's latest season last changed (a player added, removed or\nedited in any returned field, a staff member added, removed or retitled),\nwhichever source the change came from. It is never earlier than the change\nit reports, so to sync incrementally list `GET /v1/teams` with\n`roster_changed_since` or `coaches_changed_since` set to the start of your\nprevious sync and re-read only those teams. A program's first `changed_at`\nis when tracking began for it, not a change: every program holding a roster\nor staff when tracking started carries that same first timestamp, so one full\nread after it is the baseline. Tracking covers every association alike\n(NCAA, NAIA, NJCAA, 3C2A, NWAC, NCCAA, USCAA); a change is seen when the\nprogram's roster or staff lane next reads its source (the table below). Roster and coaching-staff responses also carry `coverage`, which says\nwhat the list means: `held`, `season_not_held` (other seasons are held, not\nthe one requested), `none_listed` (the program's page was read and lists\nnobody), `not_collected` (no source has been read for the program yet, so an\nempty list says nothing about it), `not_sponsored`, or `discontinued`. A\nteam's `status` and `discontinued_at` say whether the program still competes;\n`GET /v1/teams?status=active` lists only those that do. The refresh policy is\nseasonal:\n\n| Data | Inside its churn window | Otherwise |\n|---|---|---|\n| Rosters | every 24 hours | every 7 days |\n| Coaching staffs | every 7 days (Mar 1 to Jun 30) | every 14 days |\n| Season statistics | every 7 days in season | every 14 days |\n| Schedules and box scores | every 24 hours, sport lanes every 4 to 6 hours in season | daily |\n| Movements | observed at scrape time, identity resolution every 6 hours | published once confirmed |\n| Commitments | each source read daily or weekly (`GET /v1/commitments/sources` says when) | in the feed within minutes of the read |\n| Portal supply | the NCAA portal read several times a day | counted once a day, after 10:00 UTC |\n\nMovement events carry both `observed_at` (when the roster or staff page\nchanged) and `published_at` (when the event was confirmed and entered the\nfeed). The published feed carries a transfer once it is resolved to the\ntransfer edge it made (the arrival at the new school and the departure from\nthe old one), a coach's move once it is resolved to the post at another\nschool they held the season before, and confirmed head-coach changes. A\ndeparture with no known destination, a new hire with no known previous post,\nand a link to a post that ended more than a season earlier are not published.\nEnterprise keys can read the resolver stream directly with `status=resolved`\nor `status=observed` on `GET /v1/movements`.\n\n## Commitments\n\n`GET /v1/commitments` (Premium and up) is the college commitment feed:\none athlete committed to one program, reconciled across every public source\nthat lists it, from the national recruiting trackers to the platforms where\nathletes record their own commitments (which carry most of D2, D3, NAIA and\njunior college). A commitment is published only once its program is\nresolved to a team, so `team_id` always joins to `GET /v1/teams/{team_id}`.\nEach commitment carries its `sources`, each source's own date and what that\ndate means (`announced`, `recorded`, `added` or `published`); `committed_on`\nis the best of them and `first_reported_at` is when we first read it.\nSources that disagree about the program are separate commitments. A source\nreporting a signing makes it `signed`; one reporting a decommitment, or\nlisting the athlete at another program, makes it `decommitted`. Ice hockey\ntrackers give the college entry year rather than a high-school class\n(`entry_year`). Most athletes are high-school students: no contact details,\ndates of birth or social accounts are collected.\n\n`GET /v1/commitments/changes` is the change log (each commitment that is or\nwas published, in its current state, oldest change first; retractions carry\ntheir reason), the `commitment.*` webhooks push the same changes, and\n`GET /v1/commitments/sources` says what each source covers and when it was\nlast read.\n\n## Portal supply\n\n`GET /v1/portal/supply` (Developer Ultra and up) is the transfer portal\nwithout names: one row per program and position group, holding counts.\n`in_portal` is the program's entries on the market now, `in_portal_returning`\nthe part of those known not to be in their last season (the openings the\nportal adds beyond graduation), and `signed_out` the entries that signed or\nenrolled elsewhere this cycle. The position group is the roster position's\ngroup in team sports and football, the event group from results in track\nand field and in swimming and diving, and the dual-match lineup tier in\ntennis. Golf has no positions; its entries, and any entry not linked to a\nroster player, count in the program's row with `lane` null. No row carries a name, class year, entry date or per-person id, so\nnothing joins to `GET /v1/portal` (which stays verified-coach only).\n\nCounts are taken once a day. `GET /v1/portal/supply/changes` is the change\nlog, dated by the snapshot day rather than the moment anything changed, and\nthe `portal_supply.changed` webhook pushes the same changes.\n\n## Short seasons\n\nThe record and stats on a team's season (`documents` on `GET /v1/teams/{team_id}`)\nare counted from the games Magisterial holds, and a past season can hold fewer\ngames than the team played. Every season record carries a `schedule` object\nthat says so. `games_played` is how many completed games the team's own\npublished schedule counts toward its record for the season, as last read:\nexhibitions, scrimmages and games the school marks as not counting are left\nout, whether the page labels them or only its schedule data does.\n`official_record` is the record the school gives over those games, from the\nsame read, and `games_held` is how many final games we hold for the team that\nare not exhibitions for it. A game one school counts and the other calls an\nexhibition is held for the first and not the second. Each season's games are\nread in the division the team was in that season, so a program that has since\nmoved division keeps its earlier seasons.\n\nWhen `status` is `partial`, `games_held` is below `games_played` by\n`missing_games`, and the season's record and stats cover only the games held.\nWhen it is `complete`, we hold exactly the games the school counts and\n`record_from_held_games` equals `official_record`. When it is `inconsistent`,\n`games_held` is above `games_played`, or equal to it with a different record:\na held game is not one the school counts, or a held result differs from the\nschool's, and `record_from_held_games` should not be shown as the season's\nrecord. When it is `unverified` we have not read the team's schedule for that\nseason, so `games_played`, `missing_games` and `official_record` are null and\nnothing says whether the season is complete. `official_record` is given for a\npartial or inconsistent season too, with `official_record_source`\n`school_schedule`; a schedule read before the school's record was captured has\n`official_record` only when the season is complete, with\n`official_record_source` `held_games`. `record_from_held_games` is the record\nover the games held whatever the status. A season is short when `status` is\n`partial`.\n\nEach season's `overall_record` ('W-L' or 'W-L-T') is the record on the\nseason's document, and `overall_record_source` says where it comes from:\n`school_page`, the record the school posts on its own athletics site, or\n`held_games`, our tally of the games we hold. A season label is the calendar\nyear the season ends in: fall sports (soccer, football, women's volleyball,\nfield hockey) are the fall they are played in; winter and academic-year sports\n(basketball, ice hockey, swimming and diving, tennis, golf) are labelled by the\nyear the school year ends, so `2024` is the 2023-24 season (a tennis or golf\nseason spans the fall and the spring); and spring sports (baseball, softball,\nlacrosse, men's volleyball) are that spring.\n\n## Schools and external identifiers\n\nEvery team carries a `school` object with our school id, a stable slug, the\nschool's athletics domain, and its federal IPEDS UNITID (`ipeds_unitid`)\nwhere the institution is in the federal universe (about 87% of schools, and\n93% of NCAA programs). `GET /v1/schools` lists institutions with a\n`ipeds_unitid` lookup, and `GET /v1/schools/{school_id}` returns every program\na school fields across sports and divisions, so you can join on UNITID first\nand fall back to name, state, and conference only for the remainder.\n\nThe `school` object also says where the school is: `country` (ISO 3166-1\nalpha-2, `US` or `CA`; US territories such as Puerto Rico are `US`), `state`\n(the USPS code of a state, DC or territory, or a Canadian province code) and\n`city`. These are held for schools with no federal record too (Canadian\nschools, branch campuses that report under another unit). `city` is null for\na program that plays on several campuses with none as its home. Filter on them\nwith `country`, `state` and `city` on `GET /v1/teams`, `GET /v1/schools`,\n`GET /v1/movements` and `GET /v1/commitments`: `country=US` lists every US\nprogram in one query.\n\nThe two school endpoints also carry the institution's `profile` from the U.S.\nDepartment of Education's College Scorecard (the federal IPEDS reporting it\npublishes): admission rate, SAT and ACT 25th/75th percentiles, undergraduate\nenrollment, published in-state and out-of-state tuition and fees, average net\nprice, six-year graduation and first-year retention rates, religious\naffiliation, campus setting, and the top fields of study by degrees awarded,\nwith the release year in `data_year`. A null field means the institution did\nnot report that measure or it does not apply (no admission rate at an\nopen-admission college, no graduation rate at a two-year one, no religious\naffiliation at a secular one); `profile` itself is null where no federal\nprofile is held. Average net price is what aided students pay after grants,\nnot the cost of attendance; GPA ranges and the full cost of attendance are not\nprovided. The `school` object embedded in teams is unchanged and carries no\nprofile. `GET /v1/schools` filters on `religious_affiliation`, admission rate\nand undergraduate enrollment ranges as well as `control`.\n\n## High schools\n\n`high_school` is the text a source printed and is never changed. Beside it,\nplayers (search rows, profiles, rosters) and a commitment's `athlete` carry\n`high_school_kind`, what we classified that text as (`high_school`, `college`,\n`club`, `homeschool`, `not_a_school`, or `unresolved`; null when there is no\ntext or it has not been classified yet), and `secondary_school`, the registry\nschool it names, only when the kind is `high_school`. Public schools are\nidentified by their NCES `nces_id` (NCESSCH), private schools by their PPIN;\na school outside the NCES registries, such as a Canadian one, has none and is\nidentified by `id`. `GET /v1/high-schools` looks schools up by name, state or\n`nces_id`. `POST /v1/players/search` filters by `high_school_nces_id`,\n`high_school_id` and `high_school_kind`, and `GET /v1/commitments` by\n`high_school_nces_id`, so every spelling of a school's name finds its athletes.\n\n## Coach contacts\n\nCoach contact fields (`email` and `phone` on `GET /v1/teams/{team_id}/coaches`)\nare returned in three cases. None of them is metered. When they are withheld\nthe response says why in `contacts_unavailable_reason`.\n\n**Coach directory.** Coach email and phone are included with Developer Pro,\nDeveloper Ultra and Enterprise. No separate approval is needed. When creating\nyour API key, enable the `coach.contact.directory_read` scope to include\nthese fields on `GET /v1/teams/{team_id}/coaches`. Contact fields are never\npart of bulk exports.\n\n**Your own verified claim.** A key whose owner is a verified player and carries\n`outreach.coach.read` reads contacts for that athlete, as in the app.\n\n**Managed athletes.** A platform that represents many athletes obtains the\nbacking per athlete. Invite a player profile with `POST /v1/athletes`; the\nathlete receives an email at an address we can vouch for (their on-file\ncontact, their school .edu address, or the account that already claimed the\nprofile) and accepts on magisterial.ai, which also completes their verified\nclaim. From then on any key on the account that carries `outreach.coach.read`\nmay pass `on_behalf_of=<player_id>` to read coach contacts for that athlete.\nEvery such read is recorded in the athlete's access log, and athletes can\nwithdraw the authorization at any time; a revoked or unclaimed grant denies on\nthe next call. Requires the Enterprise plan and the `managed_athlete.manage`\nkey scope; seats default to 250 per account.\n\n## Filtering\n\nEvery list endpoint filters the same way. Each endpoint's parameter list\nnames the fields it filters on; the forms are always these:\n\n| Form | Meaning |\n|---|---|\n| `field=value` | Exact match. Text compares case-insensitively. |\n| `field=a,b,c` | Any of the values. |\n| `field_not=a,b` | None of the values. A row with no value for the field is left out too. |\n| `field_min=`, `field_max=` | Inclusive range, for numbers and dates. |\n| `q=text` | Name contains, case-insensitive. |\n| `sort_by=`, `sort_order=` | Where a list has more than one useful order. |\n\nFilters combine with AND. A parameter the endpoint does not declare returns\n400 `unknown_parameter` together with the list it accepts, so a mistyped\nfilter never comes back as an unfiltered page.\n\n`POST /v1/players/search` takes the same names in its JSON body, with arrays\nin place of comma lists, and every season stat as a range under `stats`,\nkeyed by the stat fields `GET /v1/filters/catalog` lists for the sport:\n\n```json\n{\"sport\": \"soccer\", \"division\": \"D3\", \"position\": \"Forward\",\n \"class_year_not\": \"Senior / Graduate\", \"stats\": {\"g\": {\"min\": 10}}}\n```\n\nPosition, class year and home state are published by each school in its own\nwords ('F', 'Fwd', 'Forward'; 'Jr.', 'Junior'; 'OH', 'Ohio'). A filter on one\nof them matches every spelling of the value you give, so use the canonical\nvalues from the filter catalog.\n\n`GET /v1/filters/catalog` says how each field can be used. `search_ops` is\nwhat `POST /v1/players/search` takes: `eq` and `in` are the field as one value\nor an array, `neq` and `not_in` are `field_not`, `gte` and `lte` are\n`field_min` and `field_max` (for a stat, `min` and `max` under `stats`).\n`alert_ops` is the `op` values an alert predicate on the field accepts. Until\n2027-01-12 the catalog also returns the keys it had before (`request_key`,\n`manual_search_operators` and the others marked deprecated); they name\nparameters of the Magisterial app's own search, which no /v1 endpoint accepts.\n\nSchools and movements span sports, so they take no required scope: one\n`school_id` on `GET /v1/movements` is that school's movements in every sport,\nand `GET /v1/schools/{school_id}` lists every team it fields.\n\n## Postman\n\nA ready-made Postman collection of every endpoint, generated from this\nspecification, is served at\n[`/v1/postman.json`](https://api.magisterial.ai/v1/postman.json). In Postman\nchoose Import, paste that URL, then set the collection variable `api_key` to\nyour key once; every request sends it as the bearer token.\n\n## Pagination\n\nList endpoints paginate with an opaque `cursor`. Pass the `next_cursor` from\none response as the `cursor` of the next request; `has_more` signals whether\nanother page exists.\n\n## Errors\n\nEvery 4xx/5xx returns a JSON envelope:\n\n```json\n{ \"error\": { \"type\": \"invalid_request\", \"code\": \"invalid_scope\", \"message\": \"...\" } }\n```\n\nAn error may carry more keys than those three: `unknown_parameter` adds\n`unknown` and `allowed`, and `plan_required` adds `required_plan` and\n`current_plan`.\n\nA request that fails validation (422) uses the same envelope, with code\n`validation_error` and an `error.fields` list naming each offending field.\nUntil 2027-01-12 it also carries FastAPI's `detail` list beside `error`.\nRate-limited responses (429) include `X-RateLimit-Limit`,\n`X-RateLimit-Remaining`, `X-RateLimit-Reset`, and `Retry-After` headers. A 429\n`monthly_quota_exceeded` also carries the `X-Monthly-Quota-*` headers below.\n\n## Player stats\n\nA stat has one name everywhere. `GET /v1/filters/catalog` lists each sport's\nstat fields (`stats_by_sport`), with a label and a type; those are the names\n`POST /v1/players/search` filters and sorts by, and the names in every `stats`\nobject the API returns: a search row's `stats`, each entry of a player's\n`stats_by_season`, `stats_totals`, and the stat columns of a players export.\nEvery stat field of the sport is present on every row; a stat the source did\nnot publish is null. Track and field has no season stats: a search row reports\nthe athlete's best mark in `track`, and a player's `track_bests` lists the best\nper event.\n\nA player row carries its profile fields at the top level under the names the\nfilters use (`home_state`, `jersey_number`, `height_inches`, `bats`, ...).\n\nUntil 2027-01-12 the three player endpoints also return what they returned\nbefore: inside a search row's `stats`, copies of the profile fields and the\nsoccer keys `sh%`, `sog%`, `sv%`, `yc-rc` and `pg-pa`; and `season_stats` on a\nplayer and on season history. Those responses carry `Deprecation` and `Sunset`\nheaders.\n\n## Plans\n\nEvery key inherits its owner's Developer-API plan. Six plans exist:\n\n| Plan | Price | Read limit | Monthly requests | Portal, query, alerts, exports | Included query usage | Coach directory |\n|---|---|---|---|---|---|---|\n| Free | $0, every account | 10 / minute | 1,000 | Not available | None | No |\n| Plus | $19.99 / month | 20 / minute | 25,000 | Available; portal and alerts usage-billed | $5 / month | No |\n| Premium | $49.99 / month | 100 / minute | 100,000 | Available; portal and alerts usage-billed | $15 / month | No |\n| Developer Pro | $99.99 / month | 300 / minute | 250,000 | Available; portal and alerts included | $40 / month | Included |\n| Developer Ultra | $199 / month | 1,200 / minute | 1,000,000 | Available; portal and alerts included | $100 / month | Included |\n| Enterprise | Contact sales | Custom (6,000 / minute default) | Unlimited | Available, custom ceilings | Custom | Included |\n\nThe `plan` value in responses and headers is `free`, `plus`, `premium`,\n`developer` (Developer Pro), `ultra` (Developer Ultra) or `enterprise`.\nA paid plan also pays for the account's chat in the Magisterial app, counted\nagainst the same limits. It adds no coaching tier.\n\nDeveloper Pro, Developer Ultra and Enterprise accounts can have a team (5, 20\nand 100 people by default, the owner included). Every key held by someone on\nthe account runs on the account's plan, and the per-minute limits and the\nmonthly quota are counted once for the whole account. A key, and the alerts\nand query runs made with it, stay its owner's own.\n\nThe free read endpoints (players, season stats, teams, schools, rosters,\ncoaches, games, careers, transfers, published movements, reference data) are on every plan at\nthe plan's limits. Every response carries `X-Magisterial-Plan`; plans with a\nmonthly quota add `X-Monthly-Quota-Limit`, `X-Monthly-Quota-Remaining` and\n`X-Monthly-Quota-Reset` (Unix seconds of the next reset: 00:00 UTC on the 1st\nof the month, not your billing date), and a capped account receives 429\n`monthly_quota_exceeded`, with the same headers, until the UTC calendar month\nrolls over. Plans and prices:\n[magisterial.ai/pricing/developers](https://magisterial.ai/pricing/developers).\nUpgrade in the developer console\n([magisterial.ai/console/billing](https://magisterial.ai/console/billing));\nEnterprise is arranged per customer.\n\n## Billing\n\nEndpoints marked *usage-billed* (`/v1/portal`, `/v1/query`, `/v1/alerts`,\n`/v1/exports`) are open on every paid plan (a Free key receives 403\n`plan_required`), require usage billing to be enabled on the account, and\nmeter usage against a monthly budget you set. List prices: exports $0.10 per\nstarted 10,000-row block (billed on success only), and query at model cost\nwith a 3x markup, drawn first from the plan's included monthly query usage.\nOn Plus and Premium the portal is $0.05 per request and alerts are $5 per\nactive alert per month; from Developer Pro up both are included and only\ncount against the plan's request quota and alert cap. Buying a plan enables\nusage billing on the same subscription. Billing-not-enabled and past-due states return 403; an exhausted monthly\nbudget returns 402.\n\nBilling is additive, not authorization. In particular, `/v1/portal`, API\nportal alerts (`/v1/alerts`, the `alert.triggered` webhook), portal answers\nfrom `/v1/query` and the portal section of `/v1/filters/catalog` are bound to\na verified coach: the key must delegate the relevant portal capability and\nthe current actor must be an active, verified coach. No coaching plan is needed; the paid API plan covers\nthem. Enabling usage billing by itself never grants portal or athlete-contact\naccess. Athlete contacts require the separate `portal.contact.read` scope\nunder the same actor policy.\n\nMovements are separate from the portal. `GET /v1/movements` and the movement\nwebhooks report roster and staff changes seen on school pages, and need no\ncoach verification on any plan. `GET /v1/transfers` is the bulk feed of school\nchanges, with both schools named; a player movement carries the same edge as\n`transfer` and the other school as `counterpart`.\n\n## Bulk exports\n\nFor full-dataset pulls, use the bulk lane instead of walking paginated\nendpoints: `POST /v1/exports` starts an async job that writes one dataset\n(players, teams, games, or coaches) in one sport/division scope to a gzipped\nCSV or JSONL file, and `GET /v1/exports/{export_id}` returns a short-lived\nsigned download URL once it succeeds. Billed on success by result size\n(per started 10,000-row block); failed exports are never billed.\n\nA players file ends with `positions` and `position_groups`, the standardized\nreading of `position` that every other player object carries. In JSONL they\nare arrays. In CSV a cell is the list as compact JSON (`[\"MID\",\"FWD\"]`), the\nway a games file writes period scores. An empty CSV cell (null in JSONL) is a\nsport with no position vocabulary (tennis, golf, swimming and diving, track and\nfield); `[]` is a sport that has one and a published position that names no\nvalue in it. A players header only grows at its end, so these two columns come\nafter every column a file already had.\n\n## Sandbox\n\nA test key (`mag_test_`) reads a synthetic world instead of production: 24\ninvented schools in D1 and D3 with men's and women's soccer and basketball,\nand everything the endpoints return for them (rosters, coaching staffs, games\nwith box scores, season statistics, rankings, postseason results, the transfer\nportal and movements). No real person, school or address is in it, and its ids\nsit far above any live id. Every response carries\n`Magisterial-Environment: sandbox`.\n\nTest keys are free. The usage-billed endpoints work without a paid plan or\nbilling, nothing is billed, and sandbox requests do not count toward the\nmonthly quota. Your plan's per-minute rate limits and the key's scopes still\napply, so what you build against a test key behaves the same with a live one.\n\n`POST /v1/query` calls no model with a test key. It answers a short list of\nsample questions from the sandbox data and answers anything else with a fixed\nmessage that lists them. Exports and alerts run over the sandbox world.\n`POST /v1/sandbox/events` makes something happen in it (a portal entry, an\nathlete or a coach joining a program, a commitment published, updated or\nretracted): your sandbox alerts are evaluated, and your registered webhook\nendpoints receive the resulting events with `\"test\": true`. The commitment\nfeed (`GET /v1/commitments` and its change log and sources) is served from\ninvented high-school prospects committed to the sandbox's schools. Managed athletes are not available with a test key\n(501 `sandbox_not_supported`).\n\n## Webhooks\n\nInstead of polling, register webhook endpoints in the\n[console](https://magisterial.ai/console/webhooks) to receive signed events:\n`alert.triggered` when a watch alert finds new portal matches, and\n`query.completed` when an async query run finishes. Payloads carry a\n`Magisterial-Signature` header (`t=<ts>,v1=<hmac_sha256_hex>` over\n`{t}.{raw_body}`, keyed with the endpoint's `whsec_` secret); failed\ndeliveries retry with backoff for about two days. See the webhooks guide at\n[magisterial.ai/docs](https://magisterial.ai/docs#webhooks-guide).\n\nDeveloper Pro, Developer Ultra and Enterprise can also have the published\nmovement feed pushed: `coach_movement.published`, `coach_movement.updated`\nand `coach_movement.retracted`, and the same three for `player_movement`.\nEach event carries one movement, as the object `GET /v1/movements` returns,\nwith a per-movement `revision` that rises with every event. Apply them in\nrevision order and you hold what the published feed holds, corrections\nincluded. Movement webhooks need no coach verification.\n\nOn every plan, `GET /v1/movements/changes` serves the same change log to a\nconsumer that polls: each movement that is or was published, in its current\nstate, oldest change first.\n",
+    "description": "REST API for college sports data across NCAA D1/D2/D3, NAIA, and NJCAA:\nplayers, teams and schools, rosters and coaching staffs, cross-program\ncareers, games, roster and staff movements, the live transfer portal, and an\nagent-backed natural-language query endpoint.\n\n## Authentication\n\nEvery endpoint requires an API key sent as a bearer token:\n\n```\nAuthorization: Bearer mag_live_...\n```\n\nCreate and manage keys in the developer console at\n[magisterial.ai/console/api-keys](https://magisterial.ai/console/api-keys).\nKeys are prefixed `mag_live_` (production) or `mag_test_` (the sandbox: see\n[Sandbox](#sandbox)).\n\nEvery key also carries an exact delegated capability list. A key's effective\nauthority is the intersection of those scopes with the actor's current role,\nverification, account plan, and requested sport. Scope names do not imply one\nanother by prefix. New keys default to the non-PII `chat.use` scope.\n\n## Scoping\n\nData access is scoped by `sport`, `division`, and (for dual-gender sports)\n`gender`. `GET /v1/sports` lists every sport with its genders and the\ndivisions each gender is offered in, and `GET /v1/divisions?sport=...` returns\none sport's list. Divisions differ by sport (football has `D1-FBS` and\n`D1-FCS`, men's volleyball has no `NWAC`), so build a scope from the sport's\nown list: any non-empty comma-separated subset of it is valid, e.g.\n`D1,NAIA,NJCAA-D1`. Football's `D1` is the combined view of `D1-FBS` and\n`D1-FCS`; request the combined code or the subdivisions, not both.\n\nA query parameter an endpoint does not accept is refused with 400\n`unknown_parameter`, and the error lists what the endpoint accepts. A filter\nis never silently ignored.\n\n## Names\n\nA player's `name` is in natural order (`Jordan Rivera`) on every player,\nroster, transfer-portal, movement and managed-athlete record. `first_name`\nand `last_name` are set when the roster source published the name in split\nform and null when it published one undivided name. Box-score and\nplay-by-play lines inside `GET /v1/games/{game_id}` carry each name as the\ngame source printed it; use the line's `player_id` for the player record.\n\n## School identity discovery\n\nUse `POST /v1/schools/resolve` with `kind=college`, one whole `query`, and\n`sport`, `gender`, `division` to identify a college. For example,\n`{\"kind\":\"college\",\"query\":\"Lock Haven University\",\"sport\":\"soccer\",\"gender\":\"women\",\"division\":\"D2\"}`.\nCanonical names and aliases return `selected`; partial or typo matches return\nranked `candidates` with location, external IDs and available program IDs.\nChoose using your user's context, then persist the college `school_id` or\nprogram `team_id`. Identity is found before checking program scope: a known\ninstitution without this sport/division returns its identity and empty\n`in_scope_team_ids`, never a similar in-scope institution.\n\n`GET /v1/teams?school=...` and `POST /v1/players/search` with `school` share\nthis contract and include `school_resolutions`. For player searches, a scalar\n`school` is one whole name (including punctuation commas); an array is any-of.\nUse `school_id: [1904]` or `team_id: [14306]` for subsequent player reads.\nSeparate filter fields intersect. Existing `/teams` `name` (exact) and `q`\n(contains), player `high_school` (exact source text), and player `team_name`\nfilters retain their meanings. Use `school` for identity discovery. Team-name\narrays preserve complete names. A scalar uses comma-separated matching only\nwhen the whole name is unrecognized.\n\nFor secondary schools, use `kind=high_school`, `query` and optional school\n`city`, `state`, `country`, or explicit `high_school_id` / string `nces_id`.\nKnoch and Knoch High School discover the same registry identity; Freeport\ncandidates include their states. School location is distinct from an athlete's\nhometown. College `school_id`, college `team_id`, high-school `high_school_id`,\nIPEDS UNITID and NCES ID are separate namespaces. Use the returned high-school\nIDs with player/commitment attendance filters. Discovery is read-only; attendance\ncoverage depends on completed source-record linking.\n\n## Using API data\n\nUse data from the Magisterial API however you like, on any plan, including Free.\nYou can keep using data you\u2019ve already retrieved after changing plans,\ncanceling, or losing API access.\n\nChoose a plan for the data access, features, and usage limits you need.\nEnterprise offers higher volumes, custom limits, and dedicated support.\n\n## Data sources and freshness\n\nRecords are compiled from publicly available sources and from the people\nthey describe:\n\n- **School athletics sites.** Rosters, coaching staffs, schedules, results,\n  box scores, and season statistics come from each program's official\n  athletics website (Sidearm Sports, Presto Sports, and WMT-hosted sites),\n  read as published and normalized into one schema. `bio_url`,\n  `boxscore_url`, and a school's `athletics_domain` point back at the source.\n- **Public federations and registries.** stats.ncaa.org for play-by-play and\n  shot charts, TFRRS for track and field and cross-country performances, the\n  NCAA transfer-portal listings, and federal IPEDS / College Scorecard data\n  for institution profiles and the `ipeds_unitid` join key.\n- **The people themselves.** Coaches and athletes who claim their profile add\n  and correct their own information; recruiting questionnaires and in-product\n  use contribute verified contact and preference data that is exposed only\n  under the contact capabilities described in the Managed athletes section.\n\nHeadshots and logos are served by reference from school athletics sites\n(some through our image proxy).\n\nFreshness is a property of each record, not of the API. Roster, coaching\nstaff, and team responses carry a `freshness` object (`observed_at`, when the\nsource page was last fetched; `changed_at`, when the content last changed;\n`next_check_at`), and `GET /v1/coverage` lists the last run of every ingest\nlane. For rosters and coaching staffs `changed_at` is when what this API\nreturns for the team's latest season last changed (a player added, removed or\nedited in any returned field, a staff member added, removed or retitled),\nwhichever source the change came from. It is never earlier than the change\nit reports, so to sync incrementally list `GET /v1/teams` with\n`roster_changed_since` or `coaches_changed_since` set to the start of your\nprevious sync and re-read only those teams. A program's first `changed_at`\nis when tracking began for it, not a change: every program holding a roster\nor staff when tracking started carries that same first timestamp, so one full\nread after it is the baseline. Tracking covers every association alike\n(NCAA, NAIA, NJCAA, 3C2A, NWAC, NCCAA, USCAA); a change is seen when the\nprogram's roster or staff lane next reads its source (the table below). Roster and coaching-staff responses also carry `coverage`, which says\nwhat the list means: `held`, `season_not_held` (other seasons are held, not\nthe one requested), `none_listed` (the program's page was read and lists\nnobody), `not_collected` (no source has been read for the program yet, so an\nempty list says nothing about it), `not_sponsored`, or `discontinued`. A\nteam's `status` and `discontinued_at` say whether the program still competes;\n`GET /v1/teams?status=active` lists only those that do. The refresh policy is\nseasonal:\n\n| Data | Inside its churn window | Otherwise |\n|---|---|---|\n| Rosters | every 24 hours | every 7 days |\n| Coaching staffs | every 7 days (Mar 1 to Jun 30) | every 14 days |\n| Season statistics | every 7 days in season | every 14 days |\n| Schedules and box scores | every 24 hours, sport lanes every 4 to 6 hours in season | daily |\n| Movements | observed at scrape time, identity resolution every 6 hours | published once confirmed |\n| Commitments | each source read daily or weekly (`GET /v1/commitments/sources` says when) | in the feed within minutes of the read |\n| Portal supply | the NCAA portal read several times a day | counted once a day, after 10:00 UTC |\n\nMovement events carry both `observed_at` (when the roster or staff page\nchanged) and `published_at` (when the event was confirmed and entered the\nfeed). The published feed carries a transfer once it is resolved to the\ntransfer edge it made (the arrival at the new school and the departure from\nthe old one), a coach's move once it is resolved to the post at another\nschool they held the season before, and confirmed head-coach changes. A\ndeparture with no known destination, a new hire with no known previous post,\nand a link to a post that ended more than a season earlier are not published.\nEnterprise keys can read the resolver stream directly with `status=resolved`\nor `status=observed` on `GET /v1/movements`.\n\n## Commitments\n\n`GET /v1/commitments` (Premium and up) is the college commitment feed:\none athlete committed to one program, reconciled across every public source\nthat lists it, from the national recruiting trackers to the platforms where\nathletes record their own commitments (which carry most of D2, D3, NAIA and\njunior college). A commitment is published only once its program is\nresolved to a team, so `team_id` always joins to `GET /v1/teams/{team_id}`.\nEach commitment carries its `sources`, each source's own date and what that\ndate means (`announced`, `recorded`, `added` or `published`); `committed_on`\nis the best of them and `first_reported_at` is when we first read it.\nSources that disagree about the program are separate commitments. A source\nreporting a signing makes it `signed`; one reporting a decommitment, or\nlisting the athlete at another program, makes it `decommitted`. Ice hockey\ntrackers give the college entry year rather than a high-school class\n(`entry_year`). Most athletes are high-school students: no contact details,\ndates of birth or social accounts are collected.\n\n`GET /v1/commitments/changes` is the change log (each commitment that is or\nwas published, in its current state, oldest change first; retractions carry\ntheir reason), the `commitment.*` webhooks push the same changes, and\n`GET /v1/commitments/sources` says what each source covers and when it was\nlast read.\n\n## Portal supply\n\n`GET /v1/portal/supply` (Developer Ultra and up) is the transfer portal\nwithout names: one row per program and position group, holding counts.\n`in_portal` is the program's entries on the market now, `in_portal_returning`\nthe part of those known not to be in their last season (the openings the\nportal adds beyond graduation), and `signed_out` the entries that signed or\nenrolled elsewhere this cycle. The position group is the roster position's\ngroup in team sports and football, the event group from results in track\nand field and in swimming and diving, and the dual-match lineup tier in\ntennis. Golf has no positions; its entries, and any entry not linked to a\nroster player, count in the program's row with `lane` null. No row carries a name, class year, entry date or per-person id, so\nnothing joins to `GET /v1/portal` (which stays verified-coach only).\n\nCounts are taken once a day. `GET /v1/portal/supply/changes` is the change\nlog, dated by the snapshot day rather than the moment anything changed, and\nthe `portal_supply.changed` webhook pushes the same changes.\n\n## Recruit fit\n\n`POST /v1/recruit/fit` (Developer Pro and up, soccer) ranks every program for\none athlete from their class, position, home state and club league. It is the\nscore Magisterial Recruit shows. `fit` is 0 to 100: 45% recruiting pipeline,\n25% roster room at the position, 15% nearness to home, 10% club level and 5%\nprogram stability, each relative to the other programs. A part with no data is\nneutral and says so in `components[].measured`. A program with no opening\nexpected ranks below every program with one.\n\nAthletes who share those four answers get the same scores: the fit measures how\na program recruits and whether it has room, not how good a player is, and it is\nnot a probability of an offer. Targets and must-haves choose which programs are\nranked and never change a fit. Pass `team_ids` to score your own shortlist. The\nrequest takes no name or other identity.\n\n## Short seasons\n\nThe record and stats on a team's season (`documents` on `GET /v1/teams/{team_id}`)\nare counted from the games Magisterial holds, and a past season can hold fewer\ngames than the team played. Every season record carries a `schedule` object\nthat says so. `games_played` is how many completed games the team's own\npublished schedule counts toward its record for the season, as last read:\nexhibitions, scrimmages and games the school marks as not counting are left\nout, whether the page labels them or only its schedule data does.\n`official_record` is the record the school gives over those games, from the\nsame read, and `games_held` is how many final games we hold for the team that\nare not exhibitions for it. A game one school counts and the other calls an\nexhibition is held for the first and not the second. Each season's games are\nread in the division the team was in that season, so a program that has since\nmoved division keeps its earlier seasons.\n\nWhen `status` is `partial`, `games_held` is below `games_played` by\n`missing_games`, and the season's record and stats cover only the games held.\nWhen it is `complete`, we hold exactly the games the school counts and\n`record_from_held_games` equals `official_record`. When it is `inconsistent`,\n`games_held` is above `games_played`, or equal to it with a different record:\na held game is not one the school counts, or a held result differs from the\nschool's, and `record_from_held_games` should not be shown as the season's\nrecord. When it is `unverified` we have not read the team's schedule for that\nseason, so `games_played`, `missing_games` and `official_record` are null and\nnothing says whether the season is complete. `official_record` is given for a\npartial or inconsistent season too, with `official_record_source`\n`school_schedule`; a schedule read before the school's record was captured has\n`official_record` only when the season is complete, with\n`official_record_source` `held_games`. `record_from_held_games` is the record\nover the games held whatever the status. A season is short when `status` is\n`partial`.\n\nEach season's `overall_record` ('W-L' or 'W-L-T') is the record on the\nseason's document, and `overall_record_source` says where it comes from:\n`school_page`, the record the school posts on its own athletics site, or\n`held_games`, our tally of the games we hold. A season label is the calendar\nyear the season ends in: fall sports (soccer, football, women's volleyball,\nfield hockey) are the fall they are played in; winter and academic-year sports\n(basketball, ice hockey, swimming and diving, tennis, golf) are labelled by the\nyear the school year ends, so `2024` is the 2023-24 season (a tennis or golf\nseason spans the fall and the spring); and spring sports (baseball, softball,\nlacrosse, men's volleyball) are that spring.\n\n## Schools and external identifiers\n\nEvery team carries a `school` object with our school id, a stable slug, the\nschool's athletics domain, and its federal IPEDS UNITID (`ipeds_unitid`)\nwhere the institution is in the federal universe (about 87% of schools, and\n93% of NCAA programs). `GET /v1/schools` lists institutions with a\n`ipeds_unitid` lookup, and `GET /v1/schools/{school_id}` returns every program\na school fields across sports and divisions, so you can join on UNITID first\nand fall back to name, state, and conference only for the remainder.\n\nThe `school` object also says where the school is: `country` (ISO 3166-1\nalpha-2, `US` or `CA`; US territories such as Puerto Rico are `US`), `state`\n(the USPS code of a state, DC or territory, or a Canadian province code) and\n`city`. These are held for schools with no federal record too (Canadian\nschools, branch campuses that report under another unit). `city` is null for\na program that plays on several campuses with none as its home. Filter on them\nwith `country`, `state` and `city` on `GET /v1/teams`, `GET /v1/schools`,\n`GET /v1/movements` and `GET /v1/commitments`: `country=US` lists every US\nprogram in one query.\n\nThe two school endpoints also carry the institution's `profile` from the U.S.\nDepartment of Education's College Scorecard (the federal IPEDS reporting it\npublishes): admission rate, SAT and ACT 25th/75th percentiles, undergraduate\nenrollment, published in-state and out-of-state tuition and fees, average net\nprice, six-year graduation and first-year retention rates, religious\naffiliation, campus setting, and the top fields of study by degrees awarded,\nwith the release year in `data_year`. A null field means the institution did\nnot report that measure or it does not apply (no admission rate at an\nopen-admission college, no graduation rate at a two-year one, no religious\naffiliation at a secular one); `profile` itself is null where no federal\nprofile is held. Average net price is what aided students pay after grants,\nnot the cost of attendance; GPA ranges and the full cost of attendance are not\nprovided. The `school` object embedded in teams is unchanged and carries no\nprofile. `GET /v1/schools` filters on `religious_affiliation`, admission rate\nand undergraduate enrollment ranges as well as `control`.\n\n## High schools\n\n`high_school` is the text a source printed and is never changed. Beside it,\nplayers (search rows, profiles, rosters) and a commitment's `athlete` carry\n`high_school_kind`, what we classified that text as (`high_school`, `college`,\n`club`, `homeschool`, `not_a_school`, or `unresolved`; null when there is no\ntext or it has not been classified yet), and `secondary_school`, the registry\nschool it names, only when the kind is `high_school`. Public schools are\nidentified by their NCES `nces_id` (NCESSCH), private schools by their PPIN;\na school outside the NCES registries, such as a Canadian one, has none and is\nidentified by `id`. `GET /v1/high-schools` looks schools up by name, state or\n`nces_id`. `POST /v1/players/search` filters by `high_school_nces_id`,\n`high_school_id` and `high_school_kind`, and `GET /v1/commitments` by\n`high_school_nces_id`, so every spelling of a school's name finds its athletes.\n\n## Coach contacts\n\nCoach contact fields (`email` and `phone` on `GET /v1/teams/{team_id}/coaches`)\nare returned in three cases. None of them is metered. When they are withheld\nthe response says why in `contacts_unavailable_reason`.\n\n**Coach directory.** Coach email and phone are included with Developer Pro,\nDeveloper Ultra and Enterprise. No separate approval is needed. When creating\nyour API key, enable the `coach.contact.directory_read` scope to include\nthese fields on `GET /v1/teams/{team_id}/coaches`. Contact fields are never\npart of bulk exports.\n\n**Your own verified claim.** A key whose owner is a verified player and carries\n`outreach.coach.read` reads contacts for that athlete, as in the app.\n\n**Managed athletes.** A platform that represents many athletes obtains the\nbacking per athlete. Invite a player profile with `POST /v1/athletes`; the\nathlete receives an email at an address we can vouch for (their on-file\ncontact, their school .edu address, or the account that already claimed the\nprofile) and accepts on magisterial.ai, which also completes their verified\nclaim. From then on any key on the account that carries `outreach.coach.read`\nmay pass `on_behalf_of=<player_id>` to read coach contacts for that athlete.\nEvery such read is recorded in the athlete's access log, and athletes can\nwithdraw the authorization at any time; a revoked or unclaimed grant denies on\nthe next call. Requires the Enterprise plan and the `managed_athlete.manage`\nkey scope; seats default to 250 per account.\n\n## Filtering\n\nEvery list endpoint filters the same way. Each endpoint's parameter list\nnames the fields it filters on; the forms are always these:\n\n| Form | Meaning |\n|---|---|\n| `field=value` | Exact match. Text compares case-insensitively. |\n| `field=a,b,c` | Any of the values. |\n| `field_not=a,b` | None of the values. A row with no value for the field is left out too. |\n| `field_min=`, `field_max=` | Inclusive range, for numbers and dates. |\n| `q=text` | Name contains, case-insensitive. |\n| `sort_by=`, `sort_order=` | Where a list has more than one useful order. |\n\nFilters combine with AND. A parameter the endpoint does not declare returns\n400 `unknown_parameter` together with the list it accepts, so a mistyped\nfilter never comes back as an unfiltered page.\n\n`POST /v1/players/search` takes the same names in its JSON body, with arrays\nin place of comma lists, and every season stat as a range under `stats`,\nkeyed by the stat fields `GET /v1/filters/catalog` lists for the sport:\n\n```json\n{\"sport\": \"soccer\", \"division\": \"D3\", \"position\": \"Forward\",\n \"class_year_not\": \"Senior / Graduate\", \"stats\": {\"g\": {\"min\": 10}}}\n```\n\nPosition, class year and home state are published by each school in its own\nwords ('F', 'Fwd', 'Forward'; 'Jr.', 'Junior'; 'OH', 'Ohio'). A filter on one\nof them matches every spelling of the value you give, so use the canonical\nvalues from the filter catalog.\n\n`GET /v1/filters/catalog` says how each field can be used. `search_ops` is\nwhat `POST /v1/players/search` takes: `eq` and `in` are the field as one value\nor an array, `neq` and `not_in` are `field_not`, `gte` and `lte` are\n`field_min` and `field_max` (for a stat, `min` and `max` under `stats`).\n`alert_ops` is the `op` values an alert predicate on the field accepts. Until\n2027-01-12 the catalog also returns the keys it had before (`request_key`,\n`manual_search_operators` and the others marked deprecated); they name\nparameters of the Magisterial app's own search, which no /v1 endpoint accepts.\n\nSchools and movements span sports, so they take no required scope: one\n`school_id` on `GET /v1/movements` is that school's movements in every sport,\nand `GET /v1/schools/{school_id}` lists every team it fields.\n\n## Postman\n\nA ready-made Postman collection of every endpoint, generated from this\nspecification, is served at\n[`/v1/postman.json`](https://api.magisterial.ai/v1/postman.json). In Postman\nchoose Import, paste that URL, then set the collection variable `api_key` to\nyour key once; every request sends it as the bearer token.\n\n## Pagination\n\nList endpoints paginate with an opaque `cursor`. Pass the `next_cursor` from\none response as the `cursor` of the next request; `has_more` signals whether\nanother page exists.\n\n## Errors\n\nEvery 4xx/5xx returns a JSON envelope:\n\n```json\n{ \"error\": { \"type\": \"invalid_request\", \"code\": \"invalid_scope\", \"message\": \"...\" } }\n```\n\nAn error may carry more keys than those three: `unknown_parameter` adds\n`unknown` and `allowed`, and `plan_required` adds `required_plan` and\n`current_plan`.\n\nA request that fails validation (422) uses the same envelope, with code\n`validation_error` and an `error.fields` list naming each offending field.\nUntil 2027-01-12 it also carries FastAPI's `detail` list beside `error`.\nRate-limited responses (429) include `X-RateLimit-Limit`,\n`X-RateLimit-Remaining`, `X-RateLimit-Reset`, and `Retry-After` headers. A 429\n`monthly_quota_exceeded` also carries the `X-Monthly-Quota-*` headers below.\n\n## Player stats\n\nA stat has one name everywhere. `GET /v1/filters/catalog` lists each sport's\nstat fields (`stats_by_sport`), with a label and a type; those are the names\n`POST /v1/players/search` filters and sorts by, and the names in every `stats`\nobject the API returns: a search row's `stats`, each entry of a player's\n`stats_by_season`, `stats_totals`, and the stat columns of a players export.\nEvery stat field of the sport is present on every row; a stat the source did\nnot publish is null. Track and field has no season stats: a search row reports\nthe athlete's best mark in `track`, and a player's `track_bests` lists the best\nper event.\n\nA player row carries its profile fields at the top level under the names the\nfilters use (`home_state`, `jersey_number`, `height_inches`, `bats`, ...).\n\nUntil 2027-01-12 the three player endpoints also return what they returned\nbefore: inside a search row's `stats`, copies of the profile fields and the\nsoccer keys `sh%`, `sog%`, `sv%`, `yc-rc` and `pg-pa`; and `season_stats` on a\nplayer and on season history. Those responses carry `Deprecation` and `Sunset`\nheaders.\n\n## Plans\n\nEvery key inherits its owner's Developer-API plan. Six plans exist:\n\n| Plan | Price | Read limit | Monthly requests | Portal, query, alerts, exports | Included query usage | Coach directory |\n|---|---|---|---|---|---|---|\n| Free | $0, every account | 10 / minute | 1,000 | Not available | None | No |\n| Plus | $19.99 / month | 20 / minute | 25,000 | Available; portal and alerts usage-billed | $5 / month | No |\n| Premium | $49.99 / month | 100 / minute | 100,000 | Available; portal and alerts usage-billed | $15 / month | No |\n| Developer Pro | $99.99 / month | 300 / minute | 250,000 | Available; portal and alerts included | $40 / month | Included |\n| Developer Ultra | $199 / month | 1,200 / minute | 1,000,000 | Available; portal and alerts included | $100 / month | Included |\n| Enterprise | Contact sales | Custom (6,000 / minute default) | Unlimited | Available, custom ceilings | Custom | Included |\n\nThe `plan` value in responses and headers is `free`, `plus`, `premium`,\n`developer` (Developer Pro), `ultra` (Developer Ultra) or `enterprise`.\nA paid plan also pays for the account's chat in the Magisterial app, counted\nagainst the same limits. It adds no coaching tier.\n\nDeveloper Pro, Developer Ultra and Enterprise accounts can have a team (5, 20\nand 100 people by default, the owner included). Every key held by someone on\nthe account runs on the account's plan, and the per-minute limits and the\nmonthly quota are counted once for the whole account. A key, and the alerts\nand query runs made with it, stay its owner's own.\n\nThe free read endpoints (players, season stats, teams, schools, rosters,\ncoaches, games, careers, transfers, published movements, reference data) are on every plan at\nthe plan's limits. Every response carries `X-Magisterial-Plan`; plans with a\nmonthly quota add `X-Monthly-Quota-Limit`, `X-Monthly-Quota-Remaining` and\n`X-Monthly-Quota-Reset` (Unix seconds of the next reset: 00:00 UTC on the 1st\nof the month, not your billing date), and a capped account receives 429\n`monthly_quota_exceeded`, with the same headers, until the UTC calendar month\nrolls over. Plans and prices:\n[magisterial.ai/pricing/developers](https://magisterial.ai/pricing/developers).\nUpgrade in the developer console\n([magisterial.ai/console/billing](https://magisterial.ai/console/billing));\nEnterprise is arranged per customer.\n\n## Billing\n\nEndpoints marked *usage-billed* (`/v1/portal`, `/v1/query`, `/v1/alerts`,\n`/v1/exports`) are open on every paid plan (a Free key receives 403\n`plan_required`), require usage billing to be enabled on the account, and\nmeter usage against a monthly budget you set. List prices: exports $0.10 per\nstarted 10,000-row block (billed on success only), and query at model cost\nwith a 3x markup, drawn first from the plan's included monthly query usage.\nOn Plus and Premium the portal is $0.05 per request and alerts are $5 per\nactive alert per month; from Developer Pro up both are included and only\ncount against the plan's request quota and alert cap. Buying a plan enables\nusage billing on the same subscription. Billing-not-enabled and past-due states return 403; an exhausted monthly\nbudget returns 402.\n\nBilling is additive, not authorization. In particular, `/v1/portal`, API\nportal alerts (`/v1/alerts`, the `alert.triggered` webhook), portal answers\nfrom `/v1/query` and the portal section of `/v1/filters/catalog` are bound to\na verified coach: the key must delegate the relevant portal capability and\nthe current actor must be an active, verified coach. No coaching plan is needed; the paid API plan covers\nthem. Enabling usage billing by itself never grants portal or athlete-contact\naccess. Athlete contacts require the separate `portal.contact.read` scope\nunder the same actor policy.\n\nMovements are separate from the portal. `GET /v1/movements` and the movement\nwebhooks report roster and staff changes seen on school pages, and need no\ncoach verification on any plan. `GET /v1/transfers` is the bulk feed of school\nchanges, with both schools named; a player movement carries the same edge as\n`transfer` and the other school as `counterpart`.\n\n## Bulk exports\n\nFor full-dataset pulls, use the bulk lane instead of walking paginated\nendpoints: `POST /v1/exports` starts an async job that writes one dataset\n(players, teams, games, or coaches) in one sport/division scope to a gzipped\nCSV or JSONL file, and `GET /v1/exports/{export_id}` returns a short-lived\nsigned download URL once it succeeds. Billed on success by result size\n(per started 10,000-row block); failed exports are never billed.\n\nA players file ends with `positions` and `position_groups`, the standardized\nreading of `position` that every other player object carries. In JSONL they\nare arrays. In CSV a cell is the list as compact JSON (`[\"MID\",\"FWD\"]`), the\nway a games file writes period scores. An empty CSV cell (null in JSONL) is a\nsport with no position vocabulary (tennis, golf, swimming and diving, track and\nfield); `[]` is a sport that has one and a published position that names no\nvalue in it. A players header only grows at its end, so these two columns come\nafter every column a file already had.\n\n## Sandbox\n\nA test key (`mag_test_`) reads a synthetic world instead of production: 24\ninvented schools in D1 and D3 with men's and women's soccer and basketball,\nand everything the endpoints return for them (rosters, coaching staffs, games\nwith box scores, season statistics, rankings, postseason results, the transfer\nportal and movements). No real person, school or address is in it, and its ids\nsit far above any live id. Every response carries\n`Magisterial-Environment: sandbox`.\n\nTest keys are free. The usage-billed endpoints work without a paid plan or\nbilling, nothing is billed, and sandbox requests do not count toward the\nmonthly quota. Your plan's per-minute rate limits and the key's scopes still\napply, so what you build against a test key behaves the same with a live one.\n\n`POST /v1/query` calls no model with a test key. It answers a short list of\nsample questions from the sandbox data and answers anything else with a fixed\nmessage that lists them. Exports and alerts run over the sandbox world.\n`POST /v1/sandbox/events` makes something happen in it (a portal entry, an\nathlete or a coach joining a program, a commitment published, updated or\nretracted): your sandbox alerts are evaluated, and your registered webhook\nendpoints receive the resulting events with `\"test\": true`. The commitment\nfeed (`GET /v1/commitments` and its change log and sources) is served from\ninvented high-school prospects committed to the sandbox's schools. Managed athletes are not available with a test key\n(501 `sandbox_not_supported`).\n\n## Webhooks\n\nInstead of polling, register webhook endpoints in the\n[console](https://magisterial.ai/console/webhooks) to receive signed events:\n`alert.triggered` when a watch alert finds new portal matches, and\n`query.completed` when an async query run finishes. Payloads carry a\n`Magisterial-Signature` header (`t=<ts>,v1=<hmac_sha256_hex>` over\n`{t}.{raw_body}`, keyed with the endpoint's `whsec_` secret); failed\ndeliveries retry with backoff for about two days. See the webhooks guide at\n[magisterial.ai/docs](https://magisterial.ai/docs#webhooks-guide).\n\nDeveloper Pro, Developer Ultra and Enterprise can also have the published\nmovement feed pushed: `coach_movement.published`, `coach_movement.updated`\nand `coach_movement.retracted`, and the same three for `player_movement`.\nEach event carries one movement, as the object `GET /v1/movements` returns,\nwith a per-movement `revision` that rises with every event. Apply them in\nrevision order and you hold what the published feed holds, corrections\nincluded. Movement webhooks need no coach verification.\n\nOn every plan, `GET /v1/movements/changes` serves the same change log to a\nconsumer that polls: each movement that is or was published, in its current\nstate, oldest change first.\n",
     "summary": "College sports data: players, teams, careers, games, the transfer portal, and natural-language query.",
     "title": "Magisterial Developer API",
     "version": "1.0.0"
@@ -26534,6 +27340,103 @@
         ]
       }
     },
+    "/v1/recruit/fit": {
+      "post": {
+        "description": "Rank every D1, D2, D3, NAIA and NJCAA soccer program for one athlete,\nfrom their class, position, home state and club league. It is the score\nMagisterial Recruit shows.\n\n`fit` is 0 to 100: 25% roster room at the position, 45% recruiting\npipeline from the athlete's state, region and league, 15% nearness to\nhome, 10% club level against the program's recent recruits, 5% program\nstability. Each part is relative to the other programs, and a part with\nno data is neutral, so read `components[].measured`. A program with no\nopening expected ranks below every program with one, so `rank` is not\nalways the order of `fit`.\n\nAthletes who share a class, position, home state and league tier get the\nsame scores: it measures how a program recruits and whether it has room,\nnot how good a player is. It is not a probability of an offer. Targets\nand must-haves choose which programs are ranked and never change a fit.\n\nPass `team_ids` to score your own shortlist. The request takes no name or\nother identity. Developer Pro and up; test keys get a 501.",
+        "operationId": "score_recruit_fit",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecruitFitRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecruitFitPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "An answer the scores cannot read."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed, or revoked API key."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "The key's plan does not include recruit fit (Developer Pro and up)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiValidationErrorResponse"
+                }
+              }
+            },
+            "description": "The request failed validation; `error.fields` names each field."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "The program inputs are being built."
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Score a soccer athlete against every program",
+        "tags": [
+          "Recruit Fit"
+        ]
+      }
+    },
     "/v1/regions": {
       "get": {
         "description": "The regions teams in the requested sport/division scope are in, in\nthe association's order ('NJCAA Region I' to 'NJCAA Region XXIV'):\nvalid values for `region` filters on other endpoints, and the values a\nteam's `region` takes. A region is an association's, not a conference:\nthe NJCAA's 24 regions hold its conferences, and a team in a region with\nno conference has a region and no conference. Only NJCAA and NCCAA teams\nhave one, so any other scope lists none.",
@@ -30085,6 +30988,10 @@
     {
       "description": "The transfer portal as counts per program and position group, with no one named, and its daily change log and portal_supply.changed webhook. Developer Ultra and up; no coach verification.",
       "name": "Portal Supply"
+    },
+    {
+      "description": "Score a soccer athlete's class, position, home state and club league against every program: recruiting pipeline, roster room, distance, club level and stability. Developer Pro and up.",
+      "name": "Recruit Fit"
     },
     {
       "description": "Games with box scores and play-by-play where covered.",

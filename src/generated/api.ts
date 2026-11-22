@@ -1058,6 +1058,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/recruit/fit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Score a soccer athlete against every program
+         * @description Rank every D1, D2, D3, NAIA and NJCAA soccer program for one athlete,
+         *     from their class, position, home state and club league. It is the score
+         *     Magisterial Recruit shows.
+         *
+         *     `fit` is 0 to 100: 25% roster room at the position, 45% recruiting
+         *     pipeline from the athlete's state, region and league, 15% nearness to
+         *     home, 10% club level against the program's recent recruits, 5% program
+         *     stability. Each part is relative to the other programs, and a part with
+         *     no data is neutral, so read `components[].measured`. A program with no
+         *     opening expected ranks below every program with one, so `rank` is not
+         *     always the order of `fit`.
+         *
+         *     Athletes who share a class, position, home state and league tier get the
+         *     same scores: it measures how a program recruits and whether it has room,
+         *     not how good a player is. It is not a probability of an offer. Targets
+         *     and must-haves choose which programs are ranked and never change a fit.
+         *
+         *     Pass `team_ids` to score your own shortlist. The request takes no name or
+         *     other identity. Developer Pro and up; test keys get a 501.
+         */
+        post: operations["score_recruit_fit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/regions": {
         parameters: {
             query?: never;
@@ -7326,6 +7364,360 @@ export interface components {
             ties: number;
             /** Wins */
             wins: number;
+        };
+        /**
+         * RecruitFitAthlete
+         * @description The answers as they were read.
+         */
+        RecruitFitAthlete: {
+            /**
+             * Club League
+             * @description The league code read for the athlete's season.
+             */
+            club_league?: string | null;
+            /**
+             * Club League Tier
+             * @description 1 is the national top flight for the gender.
+             */
+            club_league_tier?: number | null;
+            /** Grad Year */
+            grad_year: number;
+            /** Home State */
+            home_state?: string | null;
+            /** Position */
+            position?: string | null;
+            /**
+             * Position Group
+             * @description GK, DEF, MID, FWD, or ALL without a position.
+             */
+            position_group: string;
+            /** Sport Path */
+            sport_path: string;
+        };
+        /**
+         * RecruitFitComponent
+         * @description One weighted part of the fit.
+         */
+        RecruitFitComponent: {
+            /**
+             * Key
+             * @description room: expected openings at the position. pipeline: recruits and roster from the athlete's state, region and league. preferences: nearness to home. level: the athlete's league against the program's recent recruits. stability: coach tenure, first-year minutes and portal reliance.
+             * @enum {string}
+             */
+            key: "room" | "pipeline" | "preferences" | "level" | "stability";
+            /**
+             * Measured
+             * @description False when the data is missing and the part is neutral (0.5).
+             */
+            measured: boolean;
+            /**
+             * Score
+             * @description 0 to 1 against the other programs; higher is better.
+             */
+            score: number;
+            /**
+             * Weight
+             * @description Its share of the fit.
+             */
+            weight: number;
+        };
+        /**
+         * RecruitFitLevel
+         * @description The athlete's league against the program's recent recruits.
+         */
+        RecruitFitLevel: {
+            /**
+             * Above
+             * @description Share a level above.
+             */
+            above?: number | null;
+            /**
+             * Below
+             * @description Share a level below.
+             */
+            below?: number | null;
+            /**
+             * Measured
+             * @description False unless the athlete's league and 2+ of the program's recruits' are known.
+             */
+            measured: boolean;
+            /** Percentile */
+            percentile?: number | null;
+            /**
+             * Same
+             * @description Share of recruits at the athlete's league level.
+             */
+            same?: number | null;
+        };
+        /** RecruitFitMustHave */
+        RecruitFitMustHave: {
+            /**
+             * Excluded
+             * @description Programs that fail it.
+             */
+            excluded: number;
+            /** Must Have */
+            must_have: string;
+            /**
+             * Unknown Excluded
+             * @description Programs left out because the data to judge them is missing.
+             */
+            unknown_excluded: number;
+        };
+        /**
+         * RecruitFitPage
+         * @description Programs in rank order, with what the ranking was built from.
+         */
+        RecruitFitPage: {
+            athlete: components["schemas"]["RecruitFitAthlete"];
+            /**
+             * Built At
+             * @description When the oldest program input was built (hourly).
+             */
+            built_at?: string | null;
+            /** Data */
+            data: components["schemas"]["RecruitFitProgram"][];
+            /**
+             * Has More
+             * @description True when another page is available.
+             * @default false
+             */
+            has_more: boolean;
+            /**
+             * Missing
+             * @description Answers that would sharpen the scores.
+             */
+            missing: string[];
+            /** Must Haves */
+            must_haves: components["schemas"]["RecruitFitMustHave"][];
+            /**
+             * Next Cursor
+             * @description Opaque cursor for the next page; null when there are no more results.
+             * @example eyJvZmZzZXQiOiAyNX0=
+             */
+            next_cursor?: string | null;
+            /**
+             * Programs In Field
+             * @description Every program in the sport for this class and position.
+             */
+            programs_in_field: number;
+            /**
+             * Ranked
+             * @description Programs that pass the targets and must-haves.
+             */
+            ranked: number;
+            /**
+             * Unknown Team Ids
+             * @description Requested ids not in the field.
+             */
+            unknown_team_ids?: number[];
+        };
+        /**
+         * RecruitFitProgram
+         * @description One program scored for the athlete.
+         */
+        RecruitFitProgram: {
+            /** Avg Net Price */
+            avg_net_price?: number | null;
+            /** City */
+            city?: string | null;
+            /** Components */
+            components: components["schemas"]["RecruitFitComponent"][];
+            /** Conference */
+            conference?: string | null;
+            /** Division */
+            division?: string | null;
+            /**
+             * Fit
+             * @description 0 to 100, relative to every program in the sport for this class and position. Not a probability of a roster spot or an offer.
+             */
+            fit: number;
+            /** In Ranking */
+            in_ranking: boolean;
+            level: components["schemas"]["RecruitFitLevel"];
+            /** Logo Url */
+            logo_url?: string | null;
+            /** Miles From Home State */
+            miles_from_home_state?: number | null;
+            /**
+             * Rank
+             * @description 1 is the best fit among the programs ranked. Null when targets or must-haves leave it out.
+             */
+            rank?: number | null;
+            /** Region */
+            region?: string | null;
+            retention: components["schemas"]["RecruitFitRetention"];
+            room: components["schemas"]["RecruitFitRoom"];
+            /** School Id */
+            school_id?: number | null;
+            /** State */
+            state?: string | null;
+            /** Team */
+            team?: string | null;
+            /**
+             * Team Id
+             * @description The program: GET /v1/teams/{team_id}.
+             */
+            team_id: number;
+        };
+        /**
+         * RecruitFitRequest
+         * @description One soccer athlete's answers. It takes no name, email or other
+         *     identity, and nothing is saved beyond your own request log.
+         * @example {
+         *       "club_league": "ECNL",
+         *       "grad_year": 2028,
+         *       "home_state": "MN",
+         *       "limit": 10,
+         *       "position": "CM",
+         *       "sport_path": "womens-soccer",
+         *       "target_divisions": [
+         *         "D1",
+         *         "D2"
+         *       ]
+         *     }
+         */
+        RecruitFitRequest: {
+            /**
+             * Club League
+             * @description Youth league, by code or full name: ECNL, ECNL RL, GA, GA ASPIRE, MLS NEXT, MLS NEXT AD, N1, DPL, EDP, EA, USL ACADEMY. NPL, USYS NL, USYS NL PRO and E64 are read as N1 from 2026-27. Without one, club level is neutral.
+             * @example ECNL
+             */
+            club_league?: string | null;
+            /** Cursor */
+            cursor?: string | null;
+            /**
+             * Grad Year
+             * @description High school class; the fall the athlete enters college. A class the scores do not cover is a 400 that lists the ones they do.
+             * @example 2028
+             */
+            grad_year: number;
+            /**
+             * Home State
+             * @description Two-letter US state. Without one, pipeline and distance are neutral for every program, and the ranking is much weaker.
+             * @example MN
+             */
+            home_state?: string | null;
+            /**
+             * Intended Major
+             * @description Used by the `major` must-have, against the school's most common fields of study.
+             */
+            intended_major?: string | null;
+            /**
+             * Limit
+             * @default 25
+             */
+            limit: number;
+            /**
+             * Max Annual Cost Usd
+             * @description Used by the `cost` must-have, against the school's average net price.
+             */
+            max_annual_cost_usd?: number | null;
+            /**
+             * Max Distance Miles
+             * @description Used by the `distance` must-have, measured from the home state's population center.
+             */
+            max_distance_miles?: number | null;
+            /**
+             * Must Haves
+             * @description Hard filters. Each needs its answer in this request (target_divisions, target_regions, intended_major, max_distance_miles, max_annual_cost_usd). A program the filter cannot judge is left out and counted in `must_haves`.
+             */
+            must_haves?: ("division" | "region" | "major" | "distance" | "cost")[];
+            /**
+             * Position
+             * @description Without one, roster room is read for the whole roster.
+             */
+            position?: ("GK" | "CB" | "FB" | "WB" | "DM" | "CM" | "AM" | "W" | "F" | "DEF" | "MID" | "FWD") | null;
+            /**
+             * Sport Path
+             * @description Soccer only for now.
+             * @enum {string}
+             */
+            sport_path: "womens-soccer" | "mens-soccer";
+            /**
+             * Target Divisions
+             * @description Rank only these divisions. Does not change a program's fit.
+             */
+            target_divisions?: ("D1" | "D2" | "D3" | "NAIA" | "NJCAA")[];
+            /**
+             * Target Regions
+             * @description Rank only these regions. Does not change a program's fit.
+             */
+            target_regions?: ("northeast" | "south" | "midwest" | "west")[];
+            /**
+             * Team Ids
+             * @description Return only these programs, each with its fit against the whole field, including one your targets or must-haves leave out (`in_ranking` false, `rank` null).
+             */
+            team_ids?: number[] | null;
+        };
+        /**
+         * RecruitFitRetention
+         * @description The program's high school recruits still on the roster in year two.
+         *     Shown beside the fit; it is not part of it.
+         */
+        RecruitFitRetention: {
+            /**
+             * Arrival Seasons
+             * @description First and last arrival season measured.
+             */
+            arrival_seasons: number[];
+            /**
+             * Quartile
+             * @description 1 (bottom) to 4 (top) within the division.
+             */
+            quartile?: number | null;
+            /** Recruits */
+            recruits: number;
+            /**
+             * Share
+             * @description Null with fewer than 5 recruits measured.
+             */
+            share?: number | null;
+        };
+        /**
+         * RecruitFitRoom
+         * @description Expected openings at the athlete's position for their entering class.
+         */
+        RecruitFitRoom: {
+            /**
+             * Commitment Coverage
+             * @description The share of the division's high school recruits the commitment lists hold.
+             */
+            commitment_coverage?: number | null;
+            /**
+             * Commitments Counted
+             * @description How many of them were subtracted: all where the division's lists are complete enough to trust (`commitment_coverage` at least 0.3), otherwise none.
+             */
+            commitments_counted: number;
+            /** Entering Class */
+            entering_class: number;
+            /**
+             * Expected Openings
+             * @description Null without a roster to count.
+             */
+            expected_openings?: number | null;
+            /**
+             * Known Commitments
+             * @description Known commitments to this class at this position.
+             */
+            known_commitments: number;
+            /**
+             * No Opening
+             * @description Under half an opening expected; ranked below every program with one.
+             */
+            no_opening: boolean;
+            /** Seniors Leaving */
+            seniors_leaving?: number | null;
+            /**
+             * Transfers In
+             * @description Its usual transfers in to the position in a year.
+             */
+            transfers_in: number;
+            /**
+             * Transfers Out
+             * @description The program's usual transfers out of the position in a year.
+             */
+            transfers_out: number;
         };
         /**
          * RosterEntry
@@ -13866,6 +14258,84 @@ export interface operations {
             };
             /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    score_recruit_fit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecruitFitRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecruitFitPage"];
+                };
+            };
+            /** @description An answer the scores cannot read. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Missing, malformed, or revoked API key. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The key's plan does not include recruit fit (Developer Pro and up). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The request failed validation; `error.fields` names each field. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiValidationErrorResponse"];
+                };
+            };
+            /** @description Rate limit exceeded. See the X-RateLimit-* and Retry-After headers; a monthly quota 429 also carries X-Monthly-Quota-Limit, X-Monthly-Quota-Remaining and X-Monthly-Quota-Reset. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The program inputs are being built. */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };

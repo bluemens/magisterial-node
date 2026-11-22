@@ -1127,8 +1127,27 @@ describe("0.7.0 endpoints", () => {
     expect(calls).toBe(1);
   });
 
-  it("reports the 0.9.0 version", () => {
-    expect(VERSION).toBe("0.9.0");
+  it("reports the 0.10.0 version", () => {
+    expect(VERSION).toBe("0.10.0");
+  });
+
+  it("posts an athlete's answers to recruit fit (0.10.0)", async () => {
+    let sent: { url: string; method?: string; body?: unknown } | undefined;
+    const { client } = makeClient((url, init) => {
+      sent = { url, method: init.method, body: JSON.parse(String(init.body)) };
+      return new Response(JSON.stringify({ data: [], has_more: false }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    });
+    const params = {
+      sport_path: "womens-soccer" as const, grad_year: 2028, position: "CM" as const,
+      home_state: "MN", club_league: "ECNL", team_ids: [3, 4],
+    };
+    await client.recruitFit.score(params as never);
+    expect(sent?.method).toBe("POST");
+    expect(new URL(sent!.url).pathname).toBe("/v1/recruit/fit");
+    expect(sent?.body).toEqual(params);
   });
 });
 

@@ -82,6 +82,13 @@ const changes = await client.commitments.changes({ since: "2026-10-01T00:00:00Z"
 const supply = await client.portalSupply.list({ sport: "soccer", gender: "women", division: "D1" });
 const supplyChanges = await client.portalSupply.changes({ since: "2026-11-01T00:00:00Z" });
 
+// Recruit fit: score a soccer athlete against every program (Developer Pro and up)
+const fit = await client.recruitFit.score({
+  sport_path: "womens-soccer", grad_year: 2028, position: "CM",
+  home_state: "MN", club_league: "ECNL", target_divisions: ["D1", "D2"],
+});
+console.log(fit.data[0]?.team, fit.data[0]?.fit);
+
 // Golf, swimming & diving, and tennis
 const tournaments = await client.golf.listTournaments({ sport: "golf", division: "D1" });
 const times = await client.players.times(184223, {
