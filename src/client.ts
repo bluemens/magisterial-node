@@ -19,6 +19,7 @@ import { Persons } from "./resources/persons.js";
 import { Players } from "./resources/players.js";
 import { Portal } from "./resources/portal.js";
 import { PortalSupply } from "./resources/portal_supply.js";
+import { RecruitFit } from "./resources/recruit_fit.js";
 import { Query } from "./resources/query.js";
 import { Reference } from "./resources/reference.js";
 import { Sandbox } from "./resources/sandbox.js";
@@ -70,6 +71,7 @@ export class Magisterial {
   readonly games: Games;
   readonly portal: Portal;
   readonly portalSupply: PortalSupply;
+  readonly recruitFit: RecruitFit;
   readonly query: Query;
   readonly alerts: Alerts;
   readonly exports: Exports;
@@ -110,6 +112,7 @@ export class Magisterial {
     this.games = new Games(this);
     this.portal = new Portal(this);
     this.portalSupply = new PortalSupply(this);
+    this.recruitFit = new RecruitFit(this);
     this.query = new Query(this);
     this.alerts = new Alerts(this);
     this.exports = new Exports(this);

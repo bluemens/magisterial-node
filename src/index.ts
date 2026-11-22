@@ -36,6 +36,7 @@ export type {
   PortalSupplyListParams,
   PortalSupplyChangesParams,
 } from "./resources/portal_supply.js";
+export type { RecruitFitScoreParams } from "./resources/recruit_fit.js";
 export type { QueryCreateParams, PollOptions } from "./resources/query.js";
 export type { AlertCreateParams } from "./resources/alerts.js";
 export type { GameListParams } from "./resources/games.js";
