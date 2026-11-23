@@ -343,6 +343,9 @@ describe("0.2.0 endpoints", () => {
       sport: "soccer",
       division: "D1,D3",
       country: "US",
+      status: "active" as const,
+      season: "latest",
+      staff_category: "coach",
       include_contacts: true,
     };
     const { client } = makeClient((_url, init) => {

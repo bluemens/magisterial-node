@@ -20,13 +20,17 @@ export interface ExportCreateParams {
   /** 'csv' (default) or 'jsonl'; the file is always gzipped. */
   format?: string;
   gender?: string;
-  /** Season filter (championship year, e.g. "2025"). */
+  /** Championship year, e.g. "2025", or "latest" for coach exports. */
   season?: string;
   /** Conference filter (players/teams/coaches). */
   conference?: string;
   /** School country filter (players/teams/coaches), such as "US". */
   country?: string;
-  /** Include published contacts for the latest coaches held per active program.
+  /** Program status filter (players/teams/coaches). */
+  status?: "active" | "discontinued" | "all";
+  /** Comma-separated staff categories (coaches only). */
+  staff_category?: string;
+  /** Include the selected coaches' published email and phone.
    * Requires Developer Pro or Ultra and the coach.contact.directory_read scope. */
   include_contacts?: boolean;
 }

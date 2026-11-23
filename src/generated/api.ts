@@ -432,10 +432,11 @@ export interface paths {
          *     download URL (most exports finish in well under a minute). Billed on
          *     success by result size; failed exports are never billed.
          *
-         *     Set `country` to filter players, teams or coaches by the school's country.
-         *     For coaches, `include_contacts: true` adds published email and phone and limits
-         *     the file to coaching staff in the latest season held for active programs.
-         *     It requires Developer Pro or Developer Ultra and `coach.contact.directory_read`.
+         *     Players, teams and coaches can be filtered by the school's `country` and
+         *     program `status`. Coach exports also accept `season: "latest"` and
+         *     `staff_category`. `include_contacts: true` adds the published email and
+         *     phone columns to a coach export. It requires Developer Pro or Developer
+         *     Ultra and `coach.contact.directory_read`.
          *
          *     A players file ends with `positions` and `position_groups`, the
          *     standardized reading of `position`: arrays in JSONL; in CSV a cell of
@@ -2881,7 +2882,10 @@ export interface components {
          *       "format": "csv",
          *       "gender": "women",
          *       "include_contacts": true,
-         *       "sport": "soccer"
+         *       "season": "latest",
+         *       "sport": "soccer",
+         *       "staff_category": "coach",
+         *       "status": "active"
          *     }
          */
         ExportCreateRequest: {
@@ -2918,7 +2922,7 @@ export interface components {
             gender?: string | null;
             /**
              * Include Contacts
-             * @description Coaches only. Developer Pro or Developer Ultra and the coach.contact.directory_read key scope are required. Adds published email and phone for coaching staff in the latest season held per active program. Omit season.
+             * @description Coaches only. Developer Pro or Developer Ultra and the coach.contact.directory_read key scope are required. Appends the coach's published email and phone to the rows selected by the filters.
              * @default false
              */
             include_contacts: boolean;
@@ -2929,7 +2933,7 @@ export interface components {
             region?: string | null;
             /**
              * Season
-             * @description Season filter (championship year, e.g. '2025').
+             * @description Season filter (championship year, e.g. '2025'). Coach exports also accept 'latest' for the latest staff season held per program.
              */
             season?: string | null;
             /**
@@ -2937,6 +2941,16 @@ export interface components {
              * @description e.g. 'soccer', 'basketball', 'baseball'.
              */
             sport: string;
+            /**
+             * Staff Category
+             * @description Coaches only. Comma-separated staff categories: coach, program_staff, support_staff, not_staff, unclassified, unknown.
+             */
+            staff_category?: string | null;
+            /**
+             * Status
+             * @description Program status filter (players/teams/coaches): 'active', 'discontinued' or 'all' (default).
+             */
+            status?: string | null;
         };
         /**
          * ExportCreateResponse
