@@ -338,21 +338,26 @@ describe("0.2.0 endpoints", () => {
 
   it("export createAndPoll reaches succeeded", async () => {
     const statuses = ["queued", "running", "succeeded"][Symbol.iterator]();
-    const { client } = makeClient((_url, init) =>
-      init.method === "POST"
-        ? json(202, { export_id: "e1", status: "queued" })
-        : json(200, {
-            export_id: "e1",
-            status: statuses.next().value,
-            dataset: "players",
-            download_url: "https://example.com/f.csv.gz",
-          }),
-    );
-    const job = await client.exports.createAndPoll({
-      dataset: "players",
+    const params = {
+      dataset: "coaches",
       sport: "soccer",
-      division: "D3",
+      division: "D1,D3",
+      country: "US",
+      include_contacts: true,
+    };
+    const { client } = makeClient((_url, init) => {
+      if (init.method === "POST") {
+        expect(JSON.parse(String(init.body))).toEqual(params);
+        return json(202, { export_id: "e1", status: "queued" });
+      }
+      return json(200, {
+        export_id: "e1",
+        status: statuses.next().value,
+        dataset: "coaches",
+        download_url: "https://example.com/f.csv.gz",
+      });
     });
+    const job = await client.exports.createAndPoll(params);
     expect(job.status).toBe("succeeded");
     expect(job.download_url).toBeTruthy();
   });
@@ -1127,8 +1132,8 @@ describe("0.7.0 endpoints", () => {
     expect(calls).toBe(1);
   });
 
-  it("reports the 0.10.0 version", () => {
-    expect(VERSION).toBe("0.10.0");
+  it("reports the 0.11.0 version", () => {
+    expect(VERSION).toBe("0.11.0");
   });
 
   it("posts an athlete's answers to recruit fit (0.10.0)", async () => {

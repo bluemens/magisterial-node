@@ -24,6 +24,11 @@ export interface ExportCreateParams {
   season?: string;
   /** Conference filter (players/teams/coaches). */
   conference?: string;
+  /** School country filter (players/teams/coaches), such as "US". */
+  country?: string;
+  /** Include published contacts for the latest coaches held per active program.
+   * Requires Developer Pro or Ultra and the coach.contact.directory_read scope. */
+  include_contacts?: boolean;
 }
 
 export interface ExportPollOptions {

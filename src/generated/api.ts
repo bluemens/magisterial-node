@@ -432,6 +432,11 @@ export interface paths {
          *     download URL (most exports finish in well under a minute). Billed on
          *     success by result size; failed exports are never billed.
          *
+         *     Set `country` to filter players, teams or coaches by the school's country.
+         *     For coaches, `include_contacts: true` adds published email and phone and limits
+         *     the file to coaching staff in the latest season held for active programs.
+         *     It requires Developer Pro or Developer Ultra and `coach.contact.directory_read`.
+         *
          *     A players file ends with `positions` and `position_groups`, the
          *     standardized reading of `position`: arrays in JSONL; in CSV a cell of
          *     compact JSON (`["MID","FWD"]`), empty for a sport with no position
@@ -455,7 +460,8 @@ export interface paths {
          * Get an export job
          * @description Status of one export job. Once `status` is 'succeeded', `download_url`
          *     holds a fresh short-lived signed URL (mint a new one by polling again).
-         *     The stored file expires at `expires_at`.
+         *     The stored file expires at `expires_at`. Contact exports require the same
+         *     plan and API key scope when polling as when created.
          */
         get: operations["get_export"];
         put?: never;
@@ -2868,6 +2874,15 @@ export interface components {
          *       "season": "2025",
          *       "sport": "soccer"
          *     }
+         * @example {
+         *       "country": "US",
+         *       "dataset": "coaches",
+         *       "division": "D1,D2,D3,NAIA",
+         *       "format": "csv",
+         *       "gender": "women",
+         *       "include_contacts": true,
+         *       "sport": "soccer"
+         *     }
          */
         ExportCreateRequest: {
             /**
@@ -2875,6 +2890,11 @@ export interface components {
              * @description Conference filter (players/teams/coaches).
              */
             conference?: string | null;
+            /**
+             * Country
+             * @description School country filter (players/teams/coaches). Comma-separated ISO two-letter codes. US includes territories, as on GET /v1/teams.
+             */
+            country?: string | null;
             /**
              * Dataset
              * @description 'players' | 'teams' | 'games' | 'coaches'.
@@ -2896,6 +2916,12 @@ export interface components {
              * @description 'men' or 'women'. Defaults to 'men' for a sport with both; ignored for single-gender sports.
              */
             gender?: string | null;
+            /**
+             * Include Contacts
+             * @description Coaches only. Developer Pro or Developer Ultra and the coach.contact.directory_read key scope are required. Adds published email and phone for coaching staff in the latest season held per active program. Omit season.
+             * @default false
+             */
+            include_contacts: boolean;
             /**
              * Region
              * @description Region filter (players/teams/coaches), e.g. 'NJCAA Region IV': the team's region in its newest season. GET /v1/regions lists them.
